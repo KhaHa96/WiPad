@@ -15,7 +15,24 @@
 /*************************************   PUBLIC DEFINES   ****************************************/
 #define APP_USE_REG_TEST_EVENT1 (1 << 0)
 #define APP_USE_REG_TEST_EVENT2 (1 << 1)
-#define APP_USE_REG_EVENT_MASK  (APP_USE_REG_TEST_EVENT1 | APP_USE_REG_TEST_EVENT2)
+
+/**************************************   PUBLIC TYPES   *****************************************/
+/**
+ * State machine event-triggered action function pointer
+ *
+ * Functions of this type take one argument:
+ *  - void *pvArg: Pointer to event-related data passed to state machine entry's action
+*/
+typedef void (*RegistrationAction)(void *pvArg);
+
+/**
+ * Registration_tstrState State-defining structure for the Registration application
+*/
+typedef struct
+{
+    uint32_t u32Trigger;
+    RegistrationAction pfAction;
+}Registration_tstrState;
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
@@ -34,7 +51,8 @@ App_tenuStatus enuRegistration_Init(void);
 
 /**
  * @brief enuRegistration_GetNotified Notifies User registration task of an incoming event by
- *        setting it in local event group.
+ *        setting it in local event group and setting its accompanying data in local message
+ *        queue.
  *
  * @note This function is invoked by the Application Manager signaling that another task
  *       wants to communicate with the User registration task.
@@ -42,10 +60,11 @@ App_tenuStatus enuRegistration_Init(void);
  * @pre This function can't be called unless User registration task is initialized and running.
  *
  * @param u32Event Event to be posted in local event group
+ * @param pvData Pointer to event-related data
  *
  * @return App_tenuStatus Application_Success if notification was posted successfully,
  *         Application_Failure otherwise
  */
-App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event);
+App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event, void *pvData);
 
 #endif /* _APP_USEREG_H_ */

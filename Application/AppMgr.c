@@ -51,7 +51,7 @@ App_tenuStatus AppMgr_enuInit(void)
     return enuRetVal;
 }
 
-extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event)
+extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData)
 {
     App_tenuStatus enuRetVal = Application_Failure;
 
@@ -72,7 +72,7 @@ extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event)
                 {
                     if(strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif)
                     {
-                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif(u32Event);
+                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif(u32Event, pvData);
                     }
                 }
 

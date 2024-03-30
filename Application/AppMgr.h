@@ -55,10 +55,11 @@ typedef App_tenuStatus (*AppMgrInitialize)(void);
  *       responsible for posting external events dispatched from other applications and middleware
  *       tasks to the local event group.
  *
- * @note This function takes one parameter:
+ * @note This function takes two parameters:
  *  - uint32_t u32Event: Event to be posted and processed by local task.
+ *  - void *pvData: Pointer to event-related data.
 */
-typedef App_tenuStatus (*AppMgrGetNotified)(uint32_t u32Event);
+typedef App_tenuStatus (*AppMgrGetNotified)(uint32_t u32Event, void *pvData);
 
 /**
  * AppMgr_tstrInterface Application's public interface definition structure outlining the public
@@ -105,10 +106,11 @@ App_tenuStatus AppMgr_enuInit(void);
  *       tasks that request notifying a thirdparty application of a new event.
  *
  * @param u32Event Event to be dispatched
+ * @param pvData Pointer to event-related data
  *
  * @return App_tenuStatus Application_Success if event was dispatched successfully to its
  *         destination, Application_Failure otherwise
  */
-extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event);
+extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 #endif /* _APP_MGR_H_ */

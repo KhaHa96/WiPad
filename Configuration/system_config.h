@@ -13,9 +13,11 @@
 /* Key Attribution application */
 #define APP_KEYATT_TASK_STACK_SIZE 256
 #define APP_KEYATT_TASK_PRIORITY 2
+#define APP_KEYATT_QUEUE_LENGTH 5
 /* User Registration application */
 #define APP_USEREG_TASK_STACK_SIZE 256
 #define APP_USEREG_TASK_PRIORITY 2
+#define APP_USEREG_QUEUE_LENGTH 5
 
 /*************************************   MIDDLEWARE DEFINES   ************************************/
 /* Ble Middleware Service */
