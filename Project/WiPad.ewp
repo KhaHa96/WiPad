@@ -251,7 +251,7 @@
                 </option>
                 <option>
                     <name>CCDiagSuppress</name>
-                    <state>Pe111</state>
+                    <state>Pe111, Go029</state>
                 </option>
                 <option>
                     <name>CCDiagRemark</name>
@@ -358,6 +358,10 @@
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
                     <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Application</state>
+                    <state>$PROJ_DIR$\..\Application\Attribution</state>
+                    <state>$PROJ_DIR$\..\Application\Registration</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2113,6 +2117,21 @@
     </configuration>
     <group>
         <name>Application</name>
+        <group>
+            <name>Attribution</name>
+            <file>
+                <name>$PROJ_DIR$\..\Application\Attribution\Attribution.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Registration</name>
+            <file>
+                <name>$PROJ_DIR$\..\Application\Registration\Registration.c</name>
+            </file>
+        </group>
+        <file>
+            <name>$PROJ_DIR$\..\Application\AppMgr.c</name>
+        </file>
     </group>
     <group>
         <name>Board_Support</name>
@@ -2281,5 +2300,14 @@
         <file>
             <name>$PROJ_DIR$\..\Startup\system_nrf52.c</name>
         </file>
+    </group>
+    <group>
+        <name>Utilities</name>
+        <group>
+            <name>Math</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Math\Math.c</name>
+            </file>
+        </group>
     </group>
 </project>

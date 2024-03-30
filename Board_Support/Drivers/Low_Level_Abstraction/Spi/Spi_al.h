@@ -5,8 +5,11 @@
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
 
+#ifndef SPI_AL_H
+#define SPI_AL_H
+
 /******************************************   INCLUDES   *****************************************/
-#include "peripheral_config.h"
+#include "system_config.h"
 #include "driver_utils.h"
 
 /****************************************   PUBLIC TYPES   ***************************************/
@@ -192,3 +195,5 @@ bool bSpiAl_TransferInProgress(SpiAl_tenuRole enuRole, uint8_t u8SpiInstance);
  *         Driver_Failure otherwise
  */
 Drivers_tenuStatus enuSpiAl_Transfer(SpiAl_tenuRole enuRole, uint8_t u8SpiInstance, SpiAl_tstrXfer *pstrXfer);
+
+#endif /* SPI_AL_H */
