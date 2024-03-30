@@ -2216,10 +2216,16 @@
         <group>
             <name>RF_Stack</name>
             <group>
-                <name>softdevice_handler</name>
-                <file>
-                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\softdevice_handler\softdevice_handler.c</name>
-                </file>
+                <name>BLE_Stack</name>
+            </group>
+            <group>
+                <name>Softdevice</name>
+                <group>
+                    <name>softdevice_handler</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\softdevice_handler\softdevice_handler.c</name>
+                    </file>
+                </group>
             </group>
         </group>
         <group>

@@ -1,3 +1,11 @@
+/* ------------------------------   Entry point for nRF51422   --------------------------------- */
+/*  File      -  Application entry point source file                                             */
+/*  target    -  nRF51422                                                                        */
+/*  toolchain -  IAR                                                                             */
+/*  created   -  March, 2024                                                                     */
+/* --------------------------------------------------------------------------------------------- */
+
+/****************************************   INCLUDES   *******************************************/
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
@@ -6,8 +14,10 @@
 #include "BLE_Service.h"
 #include "AppMgr.h"
 
+/************************************   PRIVATE VARIABLES   **************************************/
 static TimerHandle_t pvTimerHandle;
 
+/************************************   PRIVATE FUNCTIONS   **************************************/
 void vApplicationIdleHook( void )
 {
 
@@ -18,15 +28,14 @@ static void vidTimerCallback( TimerHandle_t xTimer )
     __NOP();
 }
 
+/**************************************   MAIN FUNCTION   ****************************************/
 int main(void)
 {
-    App_tenuStatus enuAppStatus;
-
     /* Initialize clocks and prepare them for requests */
     nrf_drv_clock_init();
 
     /* Initialize application tasks */
-    enuAppStatus = AppMgr_enuInit();
+    App_tenuStatus enuAppStatus = AppMgr_enuInit();
 
     /* Initialize Ble stack task */
     Mid_tenuStatus enuMidStatus = enuBle_Init();
