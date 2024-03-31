@@ -332,18 +332,20 @@
                 </option>
                 <option>
                     <name>CCIncludePath2</name>
-                    <state>$PROJ_DIR$\..\Kernel\FreeRTOS\source\include</state>
-                    <state>$PROJ_DIR$\..\Configuration</state>
-                    <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
                     <state>$PROJ_DIR$\Toolchain</state>
-                    <state>$PROJ_DIR$\..\Board_Support\MCU</state>
-                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
+                    <state>$PROJ_DIR$\..\Kernel\FreeRTOS\source\include</state>
                     <state>$PROJ_DIR$\..\Kernel\FreeRTOS\portable\IAR\nrf52</state>
                     <state>$PROJ_DIR$\..\Kernel\FreeRTOS\portable\CMSIS\nrf52</state>
+                    <state>$PROJ_DIR$\..\Configuration</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\hal</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\legacy</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\clock</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
+                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\strerror</state>
@@ -356,12 +358,11 @@
                     <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
-                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
-                    <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services</state>
                     <state>$PROJ_DIR$\..\Application</state>
                     <state>$PROJ_DIR$\..\Application\Attribution</state>
                     <state>$PROJ_DIR$\..\Application\Registration</state>
-                    <state>$PROJ_DIR$\..\Middleware\Services</state>
+                    <state>$PROJ_DIR$\..\Application\Display</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2121,6 +2122,12 @@
             <name>Attribution</name>
             <file>
                 <name>$PROJ_DIR$\..\Application\Attribution\Attribution.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Display</name>
+            <file>
+                <name>$PROJ_DIR$\..\Application\Display\Display.c</name>
             </file>
         </group>
         <group>

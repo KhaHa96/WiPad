@@ -37,8 +37,7 @@ typedef struct
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
  * @brief enuRegistration_Init Creates User registration task, event group to receive
- *        notifications from other tasks or events dispatched from BLE stack and registers
- *        callback to report back to Application Manager.
+ *        notifications from other tasks or events dispatched from BLE stack.
  *
  * @note This function is invoked by the Application Manager.
  *

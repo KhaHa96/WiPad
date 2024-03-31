@@ -9,11 +9,18 @@
 #define _SYS_CONFIG_H_
 
 /************************************   APPLICATION DEFINES   ************************************/
-#define APPLICATION_COUNT 2 /* TODO: Change this to 3 later */
+#define APPLICATION_COUNT 3
+
 /* Key Attribution application */
 #define APP_KEYATT_TASK_STACK_SIZE 256
 #define APP_KEYATT_TASK_PRIORITY 2
 #define APP_KEYATT_QUEUE_LENGTH 5
+
+/* Display application */
+#define APP_DISPLAY_TASK_STACK_SIZE 256
+#define APP_DISPLAY_TASK_PRIORITY 2
+#define APP_DISPLAY_QUEUE_LENGTH 5
+
 /* User Registration application */
 #define APP_USEREG_TASK_STACK_SIZE 256
 #define APP_USEREG_TASK_PRIORITY 2
@@ -32,5 +39,11 @@
 #define SPI_MISO_PIN 3
 #define SPI_CS_PIN 4
 #define SPI_CLOCK_PIN 1
+
+/* LEDS */
+#define LED_1 17
+#define LED_2 18
+#define LED_3 19
+#define LED_4 20
 
 #endif /* _SYS_CONFIG_H_ */

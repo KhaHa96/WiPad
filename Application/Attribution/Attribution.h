@@ -37,8 +37,7 @@ typedef struct
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
  * @brief enuAttribution_Init Creates Key attribution task, event group to receive notifications
- *        from other tasks or events dispatched from BLE stack and registers callback to
- *        report back to Application Manager.
+ *        from other tasks or events dispatched from BLE stack.
  *
  * @note This function is invoked by the Application Manager.
  *
