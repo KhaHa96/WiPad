@@ -13,6 +13,7 @@
 #include "system_config.h"
 #include "Attribution.h"
 #include "Registration.h"
+#include "Display.h"
 
 /**************************************   PRIVATE TYPES   ****************************************/
 /**
@@ -22,7 +23,7 @@ typedef enum
 {
     App_AttributionId = 0,
     App_RegistrationId,
-    App_LEDs
+    App_DisplayId
 }AppMgr_tenuAppId;
 
 /**
@@ -33,6 +34,7 @@ typedef enum
 {
     AppMgr_LowerBoundEvt = 0,
     AppMgr_RegTestEvent1,
+    AppMgr_DisplayIdSuccessEvt,
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 

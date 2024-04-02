@@ -19,8 +19,9 @@
 /* Applications' public interface list */
 static const AppMgr_tstrInterface strApplicationList[] =
 {
-    {enuAttribution_Init, enuAttribution_GetNotified},
-    {enuRegistration_Init, enuRegistration_GetNotified}
+    {enuAttribution_Init, enuAttribution_GetNotified  },
+    {enuRegistration_Init, enuRegistration_GetNotified},
+    {enuDisplay_Init     , enuDisplay_GetNotified     }
 };
 
 /* Dispatchable events' pub/sub scheme list
@@ -30,7 +31,8 @@ static const AppMgr_tstrInterface strApplicationList[] =
  */
 static const AppMgr_tstrEventSub strEventSubscriptionList[] =
 {
-    {AppMgr_RegTestEvent1, {App_RegistrationId}, 1}
+    {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
+    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/

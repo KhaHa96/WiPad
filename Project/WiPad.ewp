@@ -272,7 +272,7 @@
                 <option>
                     <name>CCAllowList</name>
                     <version>1</version>
-                    <state>11111110</state>
+                    <state>00000000</state>
                 </option>
                 <option>
                     <name>CCDebugInfo</name>
@@ -352,6 +352,7 @@
                     <state>$PROJ_DIR$\..\Application</state>
                     <state>$PROJ_DIR$\..\Application\Attribution</state>
                     <state>$PROJ_DIR$\..\Application\Registration</state>
+                    <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
                 </option>
                 <option>
@@ -368,7 +369,7 @@
                 </option>
                 <option>
                     <name>CCOptLevel</name>
-                    <state>3</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCOptStrategy</name>
@@ -377,7 +378,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>3</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -2112,6 +2113,12 @@
             <name>Attribution</name>
             <file>
                 <name>$PROJ_DIR$\..\Application\Attribution\Attribution.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Display</name>
+            <file>
+                <name>$PROJ_DIR$\..\Application\Display\Display.c</name>
             </file>
         </group>
         <group>
