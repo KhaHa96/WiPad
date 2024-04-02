@@ -19,7 +19,6 @@
 #define APP_DISPLAY_LED_SWITCH_ON       0
 #define APP_DISPLAY_LED_SWITCH_OFF      1
 #define APP_DISPLAY_TIMER_NO_WAIT       0
-#define APP_LEDs_QUEUE_TICKS_TO_WAIT    0
 #define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ID_VERIF_SUCCESS | \
                                          APP_DISPLAY_ID_VERIF_FAILURE )
 

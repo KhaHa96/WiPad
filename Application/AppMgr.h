@@ -23,7 +23,7 @@ typedef enum
 {
     App_AttributionId = 0,
     App_RegistrationId,
-    App_LEDs
+    App_DisplayId
 }AppMgr_tenuAppId;
 
 /**

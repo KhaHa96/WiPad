@@ -32,7 +32,7 @@ static const AppMgr_tstrInterface strApplicationList[] =
 static const AppMgr_tstrEventSub strEventSubscriptionList[] =
 {
     {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
-    {AppMgr_DisplayIdSuccessEvt, {App_LEDs          }, 1}
+    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/
