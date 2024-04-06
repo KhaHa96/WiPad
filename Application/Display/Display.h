@@ -28,7 +28,7 @@ typedef void (*DisplayAction)(void);
 typedef uint32_t (*DisplayLedPattern)(uint8_t u8Index);
 
 /**
- * Display_tstrState State-defining structure for the Attribution application
+ * Display_tstrState State-defining structure for the Display application
 */
 typedef struct
 {
@@ -47,16 +47,16 @@ typedef struct
 
 /*********************************   PRIVATE INLINE FUNCTIONS   **********************************/
 /**
- * @brief u32LedPattern1243 Returns the next LED pin index in the 1,2,4,3 LED pattern.
+ * @brief u32LedPattern1243 Returns the u8Index-ranked LED pin index in the 1,2,4,3 LED pattern.
  *
  * @note Our current implementation does not guarantee the safety of this function's output if
  *       it takes any value outside the range of LED indexes as input. Therefore, this function
  *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
  *       validity of its input.
  *
- * @param u8Index Current LED index in the pattern
+ * @param u8Index LED rank in the pattern
  *
- * @return uint32_t Next LED index in the pattern
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,2,4,3 pattern
 */
 static inline uint32_t u32LedPattern1243(uint8_t u8Index)
 {
@@ -64,16 +64,16 @@ static inline uint32_t u32LedPattern1243(uint8_t u8Index)
 }
 
 /**
- * @brief u32LedPattern1423 Returns the next LED pin index in the 1,4,2,3 LED pattern.
+ * @brief u32LedPattern1423 Returns the u8Index-ranked LED pin index in the 1,4,2,3 LED pattern.
  *
  * @note Our current implementation does not guarantee the safety of this function's output if
  *       it takes any value outside the range of LED indexes as input. Therefore, this function
  *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
  *       validity of its input.
  *
- * @param u8Index Current LED index in the pattern
+ * @param u8Index LED rank in the pattern
  *
- * @return uint32_t Next LED index in the pattern
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,4,2,3 pattern
 */
 static inline uint32_t u32LedPattern1423(uint8_t u8Index)
 {

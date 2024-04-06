@@ -40,7 +40,7 @@ App_tenuStatus AppMgr_enuInit(void)
 {
     App_tenuStatus enuRetVal = Application_Success;
 
-    for(uint8_t u8Index = 0; u8Index < APPLICATION_COUNT ;u8Index++)
+    for(uint8_t u8Index = 0; u8Index < APPLICATION_COUNT; u8Index++)
     {
         /* Initialize all applications */
         if(Application_Failure == strApplicationList[u8Index].pfInit())
