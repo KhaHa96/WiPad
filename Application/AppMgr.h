@@ -91,7 +91,7 @@ typedef struct
 /**
  * @brief AppMgr_enuInit Initializes all applications.
  *
- * @note This function is invoked by the Application Manager.
+ * @note This function is invoked by the Main function.
  *
  * @pre This function requires no prerequisites.
  *
