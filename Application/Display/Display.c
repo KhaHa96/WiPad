@@ -181,7 +181,6 @@ App_tenuStatus enuDisplay_Init(void)
 
 App_tenuStatus enuDisplay_GetNotified(uint32_t u32Event, void *pvData)
 {
-    u32Event = 1;
     /* Unblock Display task by setting event in local event group */
     return (xEventGroupSetBits(pvDisplayEventGroupHandle, u32Event))
                                ?Application_Success
