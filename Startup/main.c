@@ -1,31 +1,44 @@
+/* ------------------------------   Entry point for nRF52832   --------------------------------- */
+/*  File      -  Application entry point source file                                             */
+/*  target    -  nRF52832                                                                        */
+/*  toolchain -  IAR                                                                             */
+/*  created   -  March, 2024                                                                     */
+/* --------------------------------------------------------------------------------------------- */
 
+/****************************************   INCLUDES   *******************************************/
+#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
+#include "nrf_drv_clock.h"
+#include "BLE_Service.h"
+#include "AppMgr.h"
 
-static TaskHandle_t pvTaskHandle;
+/************************************   PRIVATE VARIABLES   **************************************/
 static TimerHandle_t pvTimerHandle;
 
-static void vidTask0_Function(void *pvParam)
+/************************************   PRIVATE FUNCTIONS   **************************************/
+void vApplicationIdleHook( void )
 {
-    /* Set breakpoint here */
-    __NOP();
 
-    /* Task function's main busy loop */
-    while(1)
-    {
-    }
 }
 
-static void vidTimerCallback(TimerHandle_t pvTimerHandle)
+static void vidTimerCallback( TimerHandle_t xTimer )
 {
     __NOP();
 }
 
+/**************************************   MAIN FUNCTION   ****************************************/
 int main(void)
 {
-    /* Create generic task */
-    xTaskCreate(vidTask0_Function, "Task0", 256, NULL, 2, &pvTaskHandle);
+    /* Initialize clocks and prepare them for requests */
+    nrf_drv_clock_init();
+
+    /* Initialize application tasks */
+    App_tenuStatus enuAppStatus = AppMgr_enuInit();
+
+    /* Initialize Ble stack task */
+    Mid_tenuStatus enuMidStatus = enuBle_Init();
 
     /* Create timer */
     pvTimerHandle = xTimerCreate("Timer0", pdMS_TO_TICKS(1000), pdTRUE, NULL, vidTimerCallback);
@@ -33,11 +46,12 @@ int main(void)
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvTimerHandle, 0);
 
-    /* Start Scheduler */
+    /* Start scheduler */
     vTaskStartScheduler();
 
-    /* We should never arrive here  */
-    while (1)
+    /* This loop shouldn't be reached */
+    while(1)
     {
+
     }
 }
