@@ -346,6 +346,8 @@
                     <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
                     <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Board_Support\Drivers\Low_Level_Abstraction\Twi</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\twi</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
@@ -2159,6 +2161,9 @@
                 </group>
                 <group>
                     <name>Twi</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Board_Support\Drivers\Low_Level_Abstraction\Twi\TwiMaster_al.c</name>
+                    </file>
                 </group>
             </group>
             <group>

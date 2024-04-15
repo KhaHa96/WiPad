@@ -40,6 +40,11 @@
 #define SPI_CS_PIN 4
 #define SPI_CLOCK_PIN 1
 
+/* TWI */
+#define TWI_AL_MAX_MASTER_INSTANCE_COUNT 2
+#define TWI_SDA_PIN 26
+#define TWI_SCL_PIN 27
+
 /* LEDS */
 #define LED_1 17
 #define LED_2 18
