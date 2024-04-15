@@ -21,7 +21,7 @@
  * DisplayAction State machine event-triggered action function prototype.
  * 
  * @note This prototype is used to define state machine actions associated to different state
- *       triggers. A state action action is invoked upon receiving its trigger.
+ *       triggers. A state action is invoked upon receiving its trigger.
  * 
  * @note Functions of this type take no arguments.
  */
