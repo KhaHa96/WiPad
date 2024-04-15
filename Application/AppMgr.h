@@ -39,25 +39,25 @@ typedef enum
 }AppMgr_tenuEvents;
 
 /**
- * AppMgrInitialize Application initialization function prototype
+ * AppMgrInitialize Application initialization function prototype.
  *
  * @note This function prototype is used to define an initialization function for each
  *       application which is then invoked by the Application Manager before starting FreeRTOS'
  *       schedule.
  *
- * @note This function takes no parameters
+ * @note Functions of this type take no parameters.
  *
 */
 typedef App_tenuStatus (*AppMgrInitialize)(void);
 
 /**
- * AppMgrGetNotified Application notification function prototype
+ * AppMgrGetNotified Application notification function prototype.
  *
  * @note This function prototype is used to define a notification function for each application
  *       responsible for posting external events dispatched from other applications and middleware
  *       tasks to the local event group.
  *
- * @note This function takes two parameters:
+ * @note Functions of this type take two parameters:
  *  - uint32_t u32Event: Event to be posted and processed by local task.
  *  - void *pvData: Pointer to event-related data.
 */
@@ -96,7 +96,7 @@ typedef struct
  * @pre This function requires no prerequisites.
  *
  * @return App_tenuStatus Application_Success if all applications were initialized successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus AppMgr_enuInit(void);
 
@@ -107,11 +107,11 @@ App_tenuStatus AppMgr_enuInit(void);
  * @note This function is invoked from within the context of application and middleware
  *       tasks that request notifying a thirdparty application of a new event.
  *
- * @param u32Event Event to be dispatched
- * @param pvData Pointer to event-related data
+ * @param u32Event Event to be dispatched.
+ * @param pvData Pointer to event-related data.
  *
  * @return App_tenuStatus Application_Success if event was dispatched successfully to its
- *         destination, Application_Failure otherwise
+ *         destination, Application_Failure otherwise.
  */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 

@@ -23,7 +23,7 @@
  * @pre This function requires no prerequisites.
  *
  * @return Mid_tenuStatus Middleware_Success if initialization was performed successfully,
- *         Middleware_Failure otherwise
+ *         Middleware_Failure otherwise.
  */
 Mid_tenuStatus enuBle_Init(void);
 

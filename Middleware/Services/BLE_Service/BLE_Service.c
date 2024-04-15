@@ -15,30 +15,100 @@
 #include "nrf_sdh_ble.h"
 #include "ble_gap.h"
 #include "nrf_ble_gatt.h"
+#include "nrf_ble_qwr.h"
+#include "ble_advertising.h"
+#include "ble_conn_params.h"
+#include "ble_att.h"
+#include "ble_adm.h"
+#include "ble_reg.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define WIPAD_MOCK_EVENT      (1 << 0)
-#define BLE_CONN_CFG_TAG      1
-#define BLE_OBSERVER_PRIO     3
-#define BLE_ADV_DEVICE_NAME   "WiPad"
-#define BLE_MIN_CONN_INTERVAL MSEC_TO_UNITS(100, UNIT_1_25_MS)
-#define BLE_MAX_CONN_INTERVAL MSEC_TO_UNITS(200, UNIT_1_25_MS)
-#define BLE_SLAVE_LATENCY     0
-#define BLE_CONN_SUP_TIMEOUT  MSEC_TO_UNITS(4000, UNIT_10_MS)
-#define BLE_ADV_INTERVAL      300
-#define BLE_ADV_DURATION      18000
+#define WIPAD_MOCK_EVENT                       (1 << 0)
+#define BLE_CONN_CFG_TAG                       1
+#define BLE_OBSERVER_PRIO                      3
+#define BLE_ADV_DEVICE_NAME                    "WiPad"
+#define BLE_MIN_CONN_INTERVAL                  MSEC_TO_UNITS(100, UNIT_1_25_MS)
+#define BLE_MAX_CONN_INTERVAL                  MSEC_TO_UNITS(200, UNIT_1_25_MS)
+#define BLE_SLAVE_LATENCY                      0
+#define BLE_CONN_SUP_TIMEOUT                   MSEC_TO_UNITS(4000, UNIT_10_MS)
+#define BLE_ADV_INTERVAL                       300
+#define BLE_ADV_DURATION                       18000
+#define BLE_RAM_START_ADDRESS                  0
+#define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000
+#define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000
+#define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
+#define BLE_ADVERTISING_INTERVAL               64
+#define BLE_ADVERTISING_DURATION               18000
 
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
-
-/************************************   PRIVATE VARIABLES   **************************************/
+NRF_BLE_QWR_DEF(BleQwrInstance);
+BLE_USE_REG_DEF(BleUseRegInstance);
+BLE_KEY_ATT_DEF(BleKeyAttInstance);
+BLE_ADM_DEF(BleAdminInstance);
+BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
 static EventGroupHandle_t pvBLEEventGroupHandle;
+static ble_uuid_t strAdvUuids[] =
+{
+    //{BLE_USE_REG_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN},
+    //{BLE_KEY_ATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN},
+    {BLE_ADM_UUID_SERVICE,     BLE_UUID_TYPE_VENDOR_BEGIN}
+};
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
+void SD_EVT_IRQHandler(void)
+{
+    /* Initialize task yield request to pdFALSE */
+    BaseType_t lYieldRequest = pdFALSE;
+
+    /* Notify Softdevice RTOS task of an incoming event from BLE stack */
+    vTaskNotifyGiveFromISR(pvBLETaskHandle, &lYieldRequest);
+
+    /* If lYieldRequest was set to pdTRUE after the previous call, then a task of higher priority
+       than the currently active task has been unblocked as a result of sending out an event
+       notification. This requires an immediate context switch to the newly unblocked task. */
+    portYIELD_FROM_ISR(lYieldRequest);
+}
+
+static void vidConnParamEventHandler(ble_conn_params_evt_t *pstrEvent)
+{
+
+}
+
+static void vidConnParamErrorHandler(uint32_t u32Error)
+{
+
+}
+
 static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 {
     __NOP();
+}
+
+static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
+{
+
+}
+
+static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
+{
+
+}
+
+static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
+{
+
+}
+
+static void vidQwrErrorHandler(uint32_t u32Error)
+{
+    APP_ERROR_HANDLER(u32Error);
+}
+
+static void vidAdvEventHandler(ble_adv_evt_t enuEvent)
+{
+
 }
 
 static Mid_tenuStatus enuBleStackInit(void)
@@ -49,7 +119,7 @@ static Mid_tenuStatus enuBleStackInit(void)
     if(NRF_SUCCESS == nrf_sdh_enable_request())
     {
         /* Apply Softdevice's default configuration */
-        uint32_t u32RamStart = 0;
+        uint32_t u32RamStart = BLE_RAM_START_ADDRESS;
         if(NRF_SUCCESS == nrf_sdh_ble_default_cfg_set(BLE_CONN_CFG_TAG, &u32RamStart))
         {
             /* Enable BLE Softdevice */
@@ -108,24 +178,109 @@ static Mid_tenuStatus enuBleGattInit(void)
                                              :Middleware_Failure;
 }
 
+static Mid_tenuStatus enuBleServicesInit(void)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+    BleReg_tstrInit strUseRegInit = {0};
+    BleAtt_tstrInit strKeyAttInit = {0};
+    BleAdm_tstrInit strAdmInit = {0};
+    nrf_ble_qwr_init_t strQwrInit = {0};
+
+    /* Initialize Queued Write Module */
+    strQwrInit.error_handler = vidQwrErrorHandler;
+    if(NRF_SUCCESS == nrf_ble_qwr_init(&BleQwrInstance, &strQwrInit))
+    {
+        /* Initialize User Registration service */
+        strUseRegInit.pfUseRegEvtHandler = vidUseRegEventHandler;
+        if(Middleware_Success == enuBleUseRegInit(&BleUseRegInstance, &strUseRegInit))
+        {
+            /* Initialize Key Attribution service */
+            strKeyAttInit.pfKeyAttEvtHandler = vidKeyAttEventHandler;
+            if(Middleware_Success == enuBleKeyAttInit(&BleKeyAttInstance, &strKeyAttInit))
+            {
+                /* Initialize Admin User service */
+                strAdmInit.pfAdmEvtHandler = vidAdminEventHandler;
+                enuRetVal = enuBleAdmInit(&BleAdminInstance, &strAdmInit);
+            }
+        }
+    }
+
+    return enuRetVal;
+}
+
+static Mid_tenuStatus enuAdvertisingInit(void)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+    ble_advertising_init_t strAdvertisingInit;
+
+    /* Apply advertising module's settings */
+    memset(&strAdvertisingInit, 0, sizeof(strAdvertisingInit));
+    strAdvertisingInit.advdata.name_type = BLE_ADVDATA_FULL_NAME;
+    strAdvertisingInit.advdata.include_appearance = false;
+    strAdvertisingInit.advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
+    strAdvertisingInit.srdata.uuids_complete.uuid_cnt = sizeof(strAdvUuids) / sizeof(strAdvUuids[0]);
+    strAdvertisingInit.srdata.uuids_complete.p_uuids = strAdvUuids;
+    strAdvertisingInit.config.ble_adv_fast_enabled  = true;
+    strAdvertisingInit.config.ble_adv_fast_interval = BLE_ADVERTISING_INTERVAL;
+    strAdvertisingInit.config.ble_adv_fast_timeout  = BLE_ADVERTISING_DURATION;
+    strAdvertisingInit.evt_handler = vidAdvEventHandler;
+
+    /* Initialize advertising module */
+    enuRetVal = (NRF_SUCCESS == ble_advertising_init(&BleAdvInstance,
+                                                     &strAdvertisingInit))
+                                                     ?Middleware_Success
+                                                     :Middleware_Failure;
+
+    if(Middleware_Success == enuRetVal)
+    {
+        /* Set connection settings tag */
+        ble_advertising_conn_cfg_tag_set(&BleAdvInstance, BLE_CONN_CFG_TAG);
+    }
+
+    return enuRetVal;
+}
+
+static Mid_tenuStatus enuBleConnParamsInit(void)
+{
+    ble_conn_params_init_t strConnParams;
+
+    /* Apply Connection parameters negotiation module's settings */
+    memset(&strConnParams, 0, sizeof(strConnParams));
+    strConnParams.p_conn_params                  = NULL;
+    strConnParams.first_conn_params_update_delay = BLE_FIRST_CONN_PARAM_UPDATE_DELAY;
+    strConnParams.next_conn_params_update_delay  = BLE_REGULAR_CONN_PARAM_UPDATE_DELAY;
+    strConnParams.max_conn_params_update_count   = BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS;
+    strConnParams.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
+    strConnParams.disconnect_on_fail             = false;
+    strConnParams.evt_handler                    = vidConnParamEventHandler;
+    strConnParams.error_handler                  = vidConnParamErrorHandler;
+
+    return (NRF_SUCCESS == ble_conn_params_init(&strConnParams))
+                                                ?Middleware_Success
+                                                :Middleware_Failure;
+}
+
 static void vidBleTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
+    uint32_t u32Error;
+    Mid_tenuStatus enuStatus;
 
-    enuBleStackInit();
-    enuBleGapInit();
-    enuBleGattInit();
+    enuStatus = enuBleStackInit();
+    enuStatus = enuBleGapInit();
+    enuStatus = enuBleGattInit();
+    enuStatus = enuBleServicesInit();
+    enuStatus = enuAdvertisingInit();
+    enuStatus = enuBleConnParamsInit();
+    u32Error = ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
 
     /* Task function's main busy loop */
     while (1)
     {
-        /* Pull for synch events set in event group */
-        u32Event = xEventGroupWaitBits(pvBLEEventGroupHandle, WIPAD_MOCK_EVENT, pdTRUE, pdTRUE, portMAX_DELAY);
-
-        if (u32Event)
-        {
-            __NOP();
-        }
+        /* Process events originating from Ble Stack */
+        nrf_sdh_evts_poll();
+        /* Clear notifications after they've been processed and put task in blocked state */
+        (void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
 }
 

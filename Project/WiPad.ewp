@@ -347,24 +347,31 @@
                     <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
-                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\strerror</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log\src</state>
-                    <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
-                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\memobj</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\balloc</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\fprintf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Services</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
                     <state>$PROJ_DIR$\..\Application</state>
                     <state>$PROJ_DIR$\..\Application\Attribution</state>
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
+                    <state>$PROJ_DIR$\..\Utilities\Math</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2255,6 +2262,12 @@
                 </file>
             </group>
             <group>
+                <name>timer</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\timer\app_timer_freertos.c</name>
+                </file>
+            </group>
+            <group>
                 <name>util</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\util\app_error.c</name>
@@ -2272,11 +2285,53 @@
             <group>
                 <name>BLE_Stack</name>
                 <group>
+                    <name>ble_advertising</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising\ble_advertising.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>ble_services</name>
+                    <group>
+                        <name>ble_adm</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm\ble_adm.c</name>
+                        </file>
+                    </group>
+                    <group>
+                        <name>ble_att</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att\ble_att.c</name>
+                        </file>
+                    </group>
+                    <group>
+                        <name>ble_reg</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg\ble_reg.c</name>
+                        </file>
+                    </group>
+                </group>
+                <group>
                     <name>nrf_ble_gatt</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt\nrf_ble_gatt.c</name>
                     </file>
                 </group>
+                <group>
+                    <name>nrf_ble_qwr</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr\nrf_ble_qwr.c</name>
+                    </file>
+                </group>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advdata.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_conn_params.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_srv_common.c</name>
+                </file>
             </group>
             <group>
                 <name>Softdevice</name>
@@ -2315,7 +2370,7 @@
         <group>
             <name>Math</name>
             <file>
-                <name>$PROJ_DIR$\..\Utilities\Math\Math.c</name>
+                <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
             </file>
         </group>
     </group>

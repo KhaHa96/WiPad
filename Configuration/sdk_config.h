@@ -11383,7 +11383,7 @@
 
 // <o> NRF_SDH_BLE_VS_UUID_COUNT - The number of vendor-specific UUIDs. 
 #ifndef NRF_SDH_BLE_VS_UUID_COUNT
-#define NRF_SDH_BLE_VS_UUID_COUNT 0
+#define NRF_SDH_BLE_VS_UUID_COUNT 3
 #endif
 
 // <q> NRF_SDH_BLE_SERVICE_CHANGED  - Include the Service Changed characteristic in the Attribute Table.
@@ -11625,6 +11625,24 @@
 
 #ifndef BLE_TPS_BLE_OBSERVER_PRIO
 #define BLE_TPS_BLE_OBSERVER_PRIO 2
+#endif
+
+// <o> BLE_USE_REG_BLE_OBSERVER_PRIO  
+// <i> Priority with which BLE events are dispatched to the WiPad User Registration service.
+#ifndef BLE_USE_REG_BLE_OBSERVER_PRIO
+#define BLE_USE_REG_BLE_OBSERVER_PRIO 2
+#endif
+
+// <o> BLE_KEY_ATT_BLE_OBSERVER_PRIO  
+// <i> Priority with which BLE events are dispatched to the WiPad Key Attribution service.
+#ifndef BLE_KEY_ATT_BLE_OBSERVER_PRIO
+#define BLE_KEY_ATT_BLE_OBSERVER_PRIO 2
+#endif
+
+// <o> BLE_ADM_BLE_OBSERVER_PRIO  
+// <i> Priority with which BLE events are dispatched to the WiPad Admin user service.
+#ifndef BLE_ADM_BLE_OBSERVER_PRIO
+#define BLE_ADM_BLE_OBSERVER_PRIO 2
 #endif
 
 // <o> BSP_BTN_BLE_OBSERVER_PRIO  

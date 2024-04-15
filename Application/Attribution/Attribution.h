@@ -18,15 +18,15 @@
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
- * State machine event-triggered action function pointer
+ * AttributionAction State machine event-triggered action function pointer.
  *
- * Functions of this type take one argument:
- *  - void *pvArg: Pointer to event-related data passed to state machine entry's action
+ * @note Functions of this type take one argument:
+ *         - void *pvArg: Pointer to event-related data passed to state machine entry's action.
 */
 typedef void (*AttributionAction)(void *pvArg);
 
 /**
- * Attribution_tstrState State-defining structure for the Attribution application
+ * Attribution_tstrState State-defining structure for the Attribution application.
 */
 typedef struct
 {
@@ -44,7 +44,7 @@ typedef struct
  * @pre This function requires no prerequisites.
  *
  * @return App_tenuStatus Application_Success if initialization was performed successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuAttribution_Init(void);
 
@@ -58,11 +58,11 @@ App_tenuStatus enuAttribution_Init(void);
  *
  * @pre This function can't be called unless Key Attribution task is initialized and running.
  *
- * @param u32Event Event to be posted in local event group
- * @param pvData Pointer to event-related data
+ * @param u32Event Event to be posted in local event group.
+ * @param pvData Pointer to event-related data.
  *
  * @return App_tenuStatus Application_Success if notification was posted successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuAttribution_GetNotified(uint32_t u32Event, void *pvData);
 

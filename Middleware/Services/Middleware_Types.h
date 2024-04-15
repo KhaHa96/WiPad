@@ -10,10 +10,11 @@
 
 /****************************************   INCLUDES   *******************************************/
 #include <stdint.h>
+#include <string.h>
 
 /******************************************   TYPES   ********************************************/
 /**
- * Mid_tenuStatus Enumeration of the different possible middleware operation outcomes
+ * Mid_tenuStatus Enumeration of the different possible middleware operation outcomes.
 */
 typedef enum
 {
