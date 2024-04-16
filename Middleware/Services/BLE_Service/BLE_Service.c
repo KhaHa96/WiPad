@@ -6,7 +6,6 @@
 /* --------------------------------------------------------------------------------------------- */
 
 /****************************************   INCLUDES   *******************************************/
-#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "event_groups.h"
@@ -23,7 +22,6 @@
 #include "ble_reg.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define WIPAD_MOCK_EVENT                       (1 << 0)
 #define BLE_CONN_CFG_TAG                       1
 #define BLE_OBSERVER_PRIO                      3
 #define BLE_ADV_DEVICE_NAME                    "WiPad"
@@ -39,6 +37,14 @@
 #define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
 #define BLE_ADVERTISING_INTERVAL               64
 #define BLE_ADVERTISING_DURATION               18000
+#define BLE_EVENT_NO_WAIT                      (TickType_t)0UL
+#define BLE_EVENT_MASK                         (BLE_START_ADVERTISING)
+
+/************************************   PRIVATE MACROS   *****************************************/
+#define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
+
+/*******************************   PRIVATE FUNCTION PROTOTYPES   *********************************/
+static void vidBleStartAdvertising(void);
 
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
@@ -48,16 +54,18 @@ BLE_KEY_ATT_DEF(BleKeyAttInstance);
 BLE_ADM_DEF(BleAdminInstance);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
-static EventGroupHandle_t pvBLEEventGroupHandle;
+static EventGroupHandle_t pvBleEventGroupHandle;
 static ble_uuid_t strAdvUuids[] =
 {
-    //{BLE_USE_REG_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN},
-    //{BLE_KEY_ATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN},
-    {BLE_ADM_UUID_SERVICE,     BLE_UUID_TYPE_VENDOR_BEGIN}
+    {BLE_KEY_ATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
+};
+static const Ble_tstrState strBleStateMachine[] =
+{
+    {BLE_START_ADVERTISING, vidBleStartAdvertising}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
-void SD_EVT_IRQHandler(void)
+static void vidTaskNotify(void)
 {
     /* Initialize task yield request to pdFALSE */
     BaseType_t lYieldRequest = pdFALSE;
@@ -69,6 +77,36 @@ void SD_EVT_IRQHandler(void)
        than the currently active task has been unblocked as a result of sending out an event
        notification. This requires an immediate context switch to the newly unblocked task. */
     portYIELD_FROM_ISR(lYieldRequest);
+}
+
+void SD_EVT_IRQHandler(void)
+{
+    /* Notify Ble task of incoming Softdevice event */
+    vidTaskNotify();
+}
+
+static void vidBleEvent_Process(uint32_t u32Trigger)
+{
+    /* Go through trigger list to find trigger.
+       Note: We use a while loop as we require that no two distinct actions have the
+       same trigger in a State trigger listing */
+    uint8_t u8TriggerCount = BLE_TRIGGER_COUNT(strBleStateMachine);
+    uint8_t u8Index = 0;
+    while(u8Index < u8TriggerCount)
+    {
+        if(u32Trigger == (strBleStateMachine + u8Index)->u32Trigger)
+        {
+            /* Invoke associated action */
+            (strBleStateMachine + u8Index)->pfAction();
+        }
+        u8Index++;
+    }
+}
+
+static void vidBleStartAdvertising(void)
+{
+    /* Initiate advertising */
+    (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
 }
 
 static void vidConnParamEventHandler(ble_conn_params_evt_t *pstrEvent)
@@ -246,14 +284,14 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
 
     /* Apply Connection parameters negotiation module's settings */
     memset(&strConnParams, 0, sizeof(strConnParams));
-    strConnParams.p_conn_params                  = NULL;
+    strConnParams.p_conn_params = NULL;
     strConnParams.first_conn_params_update_delay = BLE_FIRST_CONN_PARAM_UPDATE_DELAY;
-    strConnParams.next_conn_params_update_delay  = BLE_REGULAR_CONN_PARAM_UPDATE_DELAY;
-    strConnParams.max_conn_params_update_count   = BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS;
-    strConnParams.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
-    strConnParams.disconnect_on_fail             = false;
-    strConnParams.evt_handler                    = vidConnParamEventHandler;
-    strConnParams.error_handler                  = vidConnParamErrorHandler;
+    strConnParams.next_conn_params_update_delay = BLE_REGULAR_CONN_PARAM_UPDATE_DELAY;
+    strConnParams.max_conn_params_update_count = BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS;
+    strConnParams.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
+    strConnParams.disconnect_on_fail = false;
+    strConnParams.evt_handler = vidConnParamEventHandler;
+    strConnParams.error_handler = vidConnParamErrorHandler;
 
     return (NRF_SUCCESS == ble_conn_params_init(&strConnParams))
                                                 ?Middleware_Success
@@ -263,22 +301,27 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
 static void vidBleTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
-    uint32_t u32Error;
-    Mid_tenuStatus enuStatus;
 
-    enuStatus = enuBleStackInit();
-    enuStatus = enuBleGapInit();
-    enuStatus = enuBleGattInit();
-    enuStatus = enuBleServicesInit();
-    enuStatus = enuAdvertisingInit();
-    enuStatus = enuBleConnParamsInit();
-    u32Error = ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
+    /* TODO: Just for testing! Remove later */
+    enuBle_GetNotified(BLE_START_ADVERTISING, NULL);
 
     /* Task function's main busy loop */
     while (1)
     {
         /* Process events originating from Ble Stack */
         nrf_sdh_evts_poll();
+        /* Retrieve event if any from event group */
+        u32Event = xEventGroupWaitBits(pvBleEventGroupHandle,
+                                       BLE_EVENT_MASK,
+                                       pdTRUE,
+                                       pdFALSE,
+                                       BLE_EVENT_NO_WAIT);
+        if(u32Event)
+        {
+            /* Process received event */
+            vidBleEvent_Process(u32Event);
+        }
+
         /* Clear notifications after they've been processed and put task in blocked state */
         (void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
@@ -287,15 +330,55 @@ static void vidBleTaskFunction(void *pvArg)
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 Mid_tenuStatus enuBle_Init(void)
 {
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+
     /* Create task for BLE service */
-    xTaskCreate(vidBleTaskFunction,
-                "BLE_Task",
-                MID_BLE_TASK_STACK_SIZE,
-                NULL,
-                MID_BLE_TASK_PRIORITY,
-                &pvBLETaskHandle);
+    if (pdTRUE == xTaskCreate(vidBleTaskFunction,
+                              "BLE_Task",
+                              MID_BLE_TASK_STACK_SIZE,
+                              NULL,
+                              MID_BLE_TASK_PRIORITY,
+                              &pvBLETaskHandle))
+    {
+        /* Create event group for Ble middleware service */
+        pvBleEventGroupHandle = xEventGroupCreate();
 
-    pvBLEEventGroupHandle = xEventGroupCreate();
+        if(pvBleEventGroupHandle)
+        {
+            /* Initialize BLE stack */
+            if(Middleware_Success == enuBleStackInit())
+            {
+                /* Initialize GAP */
+                if(Middleware_Success == enuBleGapInit())
+                {
+                    /* Initialize GATT */
+                    if(Middleware_Success == enuBleGattInit())
+                    {
+                        /* Initialize BLE services */
+                        if(Middleware_Success == enuBleServicesInit())
+                        {
+                            /* Initialize advertising module */
+                            if(Middleware_Success == enuAdvertisingInit())
+                            {
+                                /* Initialize Connection Parameters module */
+                                enuRetVal = enuBleConnParamsInit();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-    return (pvBLEEventGroupHandle)?Middleware_Success:Middleware_Failure;
+    return enuRetVal;
+}
+
+Mid_tenuStatus enuBle_GetNotified(uint32_t u32Event, void *pvData)
+{
+    /* Unblock Ble task */
+    vidTaskNotify();
+    /* Set event in local event group */
+    return (xEventGroupSetBits(pvBleEventGroupHandle, u32Event))
+                               ?Middleware_Success
+                               :Middleware_Failure;
 }
