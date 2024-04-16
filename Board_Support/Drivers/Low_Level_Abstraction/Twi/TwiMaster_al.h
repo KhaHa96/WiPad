@@ -51,16 +51,22 @@ typedef void (*TwiAlCallback)(TwiAl_tenuEvent enuTwiEvent,
 
 /**
  * TwiAl_tstrXfer TWI transfer descriptor Structure
+ *
+ *  @note To succesfully make a TX transfer, the Pointer to TX transfer buffer pu8TxBuffer should not
+ *        be passed as a null value, the TX buffer length u8TxBufferlength should be different from 0 and the
+ *        Pointer to RX transfer buffer pu8RxBuffer should be passed as a NULL value.
+ *
+ * @note To succesfully make a RX transfer, the Pointer to RX transfer buffer pu8RxBuffer should not
+ *        be passed as a null value, the RX buffer length u8RxBufferlength should be different from 0 and the
+ *        Pointer to TX transfer buffer pu8TxBuffer should be passed as a NULL value.
 */
 typedef struct
 {
-    TwiAl_tenuEvent         enuTwievent;//delete it         ///< event leading to a Twi Master transfer callback invoke
     uint8_t                 u8Address;           ///< Slave address.
-    uint8_t                 u8Primarylength;     ///< Number of bytes transferred.
-    uint8_t                 u8Secondarylength;   ///< Number of bytes transferred.
-    uint8_t *               pu8PrimaryBuf;       ///< Pointer to transferred data.// the buffer passed null indicates the type of the xfer
-    uint8_t *               pu8SecondaryBuf;     ///< Pointer to transferred data.// add an assert macro to make sure both buffers are not null at the same time
-                                                /// also they cannot be both != from NULL bcuz the implementation of our abstraction layer obligates us to make 2 calls for a full-duplex transfer
+    uint8_t                 u8TxBufferlength;     ///< TX Transfer buffer length.
+    uint8_t const *               pu8TxBuffer;       ///< Pointer to TX transfer buffer
+    uint8_t                 u8RxBufferlength;     ///< RX Transfer buffer length.
+    uint8_t *               pu8RxBuffer;       ///< Pointer to RX transfer buffer
 }TwiAl_tstrXfer;
 
 /**
@@ -71,7 +77,7 @@ typedef struct
     uint8_t                    u8InterruptPriority;  ///< Interrupt priority.
     bool                       bClearBusInit;      ///< Clear bus during init.
     bool                       bHoldBusUninit;     ///< Hold pull up state on gpio pins after uninit.
-    uint8_t                    u8TwiInstance;                  /* Twi instance */
+    uint8_t                    u8TwiInstance;      /* Twi instance */
 } TwiAl_tstrConfig;
 
 /**

@@ -15,20 +15,31 @@
 #define TWI_AL_MASTER_INSTANCE_0 0
 #define TWI_AL_MASTER_INSTANCE_1 1
 
+
+#define NO_STOP_CONDITION_SET    1
+#define NO_STOP_CONDITION_UNSET  0
+
 /***************************************   PRIVATE MACROS   **************************************/
 
 /* Twi configuration assertion macro */
 #define TWI_AL_ASSERT_CONFIGURATION(PARAM)                         \
 (                                                                  \
     (PARAM->u8TwiInstance < TWI_AL_MAX_MASTER_INSTANCE_COUNT)  &&  \
-    (PARAM->u8InterruptPriority != NULL)                       \
+    (PARAM->u8InterruptPriority != NULL)                           \
 )
 
-/* Twi transfer assertion macro */
-#define TWI_AL_ASSERT_TRANSFER(PARAM)                                   \
-(                                                                       \
-    ((PARAM->pu8PrimaryBuf != NULL) && (PARAM->u8Primarylength)) ||     \
-    ((PARAM->pu8SecondaryBuf != NULL) && (PARAM->u8Secondarylength))    \
+/* Twi TX transfer assertion macro */
+#define TWI_AL_ASSERT_TX_TRANSFER(PARAM)                            \
+(                                                                   \
+    ((PARAM->pu8TxBuffer != NULL) && (PARAM->u8TxBufferlength))&&   \
+    (PARAM->pu8RxBuffer == NULL)                                     \
+)
+
+/* Twi RX transfer assertion macro */
+#define TWI_AL_ASSERT_RX_TRANSFER(PARAM)                            \
+(                                                                   \
+    ((PARAM->pu8RxBuffer != NULL) && (PARAM->u8RxBufferlength)) &&  \
+    (PARAM->pu8TxBuffer == NULL)                                     \
 )
 
 /**************************************   PRIVATE TYPES   ****************************************/
@@ -111,7 +122,7 @@ Drivers_tenuStatus enuTwiAlMaster_Init(TwiAl_tstrConfig *pstrConfig, TwiAlCallba
     if(pstrConfig)
     {
         uint8_t u8TwiInstance = pstrConfig->u8TwiInstance;
-        
+
         /* Make sure user passed a valid configuration */
         if((TWI_AL_ASSERT_CONFIGURATION(pstrConfig)) &&
            ((pfCallback != NULL) && (pstrConfig->u8TwiInstance < TWI_AL_MAX_MASTER_INSTANCE_COUNT)))
@@ -126,7 +137,7 @@ Drivers_tenuStatus enuTwiAlMaster_Init(TwiAl_tstrConfig *pstrConfig, TwiAlCallba
             pstrTwiHandle->pstrTwiConfig->bHoldBusUninit = pstrConfig->bHoldBusUninit;
             pstrTwiHandle->bIsInitialized = true;
             pstrTwiHandle->pfCallback = pfCallback;
-         
+
             /* Populate nRF's Master Twi driver configuration structure */
             nrf_drv_twi_config_t strNrfTwiCfg = NRF_DRV_TWI_DEFAULT_CONFIG;
             strNrfTwiCfg.frequency = enuSetMasterFrequency(u32Baudrate);
@@ -137,13 +148,13 @@ Drivers_tenuStatus enuTwiAlMaster_Init(TwiAl_tstrConfig *pstrConfig, TwiAlCallba
             strNrfTwiCfg.sda = TWI_SDA_PIN;
             /* Map Twi event handler to a local placeholder */
             TwiMasterEventHandler pfEventHandler = (pfCallback != NULL)?vidTwiMasterEventHandler:NULL;
-       
+
             /* Initialize Master Twi */
             enuRetVal = (NRF_SUCCESS == nrf_drv_twi_init(&strTwiMasterInstanceArray[u8TwiInstance],
                                                             &strNrfTwiCfg, pfEventHandler,
                                                             (void *)&pstrTwiHandle->pstrTwiConfig->u8TwiInstance))
                                                             ?Driver_Success:Driver_Failure;
-        }    
+        }
     }
 
 
@@ -157,7 +168,7 @@ void vidTwiAl_Uninit(uint8_t u8TwiInstance)
     /* Check for valid arguments */
     if(u8TwiInstance < TWI_AL_MAX_MASTER_INSTANCE_COUNT)
     {
-        
+
         if(strTwiMasterHandleArray[u8TwiInstance].bIsInitialized)
         {
             if(bTwiAl_TransferInProgress(u8TwiInstance))
@@ -187,39 +198,28 @@ bool bTwiAl_TransferInProgress(uint8_t u8TwiInstance)
         bRetVal = strTwiMasterHandleArray[u8TwiInstance].bIsInitialized
                     ?strTwiMasterHandleArray[u8TwiInstance].bTransferInProgress
                     :false;
-        
+
     }
 
     return bRetVal;
 }
 
-Drivers_tenuStatus enuTwiAl_Transfer(uint8_t u8TwiInstance, TwiAl_tstrXfer *pstrXfer) // user xfer_tx & xfer_rx
+Drivers_tenuStatus enuTwiAl_Transfer(uint8_t u8TwiInstance, TwiAl_tstrXfer *pstrXfer)
 {
     Drivers_tenuStatus enuRetVal = Driver_Failure;
 
-    nrf_drv_twi_xfer_desc_t const twim_xfer_desc =
-        {
-            .type             = (nrf_drv_twi_xfer_type_t)pstrXfer->enuTwievent,
-            .address          = pstrXfer->u8Address,
-            .primary_length   = pstrXfer->u8Primarylength,
-            .secondary_length = pstrXfer->u8Secondarylength,
-            .p_primary_buf    = pstrXfer->pu8PrimaryBuf,
-            .p_secondary_buf  = pstrXfer->pu8SecondaryBuf,
-        };
-
-
     /* Check for valid arguments */
     if((u8TwiInstance < TWI_AL_MAX_MASTER_INSTANCE_COUNT) &&
-       ((pstrXfer) && (TWI_AL_ASSERT_TRANSFER(pstrXfer))))
+       ((pstrXfer) && (strTwiMasterHandleArray[u8TwiInstance].bIsInitialized)))
     {
-        
-        uint32_t flags = NRF_DRV_TWI_FLAG_TX_POSTINC;
-        if(strTwiMasterHandleArray[u8TwiInstance].bIsInitialized)
+        if(TWI_AL_ASSERT_TX_TRANSFER(pstrXfer))
         {
-            /* Initiate TwiAl Master transfer */
-            enuRetVal = (NRF_SUCCESS == nrf_drv_twi_xfer(&strTwiMasterInstanceArray[u8TwiInstance],
-                                                            &twim_xfer_desc,
-                                                            flags))
+            /* Initiate TwiAl Master TX transfer */
+            enuRetVal = (NRF_SUCCESS == nrf_drv_twi_tx(&strTwiMasterInstanceArray[u8TwiInstance],
+                                                            pstrXfer->u8Address,
+                                                            pstrXfer->pu8TxBuffer,
+                                                            pstrXfer->u8TxBufferlength,
+                                                            NO_STOP_CONDITION_UNSET))
                                                             ?Driver_Success:Driver_Failure;
 
             /* Set ongoing transfer flag if transfer is being performed in non-blocking mode */
@@ -228,8 +228,21 @@ Drivers_tenuStatus enuTwiAl_Transfer(uint8_t u8TwiInstance, TwiAl_tstrXfer *pstr
                 strTwiMasterHandleArray[u8TwiInstance].bTransferInProgress = true;
             }
         }
-       
-       
+        if(TWI_AL_ASSERT_RX_TRANSFER(pstrXfer))
+        {
+            /* Initiate TwiAl Master TX transfer */
+            enuRetVal = (NRF_SUCCESS == nrf_drv_twi_rx(&strTwiMasterInstanceArray[u8TwiInstance],
+                                                            pstrXfer->u8Address,
+                                                            pstrXfer->pu8RxBuffer,
+                                                            pstrXfer->u8RxBufferlength))
+                                                            ?Driver_Success:Driver_Failure;
+
+            /* Set ongoing transfer flag if transfer is being performed in non-blocking mode */
+            if(strTwiMasterHandleArray[u8TwiInstance].pfCallback)
+            {
+                strTwiMasterHandleArray[u8TwiInstance].bTransferInProgress = true;
+            }
+        }
     }
 
     return enuRetVal;
