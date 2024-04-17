@@ -357,8 +357,10 @@
                     <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm</state>
@@ -2232,6 +2234,12 @@
                 </file>
             </group>
             <group>
+                <name>atomic_flags</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags\nrf_atflags.c</name>
+                </file>
+            </group>
+            <group>
                 <name>balloc</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\balloc\nrf_balloc.c</name>
@@ -2291,6 +2299,12 @@
                     </file>
                 </group>
                 <group>
+                    <name>ble_link_ctx_manager</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager\ble_link_ctx_manager.c</name>
+                    </file>
+                </group>
+                <group>
                     <name>ble_services</name>
                     <group>
                         <name>ble_adm</name>
@@ -2328,6 +2342,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_conn_params.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_conn_state.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_srv_common.c</name>

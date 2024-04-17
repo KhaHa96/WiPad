@@ -32,6 +32,8 @@
 #define BLE_ADV_INTERVAL                       300
 #define BLE_ADV_DURATION                       18000
 #define BLE_RAM_START_ADDRESS                  0
+#define BLE_SAVED_SYSTEM_ATTRIBUTES_SIZE       0
+#define BLE_SAVED_SYSTEM_ATTRIBUTES_FLAGS      0
 #define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000
 #define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000
 #define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
@@ -49,12 +51,13 @@ static void vidBleStartAdvertising(void);
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
 NRF_BLE_QWR_DEF(BleQwrInstance);
-BLE_USE_REG_DEF(BleUseRegInstance);
+BLE_USE_REG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_KEY_ATT_DEF(BleKeyAttInstance);
 BLE_ADM_DEF(BleAdminInstance);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
 static EventGroupHandle_t pvBleEventGroupHandle;
+static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
 static ble_uuid_t strAdvUuids[] =
 {
     {BLE_KEY_ATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
@@ -121,12 +124,43 @@ static void vidConnParamErrorHandler(uint32_t u32Error)
 
 static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 {
-    __NOP();
+    /* Make sure valid arguments are passed */
+    if(pstrEvent)
+    {
+        switch (pstrEvent->header.evt_id)
+        {
+        case BLE_GAP_EVT_CONNECTED:
+        {
+            /* Preserve current connection handle */
+            u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
+            /* Assign current connection handle to Queued Writes module's instance */
+            (void)nrf_ble_qwr_conn_handle_assign(&BleQwrInstance, u16ConnHandle);
+            /* TODO: Trigger connection LED pattern */
+        }
+        break;
+
+        case BLE_GAP_EVT_DISCONNECTED:
+        {
+            /* Clear connection handle placeholder */
+            u16ConnHandle = BLE_CONN_HANDLE_INVALID;
+            /* TODO: Trigger disconnection LED pattern */
+        }
+        break;
+
+        default:
+            /* Nothing to do */
+            break;
+        }
+    }
 }
+
+uint8_t Buffer[] = "Khaled";
+uint16_t u16Size = sizeof(Buffer)-1;
 
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
-
+    __NOP();
+    enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
 }
 
 static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
