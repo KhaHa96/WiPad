@@ -101,8 +101,9 @@ static void vidDisplayEvent_Process(uint32_t u32Trigger)
     {
         if(u32Trigger == (strDisplayStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strDisplayStateMachine + u8Index)->pfAction();
+            break;
         }
         u8Index++;
     }

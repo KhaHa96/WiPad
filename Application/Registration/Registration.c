@@ -14,8 +14,8 @@
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_USE_REG_PUSH_IMMEDIATELY 0
-#define APP_USE_REG_POP_IMMEDIATELY 0
-#define APP_USE_REG_EVENT_MASK  (APP_USE_REG_TEST_EVENT1 | APP_USE_REG_TEST_EVENT2)
+#define APP_USE_REG_POP_IMMEDIATELY  0
+#define APP_USE_REG_EVENT_MASK       (APP_USE_REG_TEST_EVENT1 | APP_USE_REG_TEST_EVENT2)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_USE_REG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
@@ -57,8 +57,9 @@ static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)
     {
         if(u32Trigger == (strUseRegStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strUseRegStateMachine + u8Index)->pfAction(pvData);
+            break;
         }
         u8Index++;
     }

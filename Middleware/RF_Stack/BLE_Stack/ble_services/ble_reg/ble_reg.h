@@ -94,7 +94,10 @@ typedef void (*BleUseRegEventHandler)(BleReg_tstrEvent *pstrEvent);
 */
 typedef struct
 {
-    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when..........  */
+    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when connection with peer
+                                                 is established, notification is sent on the Status
+                                                 characteristic or data is received on the Id/Password
+                                                 characteristic */
 }BleReg_tstrInit;
 
 /**
@@ -119,7 +122,7 @@ struct ble_use_reg_s
  *       from within the context of this handler.
  *
  * @param pstrEvent Pointer to received event structure.
- * @param pvArg Pointer to parameters passed to handler.
+ * @param pvArg Pointer to User Registration definition structure.
  *
  * @return nothing.
 */

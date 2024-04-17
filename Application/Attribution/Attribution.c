@@ -14,8 +14,8 @@
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_KEY_ATT_PUSH_IMMEDIATELY 0
-#define APP_KEY_ATT_POP_IMMEDIATELY 0
-#define APP_KEY_ATT_EVENT_MASK  (APP_KEY_ATT_TEST_EVENT1 | APP_KEY_ATT_TEST_EVENT2)
+#define APP_KEY_ATT_POP_IMMEDIATELY  0
+#define APP_KEY_ATT_EVENT_MASK       (APP_KEY_ATT_TEST_EVENT1 | APP_KEY_ATT_TEST_EVENT2)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_KEY_ATT_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Attribution_tstrState))
@@ -57,8 +57,9 @@ static void vidAttributionEvent_Process(uint32_t u32Trigger, void *pvData)
     {
         if(u32Trigger == (strKeyAttStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strKeyAttStateMachine + u8Index)->pfAction(pvData);
+            break;
         }
         u8Index++;
     }

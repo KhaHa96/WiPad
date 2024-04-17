@@ -196,8 +196,8 @@ Mid_tenuStatus enuBleUseRegTransferData(ble_use_reg_t *pstrUseRegInstance, uint8
                 memset(&strHvxParams, 0, sizeof(strHvxParams));
                 strHvxParams.handle = pstrUseRegInstance->strStatusChar.value_handle;
                 strHvxParams.p_data = pu8Data;
-                strHvxParams.p_len  = pu16DataLength;
-                strHvxParams.type   = BLE_GATT_HVX_NOTIFICATION;
+                strHvxParams.p_len = pu16DataLength;
+                strHvxParams.type = BLE_GATT_HVX_NOTIFICATION;
                 enuRetVal = (NRF_SUCCESS == sd_ble_gatts_hvx(u16ConnHandle,
                                                              &strHvxParams))
                                                              ?Middleware_Success
