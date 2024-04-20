@@ -37,11 +37,11 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuBle_Init Creates Ble stack task, binary semaphore to signal receiving Ble events
- *        from Softdevice and registers callback to dispatch notifications to the application
- *        layer through the Application Manager.
+ * @brief enuBle_Init Creates Ble stack task, event group to signal receiving events
+ *        from the application layer through the Application Manager and initializes
+ *        the Ble stack.
  *
- * @note This function is invoked by the System Manager.
+ * @note This function is invoked by the Main function.
  *
  * @pre This function requires no prerequisites.
  *
@@ -53,6 +53,12 @@ Mid_tenuStatus enuBle_Init(void);
 /**
  * @brief enuBle_GetNotified Notifies Ble task of an incoming event by setting it in
  *        local event group.
+ *
+ * @note Posting the received event in the local event group is not directly responsible
+ *       for unblocking the Ble task. Rather this function unblocks the Ble task upon
+ *       receiving an event through giving a task notification (equivalent to giving
+ *       counting semaphore) and posting received event to local event group for the task
+ *       function to retrieve and process.
  *
  * @pre This function can't be called unless Ble task is initialized and running.
  *

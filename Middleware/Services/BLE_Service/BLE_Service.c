@@ -29,11 +29,7 @@
 #define BLE_MAX_CONN_INTERVAL                  MSEC_TO_UNITS(200, UNIT_1_25_MS)
 #define BLE_SLAVE_LATENCY                      0
 #define BLE_CONN_SUP_TIMEOUT                   MSEC_TO_UNITS(4000, UNIT_10_MS)
-#define BLE_ADV_INTERVAL                       300
-#define BLE_ADV_DURATION                       18000
 #define BLE_RAM_START_ADDRESS                  0
-#define BLE_SAVED_SYSTEM_ATTRIBUTES_SIZE       0
-#define BLE_SAVED_SYSTEM_ATTRIBUTES_FLAGS      0
 #define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000
 #define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000
 #define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
@@ -52,7 +48,7 @@ static void vidBleStartAdvertising(void);
 NRF_BLE_GATT_DEF(BleGattInstance);
 NRF_BLE_QWR_DEF(BleQwrInstance);
 BLE_USE_REG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_KEY_ATT_DEF(BleKeyAttInstance);
+BLE_KEY_ATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_ADM_DEF(BleAdminInstance);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
@@ -99,8 +95,9 @@ static void vidBleEvent_Process(uint32_t u32Trigger)
     {
         if(u32Trigger == (strBleStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strBleStateMachine + u8Index)->pfAction();
+            break;
         }
         u8Index++;
     }
@@ -154,18 +151,19 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
     }
 }
 
-uint8_t Buffer[] = "Khaled";
-uint16_t u16Size = sizeof(Buffer)-1;
+//uint8_t Buffer[] = "Khaled";
+//uint16_t u16Size = sizeof(Buffer)-1;
 
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
     __NOP();
-    enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
+    //enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
 }
 
 static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 {
-
+    __NOP();
+    //enuBleKeyAttTransferData(&BleKeyAttInstance, Buffer, &u16Size, u16ConnHandle);
 }
 
 static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
