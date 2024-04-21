@@ -45,9 +45,10 @@ typedef struct ble_use_reg_s ble_use_reg_t;
 */
 typedef enum
 {
-    BLE_REG_CONNECTED = 0, /* Peer connected                                       */
-    BLE_REG_STATUS_TX,     /* Peer notified of service status                      */
-    BLE_REG_ID_PWD_RX      /* Received data from peer on the Id/Pwd characteristic */
+    BLE_REG_NOTIF_ENABLED = 0, /* Peer enabled notifications on Status characteristic  */
+    BLE_REG_NOTIF_DISABLED,    /* Peer disabled notifications on Status characteristic */
+    BLE_REG_STATUS_TX,         /* Peer notified of service status                      */
+    BLE_REG_ID_PWD_RX          /* Received data from peer on the Id/Pwd characteristic */
 }BleReg_tenuEventType;
 
 /**

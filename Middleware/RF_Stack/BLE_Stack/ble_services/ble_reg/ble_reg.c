@@ -16,9 +16,11 @@
 #define BLE_USE_REG_ID_PWD_MAX_LENGTH         20U
 #define BLE_USE_REG_STATUS_CHAR_NOTIFY        1
 #define BLE_USE_REG_STATUS_MESSAGE_MAX_LENGTH 20U
+#define BLE_USE_REG_CCCD_SIZE                 2
+#define BLE_USE_REG_NOTIF_EVT_LENGTH          2
+#define BLE_USE_REG_GATTS_EVT_OFFSET          0
 #define BLE_USE_REG_OPCODE_LENGTH             1
 #define BLE_USE_REG_HANDLE_LENGTH             2
-#define BLE_USE_REG_CCCD_SIZE                 2
 #define BLE_USE_REG_MAX_DATA_LENGTH           (NRF_SDH_BLE_GATT_MAX_MTU_SIZE \
                                                - BLE_USE_REG_OPCODE_LENGTH   \
                                                - BLE_USE_REG_HANDLE_LENGTH)
@@ -59,25 +61,41 @@ static void vidPeerConnectedCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_
         /* Fetch link context from link registry based on connection handle */
         BleReg_tstrClientCtx *pstrClient;
         if(NRF_SUCCESS == blcm_link_ctx_get(pstrUseRegInstance->pstrLinkCtx,
-                                            pstrEvent->evt.gatts_evt.conn_handle,
+                                            pstrEvent->evt.gap_evt.conn_handle,
                                             (void *)&pstrClient))
         {
-            if(pstrUseRegInstance->pfUseRegEvtHandler)
-            {
-                if(pstrClient)
-                {
-                    /* Set enabled notification flag */
-                    pstrClient->bNotificationEnabled = true;
-                }
+            /* Decode CCCD value to check whether notifications on the Status characteristic are
+               already enabled */
+            ble_gatts_value_t strGattsValue;
+            uint8_t u8CccdValue[BLE_USE_REG_CCCD_SIZE];
 
-                /* Invoke User Registration service's application-registered event handler */
-                BleReg_tstrEvent strEvent;
-                memset(&strEvent, 0, sizeof(BleReg_tstrEvent));
-                strEvent.enuEventType = BLE_REG_CONNECTED;
-                strEvent.pstrUseRegInstance = pstrUseRegInstance;
-                strEvent.u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
-                strEvent.pstrLinkCtx = pstrClient;
-                pstrUseRegInstance->pfUseRegEvtHandler(&strEvent);
+            memset(&strGattsValue, 0, sizeof(ble_gatts_value_t));
+            strGattsValue.p_value = u8CccdValue;
+            strGattsValue.len = sizeof(u8CccdValue);
+            strGattsValue.offset = BLE_USE_REG_GATTS_EVT_OFFSET;
+
+            if(NRF_SUCCESS == sd_ble_gatts_value_get(pstrEvent->evt.gap_evt.conn_handle,
+                                                     pstrUseRegInstance->strStatusChar.cccd_handle,
+                                                     &strGattsValue))
+            {
+                if((pstrUseRegInstance->pfUseRegEvtHandler) &&
+                    ble_srv_is_notification_enabled(strGattsValue.p_value))
+                {
+                    if(pstrClient)
+                    {
+                        /* Set enabled notification flag */
+                        pstrClient->bNotificationEnabled = true;
+                    }
+
+                    /* Invoke User Registration service's application-registered event handler */
+                    BleReg_tstrEvent strEvent;
+                    memset(&strEvent, 0, sizeof(BleReg_tstrEvent));
+                    strEvent.enuEventType = BLE_REG_NOTIF_ENABLED;
+                    strEvent.pstrUseRegInstance = pstrUseRegInstance;
+                    strEvent.u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
+                    strEvent.pstrLinkCtx = pstrClient;
+                    pstrUseRegInstance->pfUseRegEvtHandler(&strEvent);
+                }
             }
         }
     }
@@ -103,8 +121,33 @@ static void vidCharWrittenCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_t 
             strEvent.pstrLinkCtx = pstrClient;
 
             ble_gatts_evt_write_t const *pstrWriteEvent = &pstrEvent->evt.gatts_evt.params.write;
-            if((pstrWriteEvent->handle == pstrUseRegInstance->strIdPwdChar.value_handle) &&
-               (pstrUseRegInstance->pfUseRegEvtHandler))
+            if((pstrWriteEvent->handle == pstrUseRegInstance->strStatusChar.cccd_handle) &&
+               (pstrWriteEvent->len == BLE_USE_REG_NOTIF_EVT_LENGTH))
+            {
+                if (pstrClient)
+                {
+                    /* Decode CCCD value to check whether Peer has enabled notifications on the
+                       Status characteristic */
+                    if (ble_srv_is_notification_enabled(pstrWriteEvent->data))
+                    {
+                        pstrClient->bNotificationEnabled = true;
+                        strEvent.enuEventType = BLE_REG_NOTIF_ENABLED;
+                    }
+                    else
+                    {
+                        pstrClient->bNotificationEnabled = false;
+                        strEvent.enuEventType = BLE_REG_NOTIF_DISABLED;
+                    }
+
+                    /* Invoke User Registration service's application-registered event handler */
+                    if (pstrUseRegInstance->pfUseRegEvtHandler)
+                    {
+                        pstrUseRegInstance->pfUseRegEvtHandler(&strEvent);
+                    }
+                }
+            }
+            else if((pstrWriteEvent->handle == pstrUseRegInstance->strIdPwdChar.value_handle) &&
+                    (pstrUseRegInstance->pfUseRegEvtHandler))
             {
                 /* Invoke User Registration service's application-registered event handler */
                 strEvent.enuEventType = BLE_REG_ID_PWD_RX;

@@ -45,9 +45,10 @@ typedef struct ble_key_att_s ble_key_att_t;
 */
 typedef enum
 {
-    BLE_ATT_CONNECTED = 0, /* Peer connected                                               */
-    BLE_ATT_STATUS_TX,     /* Peer notified of service status                              */
-    BLE_ATT_KEY_ACT_RX     /* Received data from peer on the Key Activation characteristic */
+    BLE_ATT_NOTIF_ENABLED = 0, /* Peer enabled notifications on Status characteristic          */
+    BLE_ATT_NOTIF_DISABLED,    /* Peer disabled notifications on Status characteristic         */
+    BLE_ATT_STATUS_TX,         /* Peer notified of service status                              */
+    BLE_ATT_KEY_ACT_RX         /* Received data from peer on the Key Activation characteristic */
 }BleAtt_tenuEventType;
 
 /**

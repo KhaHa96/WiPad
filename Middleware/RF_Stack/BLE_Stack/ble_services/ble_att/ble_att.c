@@ -17,6 +17,9 @@
 #define BLE_KEY_ATT_KEY_ACTIVATION_MAX_LENGTH sizeof(uint8_t)
 #define BLE_KEY_ATT_STATUS_CHAR_NOTIFY        1
 #define BLE_KEY_ATT_STATUS_MESSAGE_MAX_LENGTH 20U
+#define BLE_KEY_ATT_CCCD_SIZE                 2
+#define BLE_KEY_ATT_NOTIF_EVT_LENGTH          2
+#define BLE_KEY_ATT_GATTS_EVT_OFFSET          0
 #define BLE_KEY_ATT_OPCODE_LENGTH             1
 #define BLE_KEY_ATT_HANDLE_LENGTH             2
 #define BLE_KEY_ATT_MAX_DATA_LENGTH           (NRF_SDH_BLE_GATT_MAX_MTU_SIZE \
@@ -62,22 +65,38 @@ static void vidPeerConnectedCallback(ble_key_att_t *pstrKeyAttInstance, ble_evt_
                                             pstrEvent->evt.gatts_evt.conn_handle,
                                             (void *)&pstrClient))
         {
-            if(pstrKeyAttInstance->pfKeyAttEvtHandler)
-            {
-                if(pstrClient)
-                {
-                    /* Set enabled notification flag */
-                    pstrClient->bNotificationEnabled = true;
-                }
+            /* Decode CCCD value to check whether notifications on the Status characteristic are
+               already enabled */
+            ble_gatts_value_t strGattsValue;
+            uint8_t u8CccdValue[BLE_KEY_ATT_CCCD_SIZE];
 
-                /* Invoke Key Attribution service's application-registered event handler */
-                BleAtt_tstrEvent strEvent;
-                memset(&strEvent, 0, sizeof(BleAtt_tstrEvent));
-                strEvent.enuEventType = BLE_ATT_CONNECTED;
-                strEvent.pstrKeyAttInstance = pstrKeyAttInstance;
-                strEvent.u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
-                strEvent.pstrLinkCtx = pstrClient;
-                pstrKeyAttInstance->pfKeyAttEvtHandler(&strEvent);
+            memset(&strGattsValue, 0, sizeof(ble_gatts_value_t));
+            strGattsValue.p_value = u8CccdValue;
+            strGattsValue.len = sizeof(u8CccdValue);
+            strGattsValue.offset = BLE_KEY_ATT_GATTS_EVT_OFFSET;
+
+            if(NRF_SUCCESS == sd_ble_gatts_value_get(pstrEvent->evt.gap_evt.conn_handle,
+                                                     pstrKeyAttInstance->strStatusChar.cccd_handle,
+                                                     &strGattsValue))
+            {
+                if((pstrKeyAttInstance->pfKeyAttEvtHandler) &&
+                    ble_srv_is_notification_enabled(strGattsValue.p_value))
+                {
+                    if(pstrClient)
+                    {
+                        /* Set enabled notification flag */
+                        pstrClient->bNotificationEnabled = true;
+                    }
+
+                    /* Invoke Key Attribution service's application-registered event handler */
+                    BleAtt_tstrEvent strEvent;
+                    memset(&strEvent, 0, sizeof(BleAtt_tstrEvent));
+                    strEvent.enuEventType = BLE_ATT_NOTIF_ENABLED;
+                    strEvent.pstrKeyAttInstance = pstrKeyAttInstance;
+                    strEvent.u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
+                    strEvent.pstrLinkCtx = pstrClient;
+                    pstrKeyAttInstance->pfKeyAttEvtHandler(&strEvent);
+                }
             }
         }
     }
@@ -103,8 +122,33 @@ static void vidCharWrittenCallback(ble_key_att_t *pstrKeyAttInstance, ble_evt_t 
             strEvent.pstrLinkCtx = pstrClient;
 
             ble_gatts_evt_write_t const *pstrWriteEvent = &pstrEvent->evt.gatts_evt.params.write;
-            if((pstrWriteEvent->handle == pstrKeyAttInstance->strKeyActChar.value_handle) &&
-               (pstrKeyAttInstance->pfKeyAttEvtHandler))
+            if((pstrWriteEvent->handle == pstrKeyAttInstance->strStatusChar.cccd_handle) &&
+               (pstrWriteEvent->len == BLE_KEY_ATT_NOTIF_EVT_LENGTH))
+            {
+                if (pstrClient)
+                {
+                    /* Decode CCCD value to check whether Peer has enabled notifications on the
+                       Status characteristic */
+                    if (ble_srv_is_notification_enabled(pstrWriteEvent->data))
+                    {
+                        pstrClient->bNotificationEnabled = true;
+                        strEvent.enuEventType = BLE_ATT_NOTIF_ENABLED;
+                    }
+                    else
+                    {
+                        pstrClient->bNotificationEnabled = false;
+                        strEvent.enuEventType = BLE_ATT_NOTIF_DISABLED;
+                    }
+
+                    /* Invoke Key Attribution service's application-registered event handler */
+                    if (pstrKeyAttInstance->pfKeyAttEvtHandler)
+                    {
+                        pstrKeyAttInstance->pfKeyAttEvtHandler(&strEvent);
+                    }
+                }
+            }
+            else if((pstrWriteEvent->handle == pstrKeyAttInstance->strKeyActChar.value_handle) &&
+                    (pstrKeyAttInstance->pfKeyAttEvtHandler))
             {
                 /* Invoke Key Attribution service's application-registered event handler */
                 strEvent.enuEventType = BLE_ATT_KEY_ACT_RX;

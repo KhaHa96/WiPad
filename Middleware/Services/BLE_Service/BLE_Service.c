@@ -156,14 +156,80 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
-    __NOP();
-    //enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
+    /* Make sure valid arguments are passed */
+    if(pstrEvent)
+    {
+        switch(pstrEvent->enuEventType)
+        {
+        case BLE_REG_NOTIF_ENABLED:
+        {
+
+        }
+        break;
+
+        case BLE_REG_NOTIF_DISABLED:
+        {
+
+        }
+        break;
+
+        case BLE_REG_STATUS_TX:
+        {
+
+        }
+        break;
+
+        case BLE_REG_ID_PWD_RX:
+        {
+            //__NOP();
+            //enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
+        }
+        break;
+
+        default:
+            /* Nothing to do */
+            break;
+        }
+    }
 }
 
 static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 {
-    __NOP();
-    //enuBleKeyAttTransferData(&BleKeyAttInstance, Buffer, &u16Size, u16ConnHandle);
+    /* Make sure valid arguments are passed */
+    if(pstrEvent)
+    {
+        switch(pstrEvent->enuEventType)
+        {
+        case BLE_ATT_NOTIF_ENABLED:
+        {
+
+        }
+        break;
+
+        case BLE_ATT_NOTIF_DISABLED:
+        {
+
+        }
+        break;
+
+        case BLE_ATT_STATUS_TX:
+        {
+
+        }
+        break;
+
+        case BLE_ATT_KEY_ACT_RX:
+        {
+            //__NOP();
+            //enuBleKeyAttTransferData(&BleKeyAttInstance, Buffer, &u16Size, u16ConnHandle);
+        }
+        break;
+
+        default:
+            /* Nothing to do */
+            break;
+        }
+    }
 }
 
 static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
