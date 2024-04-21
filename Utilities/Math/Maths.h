@@ -20,7 +20,7 @@
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/
 /**
- * @brief u32Power Computes the outcome of an integer base raised to the power of a given integer
+ * @brief s32Power Computes the outcome of an integer base raised to the power of a given integer
  *        exponent.
  *
  * @warning This function has a computational ceiling dictated by the upper bound of int32_t
@@ -32,6 +32,6 @@
  * @return int32_t u8Base raised to the power of u8Exponent if it doesn't exceed 0x7FFFFFFF,
  *         0xFFFFFFFF otherwise.
  */
-int32_t u32Power(uint8_t u8Base, uint8_t u8Exponent);
+int32_t s32Power(uint8_t u8Base, uint8_t u8Exponent);
 
 #endif /* _UTIL_MATH_H_ */
