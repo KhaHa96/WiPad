@@ -9,7 +9,7 @@
 #define _MID_BLE_H_
 
 /****************************************   INCLUDES   *******************************************/
-#include "Middleware_Types.h"
+#include "middleware_utils.h"
 #include "system_config.h"
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/

@@ -2262,7 +2262,7 @@
         <group>
             <name>Math</name>
             <file>
-                <name>$PROJ_DIR$\..\Utilities\Math\Math.c</name>
+                <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
             </file>
         </group>
     </group>

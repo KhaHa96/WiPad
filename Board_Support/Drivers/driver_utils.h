@@ -8,6 +8,12 @@
 #ifndef DRV_TYPES_H_
 #define DRV_TYPES_H_
 
+/******************************************   INCLUDES   *****************************************/
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "Maths.h"
+
 /******************************************   TYPES   ********************************************/
 /**
  * Drivers_tenuStatus Enumeration of the different possible driver operation outcomes
