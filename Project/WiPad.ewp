@@ -212,6 +212,10 @@
                     <name>CCDefines</name>
                     <state>NRF51</state>
                     <state>NRF51422</state>
+                    <state>NRF_SD_BLE_API_VERSION=2</state>
+                    <state>S130</state>
+                    <state>SOFTDEVICE_PRESENT</state>
+                    <state>BLE_STACK_SUPPORT_REQD</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -354,6 +358,13 @@
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fstorage</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2205,7 +2216,16 @@
         <group>
             <name>Libraries</name>
             <group>
-                <name>log</name>
+                <name>fstorage</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fstorage\fstorage.c</name>
+                </file>
+            </group>
+            <group>
+                <name>timer</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\timer\app_timer_freertos.c</name>
+                </file>
             </group>
             <group>
                 <name>util</name>
@@ -2224,6 +2244,39 @@
             <name>RF_Stack</name>
             <group>
                 <name>BLE_Stack</name>
+                <group>
+                    <name>ble_advertising</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising\ble_advertising.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>ble_services</name>
+                    <group>
+                        <name>ble_adm</name>
+                    </group>
+                    <group>
+                        <name>ble_att</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att\ble_att.c</name>
+                        </file>
+                    </group>
+                    <group>
+                        <name>ble_reg</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg\ble_reg.c</name>
+                        </file>
+                    </group>
+                </group>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advdata.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_conn_params.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_srv_common.c</name>
+                </file>
             </group>
             <group>
                 <name>Softdevice</name>
