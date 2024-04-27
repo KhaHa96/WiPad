@@ -13,9 +13,7 @@
 /************************************   PRIVATE DEFINES   ****************************************/
 #define BLE_USE_REG_ID_PWD_CHAR_WRITE_REQUEST 1
 #define BLE_USE_REG_ID_PWD_CHAR_WRITE_COMMAND 1
-#define BLE_USE_REG_ID_PWD_MAX_LENGTH         20U
 #define BLE_USE_REG_STATUS_CHAR_NOTIFY        1
-#define BLE_USE_REG_STATUS_MESSAGE_MAX_LENGTH 20U
 #define BLE_USE_REG_CCCD_SIZE                 2
 #define BLE_USE_REG_NOTIF_EVT_LENGTH          2
 #define BLE_USE_REG_GATTS_EVT_OFFSET          0
@@ -32,7 +30,7 @@
     ((CLIENT) && (BLE_CONN_HANDLE_INVALID != CONN_HANDLE)) \
 )
 
-/* Charactristic notification enabled assertion macro */
+/* Characteristic notification enabled assertion macro */
 #define BLE_USE_REG_NOTIF_ENABLED(CLIENT) \
 (                                         \
     (CLIENT->bNotificationEnabled)        \
@@ -280,7 +278,7 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
                 memset(&strCharacteristic, 0, sizeof(strCharacteristic));
                 strCharacteristic.uuid = BLE_USE_REG_ID_PWD_CHAR_UUID;
                 strCharacteristic.uuid_type = pstrUseRegInstance->u8UuidType;
-                strCharacteristic.max_len = BLE_USE_REG_ID_PWD_MAX_LENGTH;
+                strCharacteristic.max_len = BLE_USE_REG_MAX_DATA_LENGTH;
                 strCharacteristic.init_len = sizeof(uint8_t);
                 strCharacteristic.is_var_len = true;
                 strCharacteristic.char_props.write = BLE_USE_REG_ID_PWD_CHAR_WRITE_REQUEST;
@@ -295,7 +293,7 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
                     memset(&strCharacteristic, 0, sizeof(strCharacteristic));
                     strCharacteristic.uuid = BLE_USE_REG_STATUS_CHAR_UUID;
                     strCharacteristic.uuid_type = pstrUseRegInstance->u8UuidType;
-                    strCharacteristic.max_len = BLE_USE_REG_STATUS_MESSAGE_MAX_LENGTH;
+                    strCharacteristic.max_len = BLE_USE_REG_MAX_DATA_LENGTH;
                     strCharacteristic.init_len = sizeof(uint8_t);
                     strCharacteristic.is_var_len = true;
                     strCharacteristic.char_props.notify = BLE_USE_REG_STATUS_CHAR_NOTIFY;

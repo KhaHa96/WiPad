@@ -9,7 +9,7 @@
 #define _BLE_ADMIN_H_
 
 /****************************************   INCLUDES   *******************************************/
-#include "Middleware_types.h"
+#include "middleware_utils.h"
 #include "ble_gatts.h"
 #include "nrf_sdh_ble.h"
 

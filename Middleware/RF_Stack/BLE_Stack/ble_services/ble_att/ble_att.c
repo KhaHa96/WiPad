@@ -12,11 +12,10 @@
 
 /************************************   PRIVATE DEFINES   ****************************************/
 
-#define BLE_KEY_ATT_STATUS_CHAR_READ          1
-#define BLE_KEY_ATT_STATUS_CHAR_WRITE         1
-#define BLE_KEY_ATT_KEY_ACTIVATION_MAX_LENGTH sizeof(uint8_t)
+#define BLE_KEY_ATT_ACTIVATION_CHAR_READ      1
+#define BLE_KEY_ATT_ACTIVATION_CHAR_WRITE     1
+#define BLE_KEY_ATT_ACTIVATION_MAX_LENGTH     sizeof(uint8_t)
 #define BLE_KEY_ATT_STATUS_CHAR_NOTIFY        1
-#define BLE_KEY_ATT_STATUS_MESSAGE_MAX_LENGTH 20U
 #define BLE_KEY_ATT_CCCD_SIZE                 2
 #define BLE_KEY_ATT_NOTIF_EVT_LENGTH          2
 #define BLE_KEY_ATT_GATTS_EVT_OFFSET          0
@@ -278,9 +277,9 @@ Mid_tenuStatus enuBleKeyAttInit(ble_key_att_t *pstrKeyAttInstance, BleAtt_tstrIn
             strCharacteristic.uuid = BLE_KEY_ATT_KEY_CHAR_UUID;
             strCharacteristic.uuid_type = pstrKeyAttInstance->u8UuidType;
             strCharacteristic.init_len = sizeof(uint8_t);
-            strCharacteristic.max_len = BLE_KEY_ATT_KEY_ACTIVATION_MAX_LENGTH;
-            strCharacteristic.char_props.read = BLE_KEY_ATT_STATUS_CHAR_READ;
-            strCharacteristic.char_props.write = BLE_KEY_ATT_STATUS_CHAR_WRITE;
+            strCharacteristic.max_len = BLE_KEY_ATT_ACTIVATION_MAX_LENGTH;
+            strCharacteristic.char_props.read = BLE_KEY_ATT_ACTIVATION_CHAR_READ;
+            strCharacteristic.char_props.write = BLE_KEY_ATT_ACTIVATION_CHAR_WRITE;
             strCharacteristic.read_access  = SEC_OPEN;
             strCharacteristic.write_access = SEC_OPEN;
             if(NRF_SUCCESS == characteristic_add(pstrKeyAttInstance->u16ServiceHandle,
@@ -291,7 +290,7 @@ Mid_tenuStatus enuBleKeyAttInit(ble_key_att_t *pstrKeyAttInstance, BleAtt_tstrIn
                 memset(&strCharacteristic, 0, sizeof(strCharacteristic));
                 strCharacteristic.uuid = BLE_KEY_ATT_STATUS_CHAR_UUID;
                 strCharacteristic.uuid_type = pstrKeyAttInstance->u8UuidType;
-                strCharacteristic.max_len = BLE_KEY_ATT_STATUS_MESSAGE_MAX_LENGTH;
+                strCharacteristic.max_len = BLE_KEY_ATT_MAX_DATA_LENGTH;
                 strCharacteristic.init_len = sizeof(uint8_t);
                 strCharacteristic.is_var_len = true;
                 strCharacteristic.char_props.notify = BLE_KEY_ATT_STATUS_CHAR_NOTIFY;

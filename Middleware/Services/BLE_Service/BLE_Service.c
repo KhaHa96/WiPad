@@ -391,6 +391,7 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
     strConnParams.evt_handler = vidConnParamEventHandler;
     strConnParams.error_handler = vidConnParamErrorHandler;
 
+    /* Initialize Connection parameters negotiation module */
     return (NRF_SUCCESS == ble_conn_params_init(&strConnParams))
                                                 ?Middleware_Success
                                                 :Middleware_Failure;
