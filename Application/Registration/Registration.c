@@ -86,7 +86,7 @@ static void vidUseRegTaskFunction(void *pvArg)
             /* Check whether queue holds any data */
             if(uxQueueMessagesWaiting(pvUseRegQueueHandle))
             {
-                /* We have no tasks of higher priority so we're guranteed that no other
+                /* We have no tasks of higher priority so we're guaranteed that no other
                    message will be received in the queue until this message is processed */
                 xQueueReceive(pvUseRegQueueHandle, pvData, APP_USEREG_POP_IMMEDIATELY);
             }

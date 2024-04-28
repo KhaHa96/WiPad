@@ -8,6 +8,7 @@
 /****************************************   INCLUDES   *******************************************/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "event_groups.h"
 #include "BLE_Service.h"
 #include "nrf_sdh.h"
@@ -37,6 +38,8 @@
 #define BLE_ADVERTISING_DURATION               18000U
 #define BLE_EVENT_NO_WAIT                      (TickType_t)0UL
 #define BLE_EVENT_MASK                         (BLE_START_ADVERTISING)
+#define BLE_PUSH_IMMEDIATELY                   0U
+#define BLE_POP_IMMEDIATELY                    0U
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
@@ -45,7 +48,7 @@
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /*******************************   PRIVATE FUNCTION PROTOTYPES   *********************************/
-static void vidBleStartAdvertising(void);
+static void vidBleStartAdvertising(void *pvArg);
 
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
@@ -55,6 +58,7 @@ BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
+static QueueHandle_t pvBleQueueHandle;
 static EventGroupHandle_t pvBleEventGroupHandle;
 static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
 static ble_uuid_t strAdvUuids[] =
@@ -87,7 +91,7 @@ void SD_EVT_IRQHandler(void)
     vidTaskNotify();
 }
 
-static void vidBleEvent_Process(uint32_t u32Trigger)
+static void vidBleEvent_Process(uint32_t u32Trigger, void *pvData)
 {
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
@@ -99,14 +103,14 @@ static void vidBleEvent_Process(uint32_t u32Trigger)
         if(u32Trigger == (strBleStateMachine + u8Index)->u32Trigger)
         {
             /* Invoke associated action and exit loop */
-            (strBleStateMachine + u8Index)->pfAction();
+            (strBleStateMachine + u8Index)->pfAction(pvData);
             break;
         }
         u8Index++;
     }
 }
 
-static void vidBleStartAdvertising(void)
+static void vidBleStartAdvertising(void *pvArg)
 {
     /* Initiate advertising */
     (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
@@ -433,6 +437,7 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
 static void vidBleTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
+    void *pvData;
 
     /* Start advertising */
     enuBle_GetNotified(BLE_START_ADVERTISING, NULL);
@@ -450,8 +455,16 @@ static void vidBleTaskFunction(void *pvArg)
                                        BLE_EVENT_NO_WAIT);
         if(u32Event)
         {
+            /* Check whether queue holds any data */
+            if(uxQueueMessagesWaiting(pvBleQueueHandle))
+            {
+                /* We have no tasks of higher priority so we're guaranteed that no other
+                   message will be received in the queue until this message is processed */
+                xQueueReceive(pvBleQueueHandle, pvData, BLE_POP_IMMEDIATELY);
+            }
+
             /* Process received event */
-            vidBleEvent_Process(u32Event);
+            vidBleEvent_Process(u32Event, pvData);
         }
 
         /* Clear notifications after they've been processed and put task in blocked state */
@@ -472,28 +485,34 @@ Mid_tenuStatus enuBle_Init(void)
                               MID_BLE_TASK_PRIORITY,
                               &pvBLETaskHandle))
     {
-        /* Create event group for Ble middleware service */
-        pvBleEventGroupHandle = xEventGroupCreate();
+        /* Create message queue for Ble middleware service */
+        pvBleQueueHandle = xQueueCreate(MID_BLE_TASK_QUEUE_LENGTH, sizeof(uint32_t));
 
-        if(pvBleEventGroupHandle)
+        if(pvBleQueueHandle)
         {
-            /* Initialize BLE stack */
-            if(Middleware_Success == enuBleStackInit())
+            /* Create event group for Ble middleware service */
+            pvBleEventGroupHandle = xEventGroupCreate();
+
+            if(pvBleEventGroupHandle)
             {
-                /* Initialize GAP */
-                if(Middleware_Success == enuBleGapInit())
+                /* Initialize BLE stack */
+                if(Middleware_Success == enuBleStackInit())
                 {
-                    /* Initialize GATT */
-                    if(Middleware_Success == enuBleGattInit())
+                    /* Initialize GAP */
+                    if(Middleware_Success == enuBleGapInit())
                     {
-                        /* Initialize BLE services */
-                        if(Middleware_Success == enuBleServicesInit())
+                        /* Initialize GATT */
+                        if(Middleware_Success == enuBleGattInit())
                         {
-                            /* Initialize advertising module */
-                            if(Middleware_Success == enuAdvertisingInit())
+                            /* Initialize BLE services */
+                            if(Middleware_Success == enuBleServicesInit())
                             {
-                                /* Initialize Connection Parameters module */
-                                enuRetVal = enuBleConnParamsInit();
+                                /* Initialize advertising module */
+                                if(Middleware_Success == enuAdvertisingInit())
+                                {
+                                    /* Initialize Connection Parameters module */
+                                    enuRetVal = enuBleConnParamsInit();
+                                }
                             }
                         }
                     }
@@ -507,10 +526,28 @@ Mid_tenuStatus enuBle_Init(void)
 
 Mid_tenuStatus enuBle_GetNotified(uint32_t u32Event, void *pvData)
 {
+    Mid_tenuStatus enuRetVal = Middleware_Success;
+
+    if(pvData)
+    {
+        /* Push event-related data to local message queue */
+        enuRetVal = (pdTRUE == xQueueSend(pvBleQueueHandle,
+                                          pvData,
+                                          BLE_PUSH_IMMEDIATELY))
+                                          ?Middleware_Success
+                                          :Middleware_Failure;
+    }
+
+    if(Middleware_Success == enuRetVal)
+    {
+        /* Set event in local event group */
+        return (xEventGroupSetBits(pvBleEventGroupHandle, u32Event))
+                                   ?Middleware_Success
+                                   :Middleware_Failure;
+    }
+
     /* Unblock Ble task */
     vidTaskNotify();
-    /* Set event in local event group */
-    return (xEventGroupSetBits(pvBleEventGroupHandle, u32Event))
-                               ?Middleware_Success
-                               :Middleware_Failure;
+
+    return enuRetVal;
 }

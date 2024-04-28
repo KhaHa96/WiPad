@@ -86,7 +86,7 @@ static void vidKeyAttTaskFunction(void *pvArg)
             /* Check whether queue holds any data */
             if(uxQueueMessagesWaiting(pvKeyAttQueueHandle))
             {
-                /* We have no tasks of higher priority so we're guranteed that no other
+                /* We have no tasks of higher priority so we're guaranteed that no other
                    message will be received in the queue until this message is processed */
                 xQueueReceive(pvKeyAttQueueHandle, pvData, APP_KEYATT_POP_IMMEDIATELY);
             }

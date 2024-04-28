@@ -27,9 +27,10 @@
  * @note This prototype is used to define state machine actions associated to different state
  *       triggers. A state action is invoked upon receiving its trigger.
  *
- * @note Functions of this type take no arguments.
+ * @note Functions of this type take one argument:
+ *         - void *pvArg: Pointer to event-related data passed to state machine entry's action.
  */
-typedef void (*BleAction)(void);
+typedef void (*BleAction)(void *pvArg);
 
 /**
  * Ble_tstrState State-defining structure for the BLE middleware.
