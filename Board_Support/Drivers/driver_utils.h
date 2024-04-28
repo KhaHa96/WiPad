@@ -9,9 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-
-/******************************************   DEFINES   ******************************************/
-#define MODULUS(x) ((x >= 0)?x:-x)
+#include "Maths.h"
 
 /******************************************   TYPES   ********************************************/
 typedef enum
