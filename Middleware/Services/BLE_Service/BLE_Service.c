@@ -52,7 +52,7 @@ NRF_BLE_GATT_DEF(BleGattInstance);
 NRF_BLE_QWR_DEF(BleQwrInstance);
 BLE_USEREG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_ADM_DEF(BleAdminInstance);
+BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
 static EventGroupHandle_t pvBleEventGroupHandle;
@@ -234,7 +234,40 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 
 static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
 {
+    /* Make sure valid arguments are passed */
+    if(pstrEvent)
+    {
+        switch(pstrEvent->enuEventType)
+        {
+        case BLE_ADM_NOTIF_ENABLED:
+        {
 
+        }
+        break;
+
+        case BLE_ADM_NOTIF_DISABLED:
+        {
+
+        }
+        break;
+
+        case BLE_ADM_STATUS_TX:
+        {
+
+        }
+        break;
+
+        case BLE_ADM_CMD_RX:
+        {
+
+        }
+        break;
+
+        default:
+            /* Nothing to do */
+            break;
+        }
+    }
 }
 
 static void vidQwrErrorHandler(uint32_t u32Error)
