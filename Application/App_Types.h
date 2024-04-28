@@ -10,10 +10,11 @@
 
 /****************************************   INCLUDES   *******************************************/
 #include <stdint.h>
+#include "Maths.h"
 
 /******************************************   TYPES   ********************************************/
 /**
- * App_tenuStatus Enumeration of the different possible application operation outcomes
+ * App_tenuStatus Enumeration of the different possible application operation outcomes.
 */
 typedef enum
 {

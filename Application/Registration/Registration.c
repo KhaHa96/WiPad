@@ -13,12 +13,13 @@
 #include "Registration.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_USE_REG_PUSH_IMMEDIATELY 0
-#define APP_USE_REG_POP_IMMEDIATELY 0
-#define APP_USE_REG_EVENT_MASK  (APP_USE_REG_TEST_EVENT1 | APP_USE_REG_TEST_EVENT2)
+#define APP_USEREG_POWER_BASE       2U
+#define APP_USEREG_PUSH_IMMEDIATELY 0U
+#define APP_USEREG_POP_IMMEDIATELY  0U
+#define APP_USEREG_EVENT_MASK       (APP_USEREG_TEST_EVENT1 | APP_USEREG_TEST_EVENT2)
 
 /************************************   PRIVATE MACROS   *****************************************/
-#define APP_USE_REG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
+#define APP_USEREG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
 
 /************************************   GLOBAL VARIABLES   ***************************************/
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
@@ -31,8 +32,8 @@ static void vidUseRegEvent1Process(void *pvArg);
 static void vidUseRegEvent2Process(void *pvArg);
 static const Registration_tstrState strUseRegStateMachine[] =
 {
-    {APP_USE_REG_TEST_EVENT1, vidUseRegEvent1Process},
-    {APP_USE_REG_TEST_EVENT2, vidUseRegEvent2Process}
+    {APP_USEREG_TEST_EVENT1, vidUseRegEvent1Process},
+    {APP_USEREG_TEST_EVENT2, vidUseRegEvent2Process}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -51,14 +52,16 @@ static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
-    uint8_t u8TriggerCount = APP_USE_REG_TRIGGER_COUNT(strUseRegStateMachine);
+    uint32_t u32Event = (uint32_t)s32Power(APP_USEREG_POWER_BASE, u32Trigger - 1);
+    uint8_t u8TriggerCount = APP_USEREG_TRIGGER_COUNT(strUseRegStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
-        if(u32Trigger == (strUseRegStateMachine + u8Index)->u32Trigger)
+        if(u32Event == (strUseRegStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strUseRegStateMachine + u8Index)->pfAction(pvData);
+            break;
         }
         u8Index++;
     }
@@ -74,7 +77,7 @@ static void vidUseRegTaskFunction(void *pvArg)
     {
         /* Task will remain blocked until an event is set in event group */
         u32Event = xEventGroupWaitBits(pvUseRegEventGroupHandle,
-                                       APP_USE_REG_EVENT_MASK,
+                                       APP_USEREG_EVENT_MASK,
                                        pdTRUE,
                                        pdFALSE,
                                        portMAX_DELAY);
@@ -83,7 +86,9 @@ static void vidUseRegTaskFunction(void *pvArg)
             /* Check whether queue holds any data */
             if(uxQueueMessagesWaiting(pvUseRegQueueHandle))
             {
-                xQueueReceive(pvUseRegQueueHandle, pvData, APP_USE_REG_POP_IMMEDIATELY);
+                /* We have no tasks of higher priority so we're guranteed that no other
+                   message will be received in the queue until this message is processed */
+                xQueueReceive(pvUseRegQueueHandle, pvData, APP_USEREG_POP_IMMEDIATELY);
             }
 
             /* Process received event */
@@ -128,7 +133,7 @@ App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event, void *pvData)
         /* Push event-related data to local message queue */
         enuRetVal = (pdTRUE == xQueueSend(pvUseRegQueueHandle,
                                           pvData,
-                                          APP_USE_REG_PUSH_IMMEDIATELY))
+                                          APP_USEREG_PUSH_IMMEDIATELY))
                                           ?Application_Success
                                           :Application_Failure;
     }

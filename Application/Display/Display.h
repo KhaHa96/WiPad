@@ -13,22 +13,41 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_DISPLAY_ID_VERIF_SUCCESS (1 << 0)
-#define APP_DISPLAY_ID_VERIF_FAILURE (1 << 1)
+/* Event bits */
+#define APP_DISPLAY_ID_VERIF_SUCCESS   (1 << 0)
+#define APP_DISPLAY_ID_VERIF_FAILURE   (1 << 1)
+#define APP_DISPLAY_PEER_CONNECTION    (1 << 2)
+#define APP_DISPLAY_PEER_DISCONNECTION (1 << 3)
+
+/* Event ranks */
+#define APP_DISPLAY_ID_VERIF_SUCCESS_RANK   1U
+#define APP_DISPLAY_ID_VERIF_FAILURE_RANK   2U
+#define APP_DISPLAY_PEER_CONNECTION_RANK    3U
+#define APP_DISPLAY_PEER_DISCONNECTION_RANK 4U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
- * State machine event-triggered action function pointer
+ * DisplayAction State machine event-triggered action function prototype.
+ *
+ * @note This prototype is used to define state machine actions associated to different state
+ *       triggers. A state action is invoked upon receiving its trigger.
+ *
+ * @note Functions of this type take no arguments.
  */
 typedef void (*DisplayAction)(void);
 
 /**
- * Led pattern-arranging function pointer
+ * DisplayLedPattern Led pattern-arranging function prototype.
+ *
+ * @note This prototype is used to define our LED pattern-arranging functions.
+ *
+ * @note Functions of this type take one parameter:
+ *         - uint8_t u8Index: LED rank in pattern.
 */
 typedef uint32_t (*DisplayLedPattern)(uint8_t u8Index);
 
 /**
- * Display_tstrState State-defining structure for the Display application
+ * Display_tstrState State-defining structure for the Display application.
 */
 typedef struct
 {
@@ -37,7 +56,7 @@ typedef struct
 }Display_tstrState;
 
 /**
- * Display_tstrLedPattern structure associating event to Led arrangement pattern
+ * Display_tstrLedPattern structure associating event to Led arrangement pattern.
 */
 typedef struct
 {
@@ -54,9 +73,9 @@ typedef struct
  *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
  *       validity of its input.
  *
- * @param u8Index LED rank in the pattern
+ * @param u8Index LED rank in the pattern.
  *
- * @return uint32_t Pin index of u8Index-ranked LED in the 1,2,4,3 pattern
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,2,4,3 pattern.
 */
 static inline uint32_t u32LedPattern1243(uint8_t u8Index)
 {
@@ -71,13 +90,47 @@ static inline uint32_t u32LedPattern1243(uint8_t u8Index)
  *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
  *       validity of its input.
  *
- * @param u8Index LED rank in the pattern
+ * @param u8Index LED rank in the pattern.
  *
- * @return uint32_t Pin index of u8Index-ranked LED in the 1,4,2,3 pattern
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,4,2,3 pattern.
 */
 static inline uint32_t u32LedPattern1423(uint8_t u8Index)
 {
     return (u8Index+(u8Index/LED_2)*(2+(u8Index%LED_2))-4*(u8Index/LED_3)-(u8Index/LED_4));
+}
+
+/**
+ * @brief u32LedPattern1324 Returns the u8Index-ranked LED pin index in the 1,3,2,4 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,3,2,4 pattern.
+*/
+static inline uint32_t u32LedPattern1324(uint8_t u8Index)
+{
+    return (u8Index+(u8Index/LED_2)-2*(u8Index/LED_3)+(u8Index/LED_4));
+}
+
+/**
+ * @brief u32LedPattern4231 Returns the u8Index-ranked LED pin index in the 4,2,3,1 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 4,2,3,1 pattern.
+*/
+static inline uint32_t u32LedPattern4231(uint8_t u8Index)
+{
+    return (u8Index-6*(u8Index/LED_4)+3*(u8Index%(LED_1-1))-6*(u8Index/LED_2)-3*(u8Index/LED_3));
 }
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
@@ -90,7 +143,7 @@ static inline uint32_t u32LedPattern1423(uint8_t u8Index)
  * @pre This function requires no prerequisites.
  *
  * @return App_tenuStatus Application_Success if initialization was performed successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuDisplay_Init(void);
 
@@ -103,11 +156,11 @@ App_tenuStatus enuDisplay_Init(void);
  *
  * @pre This function can't be called unless Display task is initialized and running.
  *
- * @param u32Event Event to be posted in local event group
- * @param pvData Unused parameter
+ * @param u32Event Event to be posted in local event group.
+ * @param pvData Unused parameter.
  *
  * @return App_tenuStatus Application_Success if notification was posted successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuDisplay_GetNotified(uint32_t u32Event, void *pvData);
 

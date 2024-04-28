@@ -1,5 +1,5 @@
-/* -----------------------------   Middleware types for nRF52832   ----------------------------- */
-/*  File      -  Middleware type definition header file                                          */
+/* -------------------------   Middleware utilities for nRF52832   ----------------------------- */
+/*  File      -  Utility header file for middleware services                                     */
 /*  target    -  nRF52832                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
@@ -10,10 +10,11 @@
 
 /****************************************   INCLUDES   *******************************************/
 #include <stdint.h>
+#include <string.h>
 
 /******************************************   TYPES   ********************************************/
 /**
- * Mid_tenuStatus Enumeration of the different possible middleware operation outcomes
+ * Mid_tenuStatus Enumeration of the different possible middleware operation outcomes.
 */
 typedef enum
 {

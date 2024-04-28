@@ -13,20 +13,23 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_USE_REG_TEST_EVENT1 (1 << 0)
-#define APP_USE_REG_TEST_EVENT2 (1 << 1)
+#define APP_USEREG_TEST_EVENT1 (1 << 0)
+#define APP_USEREG_TEST_EVENT2 (1 << 1)
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
- * State machine event-triggered action function pointer
+ * RegistrationAction State machine event-triggered action function pointer.
  *
- * Functions of this type take one argument:
- *  - void *pvArg: Pointer to event-related data passed to state machine entry's action
+ * @note This prototype is used to define state machine actions associated to different state
+ *       triggers. A state action is invoked upon receiving its trigger.
+ *
+ * @note Functions of this type take one argument:
+ *         - void *pvArg: Pointer to event-related data passed to state machine entry's action.
 */
 typedef void (*RegistrationAction)(void *pvArg);
 
 /**
- * Registration_tstrState State-defining structure for the Registration application
+ * Registration_tstrState State-defining structure for the Registration application.
 */
 typedef struct
 {
@@ -36,15 +39,15 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuRegistration_Init Creates User registration task, event group to receive
- *        notifications from other tasks or events dispatched from BLE stack.
+ * @brief enuRegistration_Init Creates User registration task, event group to receive notifications
+ *        from other tasks and message queue to hold data potentially accompanying incoming events.
  *
  * @note This function is invoked by the Application Manager.
  *
  * @pre This function requires no prerequisites.
  *
  * @return App_tenuStatus Application_Success if initialization was performed successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuRegistration_Init(void);
 
@@ -58,11 +61,11 @@ App_tenuStatus enuRegistration_Init(void);
  *
  * @pre This function can't be called unless User registration task is initialized and running.
  *
- * @param u32Event Event to be posted in local event group
- * @param pvData Pointer to event-related data
+ * @param u32Event Event to be posted in local event group.
+ * @param pvData Pointer to event-related data.
  *
  * @return App_tenuStatus Application_Success if notification was posted successfully,
- *         Application_Failure otherwise
+ *         Application_Failure otherwise.
  */
 App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event, void *pvData);
 

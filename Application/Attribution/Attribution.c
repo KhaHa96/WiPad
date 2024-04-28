@@ -13,12 +13,13 @@
 #include "Attribution.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_KEY_ATT_PUSH_IMMEDIATELY 0
-#define APP_KEY_ATT_POP_IMMEDIATELY 0
-#define APP_KEY_ATT_EVENT_MASK  (APP_KEY_ATT_TEST_EVENT1 | APP_KEY_ATT_TEST_EVENT2)
+#define APP_KEYATT_POWER_BASE       2U
+#define APP_KEYATT_PUSH_IMMEDIATELY 0U
+#define APP_KEYATT_POP_IMMEDIATELY  0U
+#define APP_KEYATT_EVENT_MASK       (APP_KEYATT_TEST_EVENT1 | APP_KEYATT_TEST_EVENT2)
 
 /************************************   PRIVATE MACROS   *****************************************/
-#define APP_KEY_ATT_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Attribution_tstrState))
+#define APP_KEYATT_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Attribution_tstrState))
 
 /************************************   GLOBAL VARIABLES   ***************************************/
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
@@ -31,8 +32,8 @@ static void vidKeyAttEvent1Process(void *pvArg);
 static void vidKeyAttEvent2Process(void *pvArg);
 static const Attribution_tstrState strKeyAttStateMachine[] =
 {
-    {APP_KEY_ATT_TEST_EVENT1, vidKeyAttEvent1Process},
-    {APP_KEY_ATT_TEST_EVENT2, vidKeyAttEvent2Process}
+    {APP_KEYATT_TEST_EVENT1, vidKeyAttEvent1Process},
+    {APP_KEYATT_TEST_EVENT2, vidKeyAttEvent2Process}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -51,14 +52,16 @@ static void vidAttributionEvent_Process(uint32_t u32Trigger, void *pvData)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
-    uint8_t u8TriggerCount = APP_KEY_ATT_TRIGGER_COUNT(strKeyAttStateMachine);
+    uint32_t u32Event = (uint32_t)s32Power(APP_KEYATT_POWER_BASE, u32Trigger - 1);
+    uint8_t u8TriggerCount = APP_KEYATT_TRIGGER_COUNT(strKeyAttStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
-        if(u32Trigger == (strKeyAttStateMachine + u8Index)->u32Trigger)
+        if(u32Event == (strKeyAttStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action */
+            /* Invoke associated action and exit loop */
             (strKeyAttStateMachine + u8Index)->pfAction(pvData);
+            break;
         }
         u8Index++;
     }
@@ -74,7 +77,7 @@ static void vidKeyAttTaskFunction(void *pvArg)
     {
         /* Task will remain blocked until an event is set in event group */
         u32Event = xEventGroupWaitBits(pvKeyAttEventGroupHandle,
-                                       APP_KEY_ATT_EVENT_MASK,
+                                       APP_KEYATT_EVENT_MASK,
                                        pdTRUE,
                                        pdFALSE,
                                        portMAX_DELAY);
@@ -83,7 +86,9 @@ static void vidKeyAttTaskFunction(void *pvArg)
             /* Check whether queue holds any data */
             if(uxQueueMessagesWaiting(pvKeyAttQueueHandle))
             {
-                xQueueReceive(pvKeyAttQueueHandle, pvData, APP_KEY_ATT_POP_IMMEDIATELY);
+                /* We have no tasks of higher priority so we're guranteed that no other
+                   message will be received in the queue until this message is processed */
+                xQueueReceive(pvKeyAttQueueHandle, pvData, APP_KEYATT_POP_IMMEDIATELY);
             }
 
             /* Process received event */
@@ -128,7 +133,7 @@ App_tenuStatus enuAttribution_GetNotified(uint32_t u32Event, void *pvData)
         /* Push event-related data to local message queue */
         enuRetVal = (pdTRUE == xQueueSend(pvKeyAttQueueHandle,
                                           pvData,
-                                          APP_KEY_ATT_PUSH_IMMEDIATELY))
+                                          APP_KEYATT_PUSH_IMMEDIATELY))
                                           ?Application_Success
                                           :Application_Failure;
     }
@@ -140,5 +145,6 @@ App_tenuStatus enuAttribution_GetNotified(uint32_t u32Event, void *pvData)
                                        ?Application_Success
                                        :Application_Failure;
     }
+
     return enuRetVal;
 }
