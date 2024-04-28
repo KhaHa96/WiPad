@@ -32,7 +32,9 @@ static const AppMgr_tstrInterface strApplicationList[] =
 static const AppMgr_tstrEventSub strEventSubscriptionList[] =
 {
     {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
-    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1}
+    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1},
+    {AppMgr_DisplayConnected   , {App_DisplayId     }, 1},
+    {AppMgr_DisplayDisconnected, {App_DisplayId     }, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/
@@ -40,9 +42,9 @@ App_tenuStatus AppMgr_enuInit(void)
 {
     App_tenuStatus enuRetVal = Application_Success;
 
+    /* Initialize all applications */
     for(uint8_t u8Index = 0; u8Index < APPLICATION_COUNT; u8Index++)
     {
-        /* Initialize all applications */
         if(Application_Failure == strApplicationList[u8Index].pfInit())
         {
             enuRetVal = Application_Failure;

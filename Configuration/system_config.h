@@ -11,6 +11,11 @@
 /************************************   APPLICATION DEFINES   ************************************/
 #define APPLICATION_COUNT 3
 
+/* User Registration application */
+#define APP_USEREG_TASK_STACK_SIZE 256
+#define APP_USEREG_TASK_PRIORITY 2
+#define APP_USEREG_QUEUE_LENGTH 5
+
 /* Key Attribution application */
 #define APP_KEYATT_TASK_STACK_SIZE 256
 #define APP_KEYATT_TASK_PRIORITY 2
@@ -21,15 +26,11 @@
 #define APP_DISPLAY_TASK_PRIORITY 2
 #define APP_DISPLAY_QUEUE_LENGTH 5
 
-/* User Registration application */
-#define APP_USEREG_TASK_STACK_SIZE 256
-#define APP_USEREG_TASK_PRIORITY 2
-#define APP_USEREG_QUEUE_LENGTH 5
-
 /*************************************   MIDDLEWARE DEFINES   ************************************/
 /* Ble Middleware Service */
 #define MID_BLE_TASK_STACK_SIZE 256
 #define MID_BLE_TASK_PRIORITY 2
+#define MID_BLE_TASK_QUEUE_LENGTH 5
 
 /*************************************   PERIPHERAL DEFINES   ************************************/
 /* SPI */

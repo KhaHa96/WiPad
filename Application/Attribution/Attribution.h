@@ -13,12 +13,15 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_KEY_ATT_TEST_EVENT1 (1 << 0)
-#define APP_KEY_ATT_TEST_EVENT2 (1 << 1)
+#define APP_KEYATT_TEST_EVENT1 (1 << 0)
+#define APP_KEYATT_TEST_EVENT2 (1 << 1)
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
  * AttributionAction State machine event-triggered action function pointer.
+ *
+ * @note This prototype is used to define state machine actions associated to different state
+ *       triggers. A state action is invoked upon receiving its trigger.
  *
  * @note Functions of this type take one argument:
  *         - void *pvArg: Pointer to event-related data passed to state machine entry's action.
@@ -37,7 +40,7 @@ typedef struct
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
  * @brief enuAttribution_Init Creates Key attribution task, event group to receive notifications
- *        from other tasks or events dispatched from BLE stack.
+ *        from other tasks and message queue to hold data potentially accompanying incoming events.
  *
  * @note This function is invoked by the Application Manager.
  *

@@ -11410,6 +11410,13 @@
 // <h> BLE Observers priorities - Invididual priorities
 
 //==========================================================
+// <o> BLE_OBSERVER_PRIO  
+// <i> Priority with which BLE events are dispatched to the main BLE observer.
+
+#ifndef BLE_OBSERVER_PRIO
+#define BLE_OBSERVER_PRIO 3
+#endif
+
 // <o> BLE_ADV_BLE_OBSERVER_PRIO  
 // <i> Priority with which BLE events are dispatched to the Advertising module.
 

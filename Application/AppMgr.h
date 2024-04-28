@@ -21,9 +21,9 @@
 */
 typedef enum
 {
-    App_AttributionId = 0,
-    App_RegistrationId,
-    App_DisplayId
+    App_RegistrationId = 0, /* User registration application ID */
+    App_AttributionId,      /* Key attribution application ID   */
+    App_DisplayId           /* Display application ID           */
 }AppMgr_tenuAppId;
 
 /**
@@ -33,8 +33,10 @@ typedef enum
 typedef enum
 {
     AppMgr_LowerBoundEvt = 0,
-    AppMgr_RegTestEvent1,
-    AppMgr_DisplayIdSuccessEvt,
+    AppMgr_RegTestEvent1,       /* User registration test event                  */
+    AppMgr_DisplayIdSuccessEvt, /* User ID authentication performed successfully */
+    AppMgr_DisplayConnected,    /* Peer connection established                   */
+    AppMgr_DisplayDisconnected, /* Peer disconnection                            */
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 
@@ -65,12 +67,12 @@ typedef App_tenuStatus (*AppMgrGetNotified)(uint32_t u32Event, void *pvData);
 
 /**
  * AppMgr_tstrInterface Application's public interface definition structure outlining the public
- *                      functions exposed to Application Manager.
+ *                      functions exposed to the Application Manager.
  *
 */
 typedef struct
 {
-    AppMgrInitialize pfInit;   /* Application Initialization function */
+    AppMgrInitialize pfInit;   /* Application initialization function */
     AppMgrGetNotified pfNotif; /* Application notification function   */
 }AppMgr_tstrInterface;
 

@@ -14,13 +14,16 @@
 #include "nrf_gpio.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_DISPLAY_LED_COUNT           4
-#define APP_DISPLAY_DEFAULT_CYCLE_COUNT 4
-#define APP_DISPLAY_LED_SWITCH_ON       0
-#define APP_DISPLAY_LED_SWITCH_OFF      1
-#define APP_DISPLAY_TIMER_NO_WAIT       0
-#define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ID_VERIF_SUCCESS | \
-                                         APP_DISPLAY_ID_VERIF_FAILURE )
+#define APP_DISPLAY_POWER_BASE          2U
+#define APP_DISPLAY_LED_COUNT           4U
+#define APP_DISPLAY_DEFAULT_CYCLE_COUNT 4U
+#define APP_DISPLAY_LED_SWITCH_ON       0U
+#define APP_DISPLAY_LED_SWITCH_OFF      1U
+#define APP_DISPLAY_TIMER_NO_WAIT       0U
+#define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ID_VERIF_SUCCESS   | \
+                                         APP_DISPLAY_ID_VERIF_FAILURE   | \
+                                         APP_DISPLAY_PEER_CONNECTION    | \
+                                         APP_DISPLAY_PEER_DISCONNECTION)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_DISPLAY_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Display_tstrState))
@@ -37,22 +40,28 @@ static volatile uint8_t u8CycleCounter;
 static uint32_t u32CurrentEvent;
 static void vidDisplayIdVerifSuccess(void);
 static void vidDisplayIdVerifFailure(void);
+static void vidDisplayPeerConnected(void);
+static void vidDisplayPeerDisonnected(void);
 static const Display_tstrState strDisplayStateMachine[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS, vidDisplayIdVerifSuccess},
-    {APP_DISPLAY_ID_VERIF_FAILURE, vidDisplayIdVerifFailure}
+    {APP_DISPLAY_ID_VERIF_SUCCESS  , vidDisplayIdVerifSuccess },
+    {APP_DISPLAY_ID_VERIF_FAILURE  , vidDisplayIdVerifFailure },
+    {APP_DISPLAY_PEER_CONNECTION   , vidDisplayPeerConnected  },
+    {APP_DISPLAY_PEER_DISCONNECTION, vidDisplayPeerDisonnected}
 };
 static const Display_tstrLedPattern strDisplayPatterns[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS, u32LedPattern1243},
-    {APP_DISPLAY_ID_VERIF_FAILURE, u32LedPattern1423}
+    {APP_DISPLAY_ID_VERIF_SUCCESS,   u32LedPattern1243},
+    {APP_DISPLAY_ID_VERIF_FAILURE,   u32LedPattern1423},
+    {APP_DISPLAY_PEER_CONNECTION,    u32LedPattern1324},
+    {APP_DISPLAY_PEER_DISCONNECTION, u32LedPattern4231}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
 static void vidDisplayIdVerifSuccess(void)
 {
     /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ID_VERIF_SUCCESS;
+    u32CurrentEvent = APP_DISPLAY_ID_VERIF_SUCCESS_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
@@ -60,14 +69,30 @@ static void vidDisplayIdVerifSuccess(void)
 static void vidDisplayIdVerifFailure(void)
 {
     /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ID_VERIF_FAILURE;
+    u32CurrentEvent = APP_DISPLAY_ID_VERIF_FAILURE_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayPeerConnected(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_PEER_CONNECTION_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayPeerDisonnected(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_PEER_DISCONNECTION_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
 
 static void vidDisplayTimerCallback(TimerHandle_t pvTimerHandle)
 {
-    if(pvTimerHandle != NULL)
+    if(pvTimerHandle)
     {
         if((LED_1 == u8LedCounter) && (!(--u8CycleCounter)))
         {
@@ -95,11 +120,12 @@ static void vidDisplayEvent_Process(uint32_t u32Trigger)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
+    uint32_t u32Event = (uint32_t)s32Power(APP_DISPLAY_POWER_BASE, u32Trigger - 1);
     uint8_t u8TriggerCount = APP_DISPLAY_TRIGGER_COUNT(strDisplayStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
-        if(u32Trigger == (strDisplayStateMachine + u8Index)->u32Trigger)
+        if(u32Event == (strDisplayStateMachine + u8Index)->u32Trigger)
         {
             /* Invoke associated action and exit loop */
             (strDisplayStateMachine + u8Index)->pfAction();
@@ -166,12 +192,12 @@ App_tenuStatus enuDisplay_Init(void)
 
             if(pvDisplayEventGroupHandle)
             {
+                /* Create software timer for Display application */
                 pvDisplayTimerHandle = xTimerCreate("APP_Display_Timer",
                                                     pdMS_TO_TICKS(400),
                                                     pdTRUE,
                                                     NULL,
                                                     vidDisplayTimerCallback);
-
                 enuRetVal = (pvDisplayTimerHandle)?Application_Success:Application_Failure;
             }
         }

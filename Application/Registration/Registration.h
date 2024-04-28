@@ -13,12 +13,15 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_USE_REG_TEST_EVENT1 (1 << 0)
-#define APP_USE_REG_TEST_EVENT2 (1 << 1)
+#define APP_USEREG_TEST_EVENT1 (1 << 0)
+#define APP_USEREG_TEST_EVENT2 (1 << 1)
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
  * RegistrationAction State machine event-triggered action function pointer.
+ *
+ * @note This prototype is used to define state machine actions associated to different state
+ *       triggers. A state action is invoked upon receiving its trigger.
  *
  * @note Functions of this type take one argument:
  *         - void *pvArg: Pointer to event-related data passed to state machine entry's action.
@@ -36,8 +39,8 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuRegistration_Init Creates User registration task, event group to receive
- *        notifications from other tasks or events dispatched from BLE stack.
+ * @brief enuRegistration_Init Creates User registration task, event group to receive notifications
+ *        from other tasks and message queue to hold data potentially accompanying incoming events.
  *
  * @note This function is invoked by the Application Manager.
  *

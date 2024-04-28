@@ -11,43 +11,43 @@
 #include "ble_srv_common.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define BLE_USE_REG_ID_PWD_CHAR_WRITE_REQUEST 1
-#define BLE_USE_REG_ID_PWD_CHAR_WRITE_COMMAND 1
-#define BLE_USE_REG_STATUS_CHAR_NOTIFY        1
-#define BLE_USE_REG_CCCD_SIZE                 2
-#define BLE_USE_REG_NOTIF_EVT_LENGTH          2
-#define BLE_USE_REG_GATTS_EVT_OFFSET          0
-#define BLE_USE_REG_OPCODE_LENGTH             1
-#define BLE_USE_REG_HANDLE_LENGTH             2
-#define BLE_USE_REG_MAX_DATA_LENGTH           (NRF_SDH_BLE_GATT_MAX_MTU_SIZE \
-                                               - BLE_USE_REG_OPCODE_LENGTH   \
-                                               - BLE_USE_REG_HANDLE_LENGTH)
+#define BLE_USEREG_ID_PWD_CHAR_WRITE_REQUEST 1U
+#define BLE_USEREG_ID_PWD_CHAR_WRITE_COMMAND 1U
+#define BLE_USEREG_STATUS_CHAR_NOTIFY        1U
+#define BLE_USEREG_CCCD_SIZE                 2U
+#define BLE_USEREG_NOTIF_EVT_LENGTH          2U
+#define BLE_USEREG_GATTS_EVT_OFFSET          0U
+#define BLE_USEREG_OPCODE_LENGTH             1U
+#define BLE_USEREG_HANDLE_LENGTH             2U
+#define BLE_USEREG_MAX_DATA_LENGTH           (NRF_SDH_BLE_GATT_MAX_MTU_SIZE \
+                                              - BLE_USEREG_OPCODE_LENGTH    \
+                                              - BLE_USEREG_HANDLE_LENGTH)
 
 /*************************************   PRIVATE MACROS   ****************************************/
 /* Valid connection handle assertion macro */
-#define BLE_USE_REG_VALID_CONN_HANDLE(CLIENT, CONN_HANDLE) \
+#define BLE_USEREG_VALID_CONN_HANDLE(CLIENT, CONN_HANDLE)  \
 (                                                          \
     ((CLIENT) && (BLE_CONN_HANDLE_INVALID != CONN_HANDLE)) \
 )
 
 /* Characteristic notification enabled assertion macro */
-#define BLE_USE_REG_NOTIF_ENABLED(CLIENT) \
-(                                         \
-    (CLIENT->bNotificationEnabled)        \
+#define BLE_USEREG_NOTIF_ENABLED(CLIENT) \
+(                                        \
+    (CLIENT->bNotificationEnabled)       \
 )
 
 /* Data transfer length assertion macro */
-#define BLE_USE_REG_TX_LENGTH_ASSERT(DATA_LENGTH) \
-(                                                 \
-    (DATA_LENGTH <= BLE_USE_REG_MAX_DATA_LENGTH)  \
+#define BLE_USEREG_TX_LENGTH_ASSERT(DATA_LENGTH) \
+(                                                \
+    (DATA_LENGTH <= BLE_USEREG_MAX_DATA_LENGTH)  \
 )
 
 /* Valid data transfer assertion macro */
-#define BLE_USE_REG_VALID_TRANSFER(CLIENT, CONN_HANDLE, DATA_LENGTH) \
-(                                                                    \
-    BLE_USE_REG_VALID_CONN_HANDLE(CLIENT, CONN_HANDLE) &&            \
-    BLE_USE_REG_NOTIF_ENABLED(CLIENT)                  &&            \
-    BLE_USE_REG_TX_LENGTH_ASSERT(DATA_LENGTH)                        \
+#define BLE_USEREG_VALID_TRANSFER(CLIENT, CONN_HANDLE, DATA_LENGTH) \
+(                                                                   \
+    BLE_USEREG_VALID_CONN_HANDLE(CLIENT, CONN_HANDLE) &&            \
+    BLE_USEREG_NOTIF_ENABLED(CLIENT)                  &&            \
+    BLE_USEREG_TX_LENGTH_ASSERT(DATA_LENGTH)                        \
 )
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -65,12 +65,12 @@ static void vidPeerConnectedCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_
             /* Decode CCCD value to check whether notifications on the Status characteristic are
                already enabled */
             ble_gatts_value_t strGattsValue;
-            uint8_t u8CccdValue[BLE_USE_REG_CCCD_SIZE];
+            uint8_t u8CccdValue[BLE_USEREG_CCCD_SIZE];
 
             memset(&strGattsValue, 0, sizeof(ble_gatts_value_t));
             strGattsValue.p_value = u8CccdValue;
             strGattsValue.len = sizeof(u8CccdValue);
-            strGattsValue.offset = BLE_USE_REG_GATTS_EVT_OFFSET;
+            strGattsValue.offset = BLE_USEREG_GATTS_EVT_OFFSET;
 
             if(NRF_SUCCESS == sd_ble_gatts_value_get(pstrEvent->evt.gap_evt.conn_handle,
                                                      pstrUseRegInstance->strStatusChar.cccd_handle,
@@ -79,6 +79,7 @@ static void vidPeerConnectedCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_
                 if((pstrUseRegInstance->pfUseRegEvtHandler) &&
                     ble_srv_is_notification_enabled(strGattsValue.p_value))
                 {
+                    /* Notifications already enabled */
                     if(pstrClient)
                     {
                         /* Set enabled notification flag */
@@ -120,8 +121,10 @@ static void vidCharWrittenCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_t 
 
             ble_gatts_evt_write_t const *pstrWriteEvent = &pstrEvent->evt.gatts_evt.params.write;
             if((pstrWriteEvent->handle == pstrUseRegInstance->strStatusChar.cccd_handle) &&
-               (pstrWriteEvent->len == BLE_USE_REG_NOTIF_EVT_LENGTH))
+               (pstrWriteEvent->len == BLE_USEREG_NOTIF_EVT_LENGTH))
             {
+                /* Gatts write event corresponds to notifications being enabled on the Status
+                   characteristic */
                 if (pstrClient)
                 {
                     /* Decode CCCD value to check whether Peer has enabled notifications on the
@@ -147,7 +150,9 @@ static void vidCharWrittenCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_t 
             else if((pstrWriteEvent->handle == pstrUseRegInstance->strIdPwdChar.value_handle) &&
                     (pstrUseRegInstance->pfUseRegEvtHandler))
             {
-                /* Invoke User Registration service's application-registered event handler */
+                /* Gatts write event corresponds to data written to the ID/Password
+                   characteristic. Invoke User Registration service's application-registered
+                   event handler */
                 strEvent.enuEventType = BLE_REG_ID_PWD_RX;
                 strEvent.strRxData.pu8Data = pstrWriteEvent->data;
                 strEvent.strRxData.u16Length = pstrWriteEvent->len;
@@ -189,6 +194,7 @@ void vidBleUseRegEventHandler(ble_evt_t const *pstrEvent, void *pvArg)
     /* Make sure valid arguments are passed */
     if(pstrEvent && pvArg)
     {
+        /* Retrieve User Registration service instance */
         ble_use_reg_t *pstrUseRegInstance = (ble_use_reg_t *)pvArg;
         switch (pstrEvent->header.evt_id)
         {
@@ -231,7 +237,7 @@ Mid_tenuStatus enuBleUseRegTransferData(ble_use_reg_t *pstrUseRegInstance, uint8
         if(NRF_SUCCESS == blcm_link_ctx_get(pstrUseRegInstance->pstrLinkCtx, u16ConnHandle, (void *)&pstrClient))
         {
             /* Ensure connection handle and data validity */
-            if(BLE_USE_REG_VALID_TRANSFER(pstrClient, u16ConnHandle, *pu16DataLength))
+            if(BLE_USEREG_VALID_TRANSFER(pstrClient, u16ConnHandle, *pu16DataLength))
             {
                /* Send notification to Status characteristic */
                 memset(&strHvxParams, 0, sizeof(strHvxParams));
@@ -262,13 +268,13 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
         pstrUseRegInstance->pfUseRegEvtHandler = pstrUseRegInit->pfUseRegEvtHandler;
 
         /* Add User Registration service's custom base UUID to Softdevice's service database */
-        ble_uuid128_t strBaseUuid = BLE_USE_REG_BASE_UUID;
+        ble_uuid128_t strBaseUuid = BLE_USEREG_BASE_UUID;
         if(NRF_SUCCESS == sd_ble_uuid_vs_add(&strBaseUuid, &pstrUseRegInstance->u8UuidType))
         {
             /* Add User Registration service to Softdevice's BLE service database */
             ble_uuid_t strUseRegUuid;
             strUseRegUuid.type = pstrUseRegInstance->u8UuidType;
-            strUseRegUuid.uuid = BLE_USE_REG_UUID_SERVICE;
+            strUseRegUuid.uuid = BLE_USEREG_UUID_SERVICE;
             if(NRF_SUCCESS == sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
                                                        &strUseRegUuid,
                                                        &pstrUseRegInstance->u16ServiceHandle))
@@ -276,13 +282,13 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
                 /* Add User Id/Password characteristic */
                 ble_add_char_params_t strCharacteristic;
                 memset(&strCharacteristic, 0, sizeof(strCharacteristic));
-                strCharacteristic.uuid = BLE_USE_REG_ID_PWD_CHAR_UUID;
+                strCharacteristic.uuid = BLE_USEREG_ID_PWD_CHAR_UUID;
                 strCharacteristic.uuid_type = pstrUseRegInstance->u8UuidType;
-                strCharacteristic.max_len = BLE_USE_REG_MAX_DATA_LENGTH;
+                strCharacteristic.max_len = BLE_USEREG_MAX_DATA_LENGTH;
                 strCharacteristic.init_len = sizeof(uint8_t);
                 strCharacteristic.is_var_len = true;
-                strCharacteristic.char_props.write = BLE_USE_REG_ID_PWD_CHAR_WRITE_REQUEST;
-                strCharacteristic.char_props.write_wo_resp = BLE_USE_REG_ID_PWD_CHAR_WRITE_COMMAND;
+                strCharacteristic.char_props.write = BLE_USEREG_ID_PWD_CHAR_WRITE_REQUEST;
+                strCharacteristic.char_props.write_wo_resp = BLE_USEREG_ID_PWD_CHAR_WRITE_COMMAND;
                 strCharacteristic.read_access = SEC_OPEN;
                 strCharacteristic.write_access = SEC_OPEN;
                 if(NRF_SUCCESS == characteristic_add(pstrUseRegInstance->u16ServiceHandle,
@@ -291,12 +297,12 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
                 {
                     /* Add Status characteristic */
                     memset(&strCharacteristic, 0, sizeof(strCharacteristic));
-                    strCharacteristic.uuid = BLE_USE_REG_STATUS_CHAR_UUID;
+                    strCharacteristic.uuid = BLE_USEREG_STATUS_CHAR_UUID;
                     strCharacteristic.uuid_type = pstrUseRegInstance->u8UuidType;
-                    strCharacteristic.max_len = BLE_USE_REG_MAX_DATA_LENGTH;
+                    strCharacteristic.max_len = BLE_USEREG_MAX_DATA_LENGTH;
                     strCharacteristic.init_len = sizeof(uint8_t);
                     strCharacteristic.is_var_len = true;
-                    strCharacteristic.char_props.notify = BLE_USE_REG_STATUS_CHAR_NOTIFY;
+                    strCharacteristic.char_props.notify = BLE_USEREG_STATUS_CHAR_NOTIFY;
                     strCharacteristic.read_access = SEC_OPEN;
                     strCharacteristic.write_access = SEC_OPEN;
                     strCharacteristic.cccd_write_access = SEC_OPEN;

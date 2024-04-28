@@ -15,14 +15,14 @@
 #include "ble_link_ctx_manager.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define BLE_USE_REG_BASE_UUID       {0xE6, 0xF8, 0xFC, 0x18, 0x9B, 0x41, 0x4C, 0xDF, \
-                                     0xB9, 0x21, 0xD9, 0x00, 0x00, 0x00, 0x59, 0x5F}
-#define BLE_USE_REG_UUID_SERVICE     0x2345
-#define BLE_USE_REG_ID_PWD_CHAR_UUID 0x2346
-#define BLE_USE_REG_STATUS_CHAR_UUID 0x2347
+#define BLE_USEREG_BASE_UUID       {0xE6, 0xF8, 0xFC, 0x18, 0x9B, 0x41, 0x4C, 0xDF, \
+                                    0xB9, 0x21, 0xD9, 0x00, 0x00, 0x00, 0x59, 0x5F}
+#define BLE_USEREG_UUID_SERVICE     0x2345
+#define BLE_USEREG_ID_PWD_CHAR_UUID 0x2346
+#define BLE_USEREG_STATUS_CHAR_UUID 0x2347
 
 /**************************************   PUBLIC MACROS   ****************************************/
-#define BLE_USE_REG_DEF(name, max_clients)                      \
+#define BLE_USEREG_DEF(name, max_clients)                       \
 BLE_LINK_CTX_MANAGER_DEF(CONCAT_2(name, _link_ctx_storage),     \
                   (max_clients), sizeof(BleReg_tstrClientCtx)); \
 static ble_use_reg_t name =                                     \
@@ -41,7 +41,7 @@ NRF_SDH_BLE_OBSERVER(name ## _obs,                              \
 typedef struct ble_use_reg_s ble_use_reg_t;
 
 /**
- * User Registration event types dispatched back to application-registered callback.
+ * User Registration events dispatched back to application-registered callback.
 */
 typedef enum
 {
@@ -56,7 +56,7 @@ typedef enum
 */
 typedef struct
 {
-    bool bNotificationEnabled; /* Indicates whether peer has enabled notification of the Status characteristic */
+    bool bNotificationEnabled; /* Indicates whether peer has enabled notification on Status characteristic */
 }BleReg_tstrClientCtx;
 
 /**
@@ -73,11 +73,11 @@ typedef struct
 */
 typedef struct
 {
-    BleReg_tenuEventType enuEventType;      /* Event type                                        */
-    ble_use_reg_t *pstrUseRegInstance;      /* Pointer to the User Registration service instance */
-    uint16_t u16ConnHandle;                 /* Connection Handle                                 */
-    BleReg_tstrClientCtx *pstrLinkCtx;      /* Pointer to the link context                       */
-    BleReg_tstrRxData strRxData;            /* Received data upon a GATT client write event      */
+    BleReg_tenuEventType enuEventType; /* Event type                                    */
+    ble_use_reg_t *pstrUseRegInstance; /* Pointer to User Registration service instance */
+    uint16_t u16ConnHandle;            /* Connection Handle                             */
+    BleReg_tstrClientCtx *pstrLinkCtx; /* Pointer to link context                       */
+    BleReg_tstrRxData strRxData;       /* Received data upon a GATT client write event  */
 }BleReg_tstrEvent;
 
 /**
@@ -95,10 +95,10 @@ typedef void (*BleUseRegEventHandler)(BleReg_tstrEvent *pstrEvent);
 */
 typedef struct
 {
-    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when connection with peer
-                                                 is established, notification is sent on the Status
-                                                 characteristic or data is received on the Id/Password
-                                                 characteristic */
+    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when peer enables/disables
+                                                 notifications on the Status characteristic,
+                                                 notification is sent on the Status characteristic or
+                                                 data is received on the Id/Password characteristic */
 }BleReg_tstrInit;
 
 /**

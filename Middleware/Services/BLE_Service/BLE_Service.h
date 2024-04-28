@@ -13,7 +13,12 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define BLE_START_ADVERTISING (1 << 0)
+/* External notifications */
+#define BLE_START_ADVERTISING   (1 << 0)
+
+/* Dispatchable events */
+#define BLE_CONNECTION_EVENT    3U
+#define BLE_DISCONNECTION_EVENT 4U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -37,9 +42,9 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuBle_Init Creates Ble stack task, event group to signal receiving events
- *        from the application layer through the Application Manager and initializes
- *        the Ble stack.
+ * @brief enuBle_Init Creates Ble stack task, event group to signal receiving events from the
+ *        application layer through the Application Manager, message queue to hold data potentially
+ *        accompanying incoming events and initializes the Ble stack.
  *
  * @note This function is invoked by the Main function.
  *
@@ -52,7 +57,7 @@ Mid_tenuStatus enuBle_Init(void);
 
 /**
  * @brief enuBle_GetNotified Notifies Ble task of an incoming event by setting it in
- *        local event group.
+ *        local event group and setting its accompanying data in local message queue.
  *
  * @note Posting the received event in the local event group is not directly responsible
  *       for unblocking the Ble task. Rather this function unblocks the Ble task upon

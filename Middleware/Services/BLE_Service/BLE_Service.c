@@ -20,26 +20,29 @@
 #include "ble_att.h"
 #include "ble_adm.h"
 #include "ble_reg.h"
+#include "App_Types.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define BLE_CONN_CFG_TAG                       1
-#define BLE_OBSERVER_PRIO                      3
+#define BLE_CONN_CFG_TAG                       1U
 #define BLE_ADV_DEVICE_NAME                    "WiPad"
 #define BLE_MIN_CONN_INTERVAL                  MSEC_TO_UNITS(100, UNIT_1_25_MS)
 #define BLE_MAX_CONN_INTERVAL                  MSEC_TO_UNITS(200, UNIT_1_25_MS)
-#define BLE_SLAVE_LATENCY                      0
+#define BLE_SLAVE_LATENCY                      0U
 #define BLE_CONN_SUP_TIMEOUT                   MSEC_TO_UNITS(4000, UNIT_10_MS)
-#define BLE_RAM_START_ADDRESS                  0
-#define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000
-#define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000
-#define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
-#define BLE_ADVERTISING_INTERVAL               64
-#define BLE_ADVERTISING_DURATION               18000
+#define BLE_RAM_START_ADDRESS                  0U
+#define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000U
+#define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000U
+#define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3U
+#define BLE_ADVERTISING_INTERVAL               64U
+#define BLE_ADVERTISING_DURATION               18000U
 #define BLE_EVENT_NO_WAIT                      (TickType_t)0UL
 #define BLE_EVENT_MASK                         (BLE_START_ADVERTISING)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
+
+/************************************   GLOBAL VARIABLES   ***************************************/
+extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /*******************************   PRIVATE FUNCTION PROTOTYPES   *********************************/
 static void vidBleStartAdvertising(void);
@@ -47,8 +50,8 @@ static void vidBleStartAdvertising(void);
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
 NRF_BLE_QWR_DEF(BleQwrInstance);
-BLE_USE_REG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_KEY_ATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
+BLE_USEREG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
+BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_ADM_DEF(BleAdminInstance);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
@@ -56,7 +59,7 @@ static EventGroupHandle_t pvBleEventGroupHandle;
 static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
 static ble_uuid_t strAdvUuids[] =
 {
-    {BLE_KEY_ATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
+    {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
 };
 static const Ble_tstrState strBleStateMachine[] =
 {
@@ -132,7 +135,8 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
             u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
             /* Assign current connection handle to Queued Writes module's instance */
             (void)nrf_ble_qwr_conn_handle_assign(&BleQwrInstance, u16ConnHandle);
-            /* TODO: Trigger connection LED pattern */
+            /* Trigger connection LED pattern */
+            (void)AppMgr_enuDispatchEvent(BLE_CONNECTION_EVENT, NULL);
         }
         break;
 
@@ -140,7 +144,8 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
         {
             /* Clear connection handle placeholder */
             u16ConnHandle = BLE_CONN_HANDLE_INVALID;
-            /* TODO: Trigger disconnection LED pattern */
+            /* Trigger disconnection LED pattern */
+            (void)AppMgr_enuDispatchEvent(BLE_DISCONNECTION_EVENT, NULL);
         }
         break;
 
@@ -150,9 +155,6 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
         }
     }
 }
-
-//uint8_t Buffer[] = "Khaled";
-//uint16_t u16Size = sizeof(Buffer)-1;
 
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
@@ -181,8 +183,7 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 
         case BLE_REG_ID_PWD_RX:
         {
-            //__NOP();
-            //enuBleUseRegTransferData(&BleUseRegInstance, Buffer, &u16Size, u16ConnHandle);
+
         }
         break;
 
@@ -220,8 +221,7 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 
         case BLE_ATT_KEY_ACT_RX:
         {
-            //__NOP();
-            //enuBleKeyAttTransferData(&BleKeyAttInstance, Buffer, &u16Size, u16ConnHandle);
+
         }
         break;
 
@@ -401,11 +401,11 @@ static void vidBleTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
 
-    /* TODO: Just for testing! Remove later */
+    /* Start advertising */
     enuBle_GetNotified(BLE_START_ADVERTISING, NULL);
 
-    /* Task function's main busy loop */
-    while (1)
+    /* Ble task's main polling loop */
+    while(1)
     {
         /* Process events originating from Ble Stack */
         nrf_sdh_evts_poll();
