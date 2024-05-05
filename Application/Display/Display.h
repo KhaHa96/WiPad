@@ -18,12 +18,14 @@
 #define APP_DISPLAY_ID_VERIF_FAILURE   (1 << 1)
 #define APP_DISPLAY_PEER_CONNECTION    (1 << 2)
 #define APP_DISPLAY_PEER_DISCONNECTION (1 << 3)
+#define APP_DISPLAY_ADVERTISING_START  (1 << 4)
 
 /* Event ranks */
 #define APP_DISPLAY_ID_VERIF_SUCCESS_RANK   1U
 #define APP_DISPLAY_ID_VERIF_FAILURE_RANK   2U
 #define APP_DISPLAY_PEER_CONNECTION_RANK    3U
 #define APP_DISPLAY_PEER_DISCONNECTION_RANK 4U
+#define APP_DISPLAY_ADVERTISING_START_RANK  5U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -131,6 +133,23 @@ static inline uint32_t u32LedPattern1324(uint8_t u8Index)
 static inline uint32_t u32LedPattern4231(uint8_t u8Index)
 {
     return (u8Index-6*(u8Index/LED_4)+3*(u8Index%(LED_1-1))-6*(u8Index/LED_2)-3*(u8Index/LED_3));
+}
+
+/**
+ * @brief u32LedPattern2341 Returns the u8Index-ranked LED pin index in the 2,3,4,1 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 2,3,4,1 pattern.
+*/
+static inline uint32_t u32LedPattern2341(uint8_t u8Index)
+{
+    return (((u8Index+1)%(LED_4+1))+(u8Index/LED_4)*LED_1);
 }
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/

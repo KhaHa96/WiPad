@@ -15,10 +15,13 @@
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* External notifications */
 #define BLE_START_ADVERTISING   (1 << 0)
+#define BLE_GET_CURRENT_TIME    (1 << 1)
+#define BLE_HANDLE_TIME_READING (1 << 2)
 
 /* Dispatchable events */
 #define BLE_CONNECTION_EVENT    3U
 #define BLE_DISCONNECTION_EVENT 4U
+#define BLE_ADVERTISING_STARTED 5U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**

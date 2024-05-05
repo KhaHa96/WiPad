@@ -23,7 +23,8 @@
 #define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ID_VERIF_SUCCESS   | \
                                          APP_DISPLAY_ID_VERIF_FAILURE   | \
                                          APP_DISPLAY_PEER_CONNECTION    | \
-                                         APP_DISPLAY_PEER_DISCONNECTION)
+                                         APP_DISPLAY_PEER_DISCONNECTION | \
+                                         APP_DISPLAY_ADVERTISING_START)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_DISPLAY_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Display_tstrState))
@@ -42,19 +43,22 @@ static void vidDisplayIdVerifSuccess(void);
 static void vidDisplayIdVerifFailure(void);
 static void vidDisplayPeerConnected(void);
 static void vidDisplayPeerDisonnected(void);
+static void vidDisplayAdvertisingStart(void);
 static const Display_tstrState strDisplayStateMachine[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS  , vidDisplayIdVerifSuccess },
-    {APP_DISPLAY_ID_VERIF_FAILURE  , vidDisplayIdVerifFailure },
-    {APP_DISPLAY_PEER_CONNECTION   , vidDisplayPeerConnected  },
-    {APP_DISPLAY_PEER_DISCONNECTION, vidDisplayPeerDisonnected}
+    {APP_DISPLAY_ID_VERIF_SUCCESS  , vidDisplayIdVerifSuccess  },
+    {APP_DISPLAY_ID_VERIF_FAILURE  , vidDisplayIdVerifFailure  },
+    {APP_DISPLAY_PEER_CONNECTION   , vidDisplayPeerConnected   },
+    {APP_DISPLAY_PEER_DISCONNECTION, vidDisplayPeerDisonnected },
+    {APP_DISPLAY_ADVERTISING_START , vidDisplayAdvertisingStart}
 };
 static const Display_tstrLedPattern strDisplayPatterns[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS,   u32LedPattern1243},
-    {APP_DISPLAY_ID_VERIF_FAILURE,   u32LedPattern1423},
-    {APP_DISPLAY_PEER_CONNECTION,    u32LedPattern1324},
-    {APP_DISPLAY_PEER_DISCONNECTION, u32LedPattern4231}
+    {APP_DISPLAY_ID_VERIF_SUCCESS  , u32LedPattern1243},
+    {APP_DISPLAY_ID_VERIF_FAILURE  , u32LedPattern1423},
+    {APP_DISPLAY_PEER_CONNECTION   , u32LedPattern1324},
+    {APP_DISPLAY_PEER_DISCONNECTION, u32LedPattern4231},
+    {APP_DISPLAY_ADVERTISING_START , u32LedPattern2341}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -86,6 +90,14 @@ static void vidDisplayPeerDisonnected(void)
 {
     /* Set current event */
     u32CurrentEvent = APP_DISPLAY_PEER_DISCONNECTION_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayAdvertisingStart(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_ADVERTISING_START_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }

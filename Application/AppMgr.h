@@ -37,6 +37,7 @@ typedef enum
     AppMgr_DisplayIdSuccessEvt, /* User ID authentication performed successfully */
     AppMgr_DisplayConnected,    /* Peer connection established                   */
     AppMgr_DisplayDisconnected, /* Peer disconnection                            */
+    AppMgr_DisplayAdvertising,  /* Advertising started                           */
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 

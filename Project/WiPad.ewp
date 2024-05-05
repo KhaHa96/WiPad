@@ -211,6 +211,7 @@
                 <option>
                     <name>CCDefines</name>
                     <state>NRF52832_XXAA</state>
+                    <state>BOARD_PCA10040</state>
                     <state>NRF_SD_BLE_API_VERSION=7</state>
                     <state>S132</state>
                     <state>SOFTDEVICE_PRESENT</state>
@@ -344,8 +345,10 @@
                     <state>$PROJ_DIR$\..\Board_Support\MCU\legacy</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\clock</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
-                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\gpio</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\boards</state>
+                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
@@ -356,16 +359,27 @@
                     <state>$PROJ_DIR$\..\Middleware\Libraries\fprintf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\queue</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\mutex</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fds</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_fifo</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fstorage</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\bsp</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\button</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_db_discovery</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_cts_c</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Services</state>
                     <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
@@ -2170,17 +2184,23 @@
                     <name>Twi</name>
                 </group>
             </group>
+        </group>
+        <group>
+            <name>MCU</name>
             <group>
-                <name>MCU</name>
-                <group>
-                    <name>clock</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrf_drv_clock.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrfx_clock.c</name>
-                    </file>
-                </group>
+                <name>boards</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\boards\boards.c</name>
+                </file>
+            </group>
+            <group>
+                <name>clock</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrf_drv_clock.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrfx_clock.c</name>
+                </file>
             </group>
         </group>
     </group>
@@ -2234,6 +2254,12 @@
                 </file>
             </group>
             <group>
+                <name>atomic_fifo</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\atomic_fifo\nrf_atfifo.c</name>
+                </file>
+            </group>
+            <group>
                 <name>atomic_flags</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags\nrf_atflags.c</name>
@@ -2246,9 +2272,39 @@
                 </file>
             </group>
             <group>
+                <name>bsp</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\bsp\bsp.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\bsp\bsp_btn_ble.c</name>
+                </file>
+            </group>
+            <group>
+                <name>button</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\button\app_button.c</name>
+                </file>
+            </group>
+            <group>
                 <name>experimental_section_vars</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars\nrf_section_iter.c</name>
+                </file>
+            </group>
+            <group>
+                <name>fds</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fds\fds.c</name>
+                </file>
+            </group>
+            <group>
+                <name>fstorage</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fstorage\nrf_fstorage.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fstorage\nrf_fstorage_sd.c</name>
                 </file>
             </group>
             <group>
@@ -2261,6 +2317,12 @@
                 <name>memobj</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\memobj\nrf_memobj.c</name>
+                </file>
+            </group>
+            <group>
+                <name>queue</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\queue\nrf_queue.c</name>
                 </file>
             </group>
             <group>
@@ -2299,6 +2361,18 @@
                     </file>
                 </group>
                 <group>
+                    <name>ble_db_discovery</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_db_discovery\ble_db_discovery.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>nrf_ble_gq</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq\nrf_ble_gq.c</name>
+                    </file>
+                </group>
+                <group>
                     <name>ble_link_ctx_manager</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager\ble_link_ctx_manager.c</name>
@@ -2319,6 +2393,12 @@
                         </file>
                     </group>
                     <group>
+                        <name>ble_cts_c</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_cts_c\ble_cts_c.c</name>
+                        </file>
+                    </group>
+                    <group>
                         <name>ble_reg</name>
                         <file>
                             <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg\ble_reg.c</name>
@@ -2335,6 +2415,42 @@
                     <name>nrf_ble_qwr</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr\nrf_ble_qwr.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>peer_manager</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\gatt_cache_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\gatts_cache_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\id_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_data_storage.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_database.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_id.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_manager_handler.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\pm_buffer.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\security_dispatcher.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\security_manager.c</name>
                     </file>
                 </group>
                 <file>
