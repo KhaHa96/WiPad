@@ -34,7 +34,8 @@ static const AppMgr_tstrEventSub strEventSubscriptionList[] =
     {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
     {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1},
     {AppMgr_DisplayConnected   , {App_DisplayId     }, 1},
-    {AppMgr_DisplayDisconnected, {App_DisplayId     }, 1}
+    {AppMgr_DisplayDisconnected, {App_DisplayId     }, 1},
+    {AppMgr_DisplayAdvertising , {App_DisplayId     }, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/

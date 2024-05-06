@@ -11,6 +11,7 @@
 #include "queue.h"
 #include "event_groups.h"
 #include "Registration.h"
+#include "BLE_Service.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_USEREG_POWER_BASE       2U
