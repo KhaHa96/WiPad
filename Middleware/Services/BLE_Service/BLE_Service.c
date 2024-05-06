@@ -599,8 +599,6 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
 
 static void vidBleTaskFunction(void *pvArg)
 {
-    uint32_t u32Event;
-
     /* Start advertising */
     vidBleStartAdvertising();
 
