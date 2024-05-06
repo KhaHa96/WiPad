@@ -103,18 +103,6 @@ static void vidBleStartAdvertising(void)
     }
 }
 
-void vidBleGetCurrentTime(void)
-{
-    if(bTimeReadingPossible)
-    {
-        /* Get a current time reading from connected peer. Note: This is an asynchronous
-           operation. The current time reading obtained from peer's GATT server can be found
-           in the vidCtsEventHandler event handler upon receiving a BLE_CTS_C_EVT_CURRENT_TIME
-           event. */
-        (void)ble_cts_c_current_time_read(&BleCtsInstance);
-    }
-}
-
 static void vidConnParamErrorHandler(uint32_t u32Error)
 {
     APP_ERROR_HANDLER(u32Error);
@@ -672,6 +660,18 @@ Mid_tenuStatus enuBle_Init(void)
     }
 
     return enuRetVal;
+}
+
+void vidBleGetCurrentTime(void)
+{
+    if(bTimeReadingPossible)
+    {
+        /* Get a current time reading from connected peer. Note: This is an asynchronous
+           operation. The current time reading obtained from peer's GATT server can be found
+           in the vidCtsEventHandler event handler upon receiving a BLE_CTS_C_EVT_CURRENT_TIME
+           event. */
+        (void)ble_cts_c_current_time_read(&BleCtsInstance);
+    }
 }
 
 void vidRegisterCtsCallback(vidCtsCallback pfCallback)
