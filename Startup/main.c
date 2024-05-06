@@ -10,6 +10,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "nrf_drv_clock.h"
+#include "boards.h"
+#include "bsp.h"
 #include "BLE_Service.h"
 #include "AppMgr.h"
 
@@ -24,6 +26,9 @@ int main(void)
 {
     /* Initialize clocks and prepare them for requests */
     nrf_drv_clock_init();
+
+    /* Initialize buttons */
+    bsp_init(BSP_INIT_BUTTONS, NULL);
 
     /* Initialize application tasks */
     App_tenuStatus enuAppStatus = AppMgr_enuInit();

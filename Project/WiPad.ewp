@@ -2259,6 +2259,12 @@
                     <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrfx_clock.c</name>
                 </file>
             </group>
+            <group>
+                <name>gpio</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\gpio\nrfx_gpiote.c</name>
+                </file>
+            </group>
         </group>
     </group>
     <group>

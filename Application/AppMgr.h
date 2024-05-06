@@ -21,9 +21,9 @@
 */
 typedef enum
 {
-    App_RegistrationId = 0, /* User registration application ID */
-    App_AttributionId,      /* Key attribution application ID   */
-    App_DisplayId           /* Display application ID           */
+    App_AttributionId = 0, /* Key attribution application ID   */
+    App_RegistrationId,    /* User registration application ID */
+    App_DisplayId          /* Display application ID           */
 }AppMgr_tenuAppId;
 
 /**

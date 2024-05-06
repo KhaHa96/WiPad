@@ -11,6 +11,7 @@
 #include "queue.h"
 #include "event_groups.h"
 #include "Attribution.h"
+#include "BLE_Service.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_KEYATT_POWER_BASE       2U
@@ -47,6 +48,11 @@ static void vidKeyAttEvent2Process(void *pvArg)
     __NOP();
 }
 
+static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
+{
+    __NOP();
+}
+
 static void vidAttributionEvent_Process(uint32_t u32Trigger, void *pvData)
 {
     /* Go through trigger list to find trigger.
@@ -71,6 +77,9 @@ static void vidKeyAttTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
     void *pvData;
+
+    /* Register current time data callback */
+    vidRegisterCtsCallback(vidCurrentTimeCallback);
 
     /* Key attribution task's main polling loop */
     while(1)

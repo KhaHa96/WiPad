@@ -8,8 +8,6 @@
 /****************************************   INCLUDES   *******************************************/
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
-#include "event_groups.h"
 #include "BLE_Service.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
@@ -23,10 +21,9 @@
 #include "ble_att.h"
 #include "ble_adm.h"
 #include "ble_reg.h"
-#include "ble_cts_c.h"
 #include "ble_db_discovery.h"
-#include "App_Types.h"
 #include "bsp_btn_ble.h"
+#include "App_Types.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define BLE_CONN_CFG_TAG                       1U
@@ -40,10 +37,7 @@
 #define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000U
 #define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3U
 #define BLE_ADVERTISING_INTERVAL               64U
-#define BLE_ADVERTISING_DURATION               1000//18000U
-#define BLE_EVENT_NO_WAIT                      (TickType_t)0UL
-#define BLE_PUSH_IMMEDIATELY                   0U
-#define BLE_POP_IMMEDIATELY                    0U
+#define BLE_ADVERTISING_DURATION               18000U
 #define BLE_PERFORM_BONDING                    1U
 #define BLE_MITM_PROTECTION_NOT_REQUIRED       0U
 #define BLE_LE_SECURE_CONNECTIONS_DISABLED     0U
@@ -55,18 +49,12 @@
 #define BLE_LOCAL_IRK_ID_ADDRESS_DISTRIBUTE    1U
 #define BLE_REMOTE_LTK_MASTER_ID_DISTRIBUTE    1U
 #define BLE_REMOTE_IRK_ID_ADDRESS_DISTRIBUTE   1U
-#define BLE_EVENT_MASK                         (BLE_START_ADVERTISING |  \
-                                                BLE_GET_CURRENT_TIME)
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
 
 /************************************   GLOBAL VARIABLES   ***************************************/
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
-
-/*******************************   PRIVATE FUNCTION PROTOTYPES   *********************************/
-static void vidBleStartAdvertising(void *pvArg);
-static void vidBleGetCurrentTime(void *pvArg);
 
 /************************************   PRIVATE VARIABLES   **************************************/
 NRF_BLE_GATT_DEF(BleGattInstance);
@@ -79,24 +67,17 @@ BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
 BLE_CTS_C_DEF(BleCtsInstance);
 BLE_ADVERTISING_DEF(BleAdvInstance);
 static TaskHandle_t pvBLETaskHandle;
-static QueueHandle_t pvBleQueueHandle;
-static EventGroupHandle_t pvBleEventGroupHandle;
 static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
-static exact_time_256_t *pstrCurrentTime;
 static volatile bool bTimeReadingPossible = false;
-static bool bFirstAdvInCycle = true;
+static volatile bool bFirstAdvInCycle = true;
+static vidCtsCallback pfCtsCallback = NULL;
 static ble_uuid_t strAdvUuids[] =
 {
     {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
 };
-static const Ble_tstrState strBleStateMachine[] =
-{
-    {BLE_START_ADVERTISING  , vidBleStartAdvertising },
-    {BLE_GET_CURRENT_TIME   , vidBleGetCurrentTime   }
-};
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
-static void vidTaskNotify(void)
+void SD_EVT_IRQHandler(void)
 {
     /* Initialize task yield request to pdFALSE */
     BaseType_t lYieldRequest = pdFALSE;
@@ -110,32 +91,7 @@ static void vidTaskNotify(void)
     portYIELD_FROM_ISR(lYieldRequest);
 }
 
-void SD_EVT_IRQHandler(void)
-{
-    /* Notify Ble task of incoming Softdevice event */
-    vidTaskNotify();
-}
-
-static void vidBleEvent_Process(uint32_t u32Trigger, void *pvData)
-{
-    /* Go through trigger list to find trigger.
-       Note: We use a while loop as we require that no two distinct actions have the
-       same trigger in a State trigger listing */
-    uint8_t u8TriggerCount = BLE_TRIGGER_COUNT(strBleStateMachine);
-    uint8_t u8Index = 0;
-    while(u8Index < u8TriggerCount)
-    {
-        if(u32Trigger == (strBleStateMachine + u8Index)->u32Trigger)
-        {
-            /* Invoke associated action and exit loop */
-            (strBleStateMachine + u8Index)->pfAction(pvData);
-            break;
-        }
-        u8Index++;
-    }
-}
-
-static void vidBleStartAdvertising(void *pvArg)
+static void vidBleStartAdvertising(void)
 {
     /* Note: WiPad uses a one-time discardable bond policy which means it requires peers
        to perform bonding every time they connect just to be able to access their CTS
@@ -147,13 +103,14 @@ static void vidBleStartAdvertising(void *pvArg)
     }
 }
 
-static void vidBleGetCurrentTime(void *pvArg)
+void vidBleGetCurrentTime(void)
 {
     if(bTimeReadingPossible)
     {
-        /* Preserve address of variable to be used to store current time reading */
-        pstrCurrentTime = (exact_time_256_t *)pvArg;
-        /* Get a current time reading from connected peer */
+        /* Get a current time reading from connected peer. Note: This is an asynchronous
+           operation. The current time reading obtained from peer's GATT server can be found
+           in the vidCtsEventHandler event handler upon receiving a BLE_CTS_C_EVT_CURRENT_TIME
+           event. */
         (void)ble_cts_c_current_time_read(&BleCtsInstance);
     }
 }
@@ -200,7 +157,7 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 
         case BLE_GAP_EVT_ADV_SET_TERMINATED:
         {
-            /* Advertising timed out. Prepare wakeup button and go to sleep */
+            /* Advertising timed out. Prepare wakeup buttons and go to sleep */
             if(NRF_SUCCESS == bsp_btn_ble_sleep_mode_prepare())
             {
                 /* Enter system-off mode. Wakeup will only be possible through a reset */
@@ -248,7 +205,7 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 
         case BLE_REG_ID_PWD_RX:
         {
-
+            AppMgr_enuDispatchEvent(6,NULL);
         }
         break;
 
@@ -364,11 +321,8 @@ static void vidCtsEventHandler(ble_cts_c_t *pstrCtsInstance, ble_cts_c_evt_t *ps
 
         case BLE_CTS_C_EVT_CURRENT_TIME:
         {
-            if(pstrCurrentTime)
-            {
-                /* Store current time reading in return variable */
-                *pstrCurrentTime = pstrEvent->params.current_time.exact_time_256;
-            }
+            /* Invoke Attribution application's current time data callback */
+            pfCtsCallback(&pstrEvent->params.current_time.exact_time_256);
         }
         break;
 
@@ -401,12 +355,12 @@ static void vidAdvEventHandler(ble_adv_evt_t enuEvent)
     {
     case BLE_ADV_EVT_FAST:
     {
-        /* Clear first advertising flag */
-        bFirstAdvInCycle = false;
         if(bFirstAdvInCycle)
         {
             /* Trigger advertising start LED pattern */
             (void)AppMgr_enuDispatchEvent(BLE_ADVERTISING_STARTED, NULL);
+            /* Clear first advertising flag */
+            bFirstAdvInCycle = false;
         }
     }
     break;
@@ -658,36 +612,15 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
 static void vidBleTaskFunction(void *pvArg)
 {
     uint32_t u32Event;
-    void *pvData;
 
     /* Start advertising */
-    enuBle_GetNotified(BLE_START_ADVERTISING, NULL);
+    vidBleStartAdvertising();
 
     /* Ble task's main polling loop */
     while(1)
     {
         /* Process events originating from Ble Stack */
         nrf_sdh_evts_poll();
-        /* Retrieve event if any from event group */
-        u32Event = xEventGroupWaitBits(pvBleEventGroupHandle,
-                                       BLE_EVENT_MASK,
-                                       pdTRUE,
-                                       pdFALSE,
-                                       BLE_EVENT_NO_WAIT);
-        if(u32Event)
-        {
-            /* Check whether queue holds any data */
-            if(uxQueueMessagesWaiting(pvBleQueueHandle))
-            {
-                /* We have no tasks of higher priority so we're guaranteed that no other
-                   message will be received in the queue until this message is processed */
-                xQueueReceive(pvBleQueueHandle, pvData, BLE_POP_IMMEDIATELY);
-            }
-
-            /* Process received event */
-            vidBleEvent_Process(u32Event, pvData);
-        }
-
         /* Clear notifications after they've been processed and put task in blocked state */
         (void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
@@ -699,48 +632,36 @@ Mid_tenuStatus enuBle_Init(void)
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
     /* Create task for BLE service */
-    if (pdTRUE == xTaskCreate(vidBleTaskFunction,
-                              "BLE_Task",
-                              MID_BLE_TASK_STACK_SIZE,
-                              NULL,
-                              MID_BLE_TASK_PRIORITY,
-                              &pvBLETaskHandle))
+    if(pdTRUE == xTaskCreate(vidBleTaskFunction,
+                             "BLE_Task",
+                             MID_BLE_TASK_STACK_SIZE,
+                             NULL,
+                             MID_BLE_TASK_PRIORITY,
+                             &pvBLETaskHandle))
     {
-        /* Create message queue for Ble middleware service */
-        pvBleQueueHandle = xQueueCreate(MID_BLE_TASK_QUEUE_LENGTH, sizeof(uint32_t));
-
-        if(pvBleQueueHandle)
+        /* Initialize BLE stack */
+        if(Middleware_Success == enuBleStackInit())
         {
-            /* Create event group for Ble middleware service */
-            pvBleEventGroupHandle = xEventGroupCreate();
-
-            if(pvBleEventGroupHandle)
+            /* Initialize GAP */
+            if(Middleware_Success == enuBleGapInit())
             {
-                /* Initialize BLE stack */
-                if(Middleware_Success == enuBleStackInit())
+                /* Initialize GATT */
+                if(Middleware_Success == enuBleGattInit())
                 {
-                    /* Initialize GAP */
-                    if(Middleware_Success == enuBleGapInit())
+                    /* Initialize Database discovery module */
+                    if(Middleware_Success == enuBleDataBaseDiscoveryInit())
                     {
-                        /* Initialize GATT */
-                        if(Middleware_Success == enuBleGattInit())
+                        /* Initialize BLE services */
+                        if(Middleware_Success == enuBleServicesInit())
                         {
-                            /* Initialize Database discovery module */
-                            if(Middleware_Success == enuBleDataBaseDiscoveryInit())
+                            /* Initialize advertising module */
+                            if(Middleware_Success == enuAdvertisingInit())
                             {
-                                /* Initialize BLE services */
-                                if(Middleware_Success == enuBleServicesInit())
+                                /* Initialize Peer Manager module */
+                                if(Middleware_Success == enuBlePeerManagerInit())
                                 {
-                                    /* Initialize advertising module */
-                                    if(Middleware_Success == enuAdvertisingInit())
-                                    {
-                                        /* Initialize Peer Manager module */
-                                        if(Middleware_Success == enuBlePeerManagerInit())
-                                        {
-                                            /* Initialize Connection Parameters module */
-                                            enuRetVal = enuBleConnParamsInit();
-                                        }
-                                    }
+                                    /* Initialize Connection Parameters module */
+                                    enuRetVal = enuBleConnParamsInit();
                                 }
                             }
                         }
@@ -753,30 +674,8 @@ Mid_tenuStatus enuBle_Init(void)
     return enuRetVal;
 }
 
-Mid_tenuStatus enuBle_GetNotified(uint32_t u32Event, void *pvData)
+void vidRegisterCtsCallback(vidCtsCallback pfCallback)
 {
-    Mid_tenuStatus enuRetVal = Middleware_Success;
-
-    if(pvData)
-    {
-        /* Push event-related data to local message queue */
-        enuRetVal = (pdTRUE == xQueueSend(pvBleQueueHandle,
-                                          pvData,
-                                          BLE_PUSH_IMMEDIATELY))
-                                          ?Middleware_Success
-                                          :Middleware_Failure;
-    }
-
-    if(Middleware_Success == enuRetVal)
-    {
-        /* Set event in local event group */
-        return (xEventGroupSetBits(pvBleEventGroupHandle, u32Event))
-                                   ?Middleware_Success
-                                   :Middleware_Failure;
-    }
-
-    /* Unblock Ble task */
-    vidTaskNotify();
-
-    return enuRetVal;
+    /* Register Attribution application's current time data callback */
+    pfCtsCallback = pfCallback;
 }
