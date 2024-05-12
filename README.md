@@ -12,4 +12,4 @@ WiPad was created using IAR Embedded Workbench for ARM 9.10.2. Future porting ef
 transition to more easily accessible toolchains.
 
 ## Testing apparatus
-WiPad was deployed and tested using an Android 8.1.0 running an nRF connect mobile app. 
+WiPad was deployed and tested using an Android 8.1.0 device running an nRF connect mobile app. 
