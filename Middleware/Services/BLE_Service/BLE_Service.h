@@ -21,6 +21,16 @@
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
+ * Ble_tenuServices Ble services hosted by peripheral's GATT server
+*/
+typedef enum
+{
+    Ble_Registration = 0, /* ble_reg service */
+    Ble_Attribution,      /* ble_att service */
+    Ble_Admin             /* ble_adm service */
+}Ble_tenuServices;
+
+/**
  * BleAction State machine event-triggered action function prototype.
  *
  * @note This prototype is used to define state machine actions associated to different state
@@ -80,6 +90,19 @@ Mid_tenuStatus enuBle_Init(void);
  * @return Nothing.
  */
 void vidBleGetCurrentTime(void);
+
+/**
+ * @brief enuTransferNotification Relays notification data from application to peer by calling
+ *        the data transfer function of the destination Ble service.
+ *
+ * @param enuService Destination Ble service
+ * @param pu8Data Pointer to data buffer
+ * @param pu16Length Pointer to data length
+ *
+ * @return Mid_tenuStatus Middleware_Success if notification was successfully transferred to peer,
+ *         Middleware_Failure otherwise.
+ */
+Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8Data, uint16_t *pu16Length);
 
 /**
  * @brief vidRegisterCtsCallback Registers a callback to be invoked upon obtaining a current time

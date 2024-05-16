@@ -52,6 +52,12 @@
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
+#define BLE_SERVICE_ASSERT(svc)    \
+(                                  \
+    ( svc == Ble_Registration ) || \
+    ( svc == Ble_Attribution  ) || \
+    ( svc == Ble_Admin        )    \
+)
 
 /************************************   GLOBAL VARIABLES   ***************************************/
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
@@ -670,6 +676,42 @@ void vidBleGetCurrentTime(void)
            event. */
         (void)ble_cts_c_current_time_read(&BleCtsInstance);
     }
+}
+
+Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8Data, uint16_t *pu16Length)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+
+    /* Make sure valid arguments are passed */
+    if(BLE_SERVICE_ASSERT(enuService) && pu8Data && pu16Length && (*pu16Length > 0))
+    {
+        switch(enuService)
+        {
+        case Ble_Registration:
+        {
+            enuRetVal = enuBleUseRegTransferData(&BleUseRegInstance, pu8Data, pu16Length, u16ConnHandle);
+        }
+        break;
+
+        case Ble_Attribution:
+        {
+            enuRetVal = enuBleKeyAttTransferData(&BleKeyAttInstance, pu8Data, pu16Length, u16ConnHandle);
+        }
+        break;
+
+        case Ble_Admin:
+        {
+            enuRetVal = enuBleAdmTransferData(&BleAdminInstance, pu8Data, pu16Length, u16ConnHandle);
+        }
+        break;
+
+        default:
+            /* Nothing to do */
+            break;
+        }
+    }
+
+    return enuRetVal;
 }
 
 void vidRegisterCtsCallback(vidCtsCallback pfCallback)

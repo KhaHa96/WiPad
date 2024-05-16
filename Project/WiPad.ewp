@@ -383,6 +383,7 @@
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Services</state>
                     <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services\NVM_Service</state>
                     <state>$PROJ_DIR$\..\Application</state>
                     <state>$PROJ_DIR$\..\Application\Attribution</state>
                     <state>$PROJ_DIR$\..\Application\Registration</state>
@@ -2430,12 +2431,6 @@
                     </file>
                 </group>
                 <group>
-                    <name>nrf_ble_gq</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq\nrf_ble_gq.c</name>
-                    </file>
-                </group>
-                <group>
                     <name>ble_link_ctx_manager</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager\ble_link_ctx_manager.c</name>
@@ -2472,6 +2467,12 @@
                     <name>nrf_ble_gatt</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt\nrf_ble_gatt.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>nrf_ble_gq</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq\nrf_ble_gq.c</name>
                     </file>
                 </group>
                 <group>
@@ -2545,6 +2546,12 @@
                 <name>BLE_Service</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Services\BLE_Service\BLE_Service.c</name>
+                </file>
+            </group>
+            <group>
+                <name>NVM_Service</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Services\NVM_Service\NVM_Service.c</name>
                 </file>
             </group>
         </group>
