@@ -31,11 +31,17 @@ static const AppMgr_tstrInterface strApplicationList[] =
  */
 static const AppMgr_tstrEventSub strEventSubscriptionList[] =
 {
-    {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
-    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1},
-    {AppMgr_DisplayConnected   , {App_DisplayId     }, 1},
-    {AppMgr_DisplayDisconnected, {App_DisplayId     }, 1},
-    {AppMgr_DisplayAdvertising , {App_DisplayId     }, 1}
+    {AppMgr_DisplayAdvertising   , {App_DisplayId     }, 1},
+    {AppMgr_DisplayConnected     , {App_DisplayId     }, 1},
+    {AppMgr_DisplayDisconnected  , {App_DisplayId     }, 1},
+    {AppMgr_DisplayValidInput    , {App_DisplayId     }, 1},
+    {AppMgr_DisplayInvalidInput  , {App_DisplayId     }, 1},
+    {AppMgr_DisplayAccessGranted , {App_DisplayId     }, 1},
+    {AppMgr_DisplayAccessDenied  , {App_DisplayId     }, 1},
+    {AppMgr_DisplayAdminAdd      , {App_DisplayId     }, 1},
+    {AppMgr_DisplayAdminCheck    , {App_DisplayId     }, 1},
+    {AppMgr_DisplayNotifsDisabled, {App_DisplayId     }, 1},
+    {AppMgr_RegTestEvent1        , {App_RegistrationId}, 1},
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/

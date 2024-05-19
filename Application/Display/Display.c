@@ -43,6 +43,7 @@ static TimerHandle_t pvDisplayTimerHandle;
 static volatile uint8_t u8LedCounter;
 static volatile uint8_t u8CycleCounter;
 static uint32_t u32CurrentEvent;
+static uint8_t u8LedsState = 1;
 static void vidDisplayAdvertisingStart(void);
 static void vidDisplayPeerConnected(void);
 static void vidDisplayPeerDisonnected(void);
@@ -52,6 +53,7 @@ static void vidDisplayAccessGranted(void);
 static void vidDisplayAccessDenied(void);
 static void vidDisplaySuccessfulAddOp(void);
 static void vidDisplaySuccessfulCheckOp(void);
+static void vidDisplayDisabledNotifs(void);
 static const Display_tstrState strDisplayStateMachine[] =
 {
     {APP_DISPLAY_ADVERTISING_START        , vidDisplayAdvertisingStart },
@@ -62,7 +64,8 @@ static const Display_tstrState strDisplayStateMachine[] =
     {APP_DISPLAY_ACCESS_GRANTED           , vidDisplayAccessGranted    },
     {APP_DISPLAY_ACCESS_DENIED            , vidDisplayAccessDenied     },
     {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , vidDisplaySuccessfulAddOp  },
-    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp}
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp},
+    {APP_DISPLAY_DISABLED_NOTIFICATIONS   , vidDisplayDisabledNotifs   }
 };
 static const Display_tstrLedPattern strDisplayPatterns[] =
 {
@@ -150,27 +153,55 @@ static void vidDisplaySuccessfulCheckOp(void)
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
 
+static void vidDisplayDisabledNotifs(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_DISABLED_NOTIFICATIONS_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
 static void vidDisplayTimerCallback(TimerHandle_t pvTimerHandle)
 {
     if(pvTimerHandle)
     {
-        if((LED_1 == u8LedCounter) && (!(--u8CycleCounter)))
+        if(APP_DISPLAY_DISABLED_NOTIFICATIONS_RANK == u32CurrentEvent)
         {
-            /* Switch off last Led in the pattern */
-            nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(LED_4),
-                               APP_DISPLAY_LED_SWITCH_OFF);
-            /* Stop timer */
-            xTimerStop(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+            if((u8LedsState) && (!(--u8CycleCounter)))
+            {
+                /* Stop timer */
+                xTimerStop(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+            }
+            else
+            {
+                /* Toggle all LEDs */
+                u8LedsState = !u8LedsState;
+                for(uint8_t u8Index = LED_1; u8Index <= LED_4; u8Index++)
+                {
+                    nrf_gpio_pin_write((uint32_t)u8Index, u8LedsState);
+                }
+            }
         }
         else
         {
-            /* Toggle LEDs sequentially */
-            nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(APP_DISPLAY_PENULTIMATE_LED(u8LedCounter)),
-                               APP_DISPLAY_LED_SWITCH_OFF);
-            nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(u8LedCounter),
-                               APP_DISPLAY_LED_SWITCH_ON);
-            /* Increment Led counter in cycles of 4 */
-            u8LedCounter = LED_1 + (((u8LedCounter+1)%LED_1)%APP_DISPLAY_LED_COUNT);
+            if((LED_1 == u8LedCounter) && (!(--u8CycleCounter)))
+            {
+                /* Switch off last Led in the pattern */
+                nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(LED_4),
+                                   APP_DISPLAY_LED_SWITCH_OFF);
+                /* Stop timer */
+                xTimerStop(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+            }
+            else
+            {
+                /* Toggle LEDs sequentially */
+                nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(APP_DISPLAY_PENULTIMATE_LED(u8LedCounter)),
+                                   APP_DISPLAY_LED_SWITCH_OFF);
+                nrf_gpio_pin_write(strDisplayPatterns[APP_DISPLAY_ALIGN_EVENT(u32CurrentEvent)].pfArrangement(u8LedCounter),
+                                   APP_DISPLAY_LED_SWITCH_ON);
+                /* Increment Led counter in cycles of 4 */
+                u8LedCounter = LED_1 + (((u8LedCounter+1)%LED_1)%APP_DISPLAY_LED_COUNT);
+            }
         }
     }
 }
