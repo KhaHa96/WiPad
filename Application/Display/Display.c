@@ -26,7 +26,7 @@
                                          APP_DISPLAY_VALID_USER_INPUT          | \
                                          APP_DISPLAY_INVALID_USER_INPUT        | \
                                          APP_DISPLAY_ACCESS_GRANTED            | \
-                                         APP_DISPLAY_ACCESS_DINIED             | \
+                                         APP_DISPLAY_ACCESS_DENIED             | \
                                          APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   | \
                                          APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP   )
 
@@ -60,7 +60,7 @@ static const Display_tstrState strDisplayStateMachine[] =
     {APP_DISPLAY_VALID_USER_INPUT         , vidDisplayInputVerifSuccess},
     {APP_DISPLAY_INVALID_USER_INPUT       , vidDisplayInputVerifFailure},
     {APP_DISPLAY_ACCESS_GRANTED           , vidDisplayAccessGranted    },
-    {APP_DISPLAY_ACCESS_DINIED            , vidDisplayAccessDenied     },
+    {APP_DISPLAY_ACCESS_DENIED            , vidDisplayAccessDenied     },
     {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , vidDisplaySuccessfulAddOp  },
     {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp}
 };
@@ -72,7 +72,7 @@ static const Display_tstrLedPattern strDisplayPatterns[] =
     {APP_DISPLAY_VALID_USER_INPUT         , u32LedPattern2341},
     {APP_DISPLAY_INVALID_USER_INPUT       , u32LedPattern1432},
     {APP_DISPLAY_ACCESS_GRANTED           , u32LedPattern1243},
-    {APP_DISPLAY_ACCESS_DINIED            , u32LedPattern1423},
+    {APP_DISPLAY_ACCESS_DENIED            , u32LedPattern1423},
     {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , u32LedPattern1234},
     {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, u32LedPattern4321}
 };
@@ -129,7 +129,7 @@ static void vidDisplayAccessGranted(void)
 static void vidDisplayAccessDenied(void)
 {
     /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ACCESS_DINIED_RANK;
+    u32CurrentEvent = APP_DISPLAY_ACCESS_DENIED_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }

@@ -20,22 +20,20 @@
 #define APP_DISPLAY_VALID_USER_INPUT          (1 << 3)
 #define APP_DISPLAY_INVALID_USER_INPUT        (1 << 4)
 #define APP_DISPLAY_ACCESS_GRANTED            (1 << 5)
-#define APP_DISPLAY_ACCESS_DINIED             (1 << 6)
+#define APP_DISPLAY_ACCESS_DENIED             (1 << 6)
 #define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   (1 << 7)
 #define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP (1 << 8)
 
-
-
 /* Event ranks */
-#define APP_DISPLAY_ADVERTISING_START_RANK         1U     
-#define APP_DISPLAY_PEER_CONNECTION_RANK           2U     
-#define APP_DISPLAY_PEER_DISCONNECTION_RANK        3U    
-#define APP_DISPLAY_VALID_USER_INPUT_RANK          4U         
-#define APP_DISPLAY_INVALID_USER_INPUT_RANK        5U     
-#define APP_DISPLAY_ACCESS_GRANTED_RANK            6U    
-#define APP_DISPLAY_ACCESS_DINIED_RANK             7U     
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK   8U   
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK 9U 
+#define APP_DISPLAY_ADVERTISING_START_RANK         1U
+#define APP_DISPLAY_PEER_CONNECTION_RANK           2U
+#define APP_DISPLAY_PEER_DISCONNECTION_RANK        3U
+#define APP_DISPLAY_VALID_USER_INPUT_RANK          4U
+#define APP_DISPLAY_INVALID_USER_INPUT_RANK        5U
+#define APP_DISPLAY_ACCESS_GRANTED_RANK            6U
+#define APP_DISPLAY_ACCESS_DENIED_RANK             7U
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK   8U
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK 9U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -111,7 +109,6 @@ static inline uint32_t u32LedPattern1342(uint8_t u8Index)
     return (u8Index+(u8Index%LED_1)-(u8Index\LED_3)-(4*(u8Index\LED_4)));
 }
 
-
 /**
  * @brief u32LedPattern1243 Returns the u8Index-ranked LED pin index in the 1,4,3,2 LED pattern.
  *
@@ -143,7 +140,7 @@ static inline uint32_t u32LedPattern1432(uint8_t u8Index)
 */
 static inline uint32_t u32LedPattern1234(uint8_t u8Index)
 {
-    return (u8Index);
+    return u8Index;
 }
 
 /**
