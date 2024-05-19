@@ -15,9 +15,10 @@
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Dispatchable events */
-#define BLE_CONNECTION_EVENT    3U
-#define BLE_DISCONNECTION_EVENT 4U
-#define BLE_ADVERTISING_STARTED 5U
+#define BLE_ADVERTISING_STARTED 1U
+#define BLE_CONNECTION_EVENT    2U
+#define BLE_DISCONNECTION_EVENT 3U
+
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**

@@ -14,18 +14,28 @@
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Event bits */
-#define APP_DISPLAY_ID_VERIF_SUCCESS   (1 << 0)
-#define APP_DISPLAY_ID_VERIF_FAILURE   (1 << 1)
-#define APP_DISPLAY_PEER_CONNECTION    (1 << 2)
-#define APP_DISPLAY_PEER_DISCONNECTION (1 << 3)
-#define APP_DISPLAY_ADVERTISING_START  (1 << 4)
+#define APP_DISPLAY_ADVERTISING_START         (1 << 0)
+#define APP_DISPLAY_PEER_CONNECTION           (1 << 1)
+#define APP_DISPLAY_PEER_DISCONNECTION        (1 << 2)
+#define APP_DISPLAY_VALID_USER_INPUT          (1 << 3)
+#define APP_DISPLAY_INVALID_USER_INPUT        (1 << 4)
+#define APP_DISPLAY_ACCESS_GRANTED            (1 << 5)
+#define APP_DISPLAY_ACCESS_DINIED             (1 << 6)
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   (1 << 7)
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP (1 << 8)
+
+
 
 /* Event ranks */
-#define APP_DISPLAY_ID_VERIF_SUCCESS_RANK   1U
-#define APP_DISPLAY_ID_VERIF_FAILURE_RANK   2U
-#define APP_DISPLAY_PEER_CONNECTION_RANK    3U
-#define APP_DISPLAY_PEER_DISCONNECTION_RANK 4U
-#define APP_DISPLAY_ADVERTISING_START_RANK  5U
+#define APP_DISPLAY_ADVERTISING_START_RANK         1U     
+#define APP_DISPLAY_PEER_CONNECTION_RANK           2U     
+#define APP_DISPLAY_PEER_DISCONNECTION_RANK        3U    
+#define APP_DISPLAY_VALID_USER_INPUT_RANK          4U         
+#define APP_DISPLAY_INVALID_USER_INPUT_RANK        5U     
+#define APP_DISPLAY_ACCESS_GRANTED_RANK            6U    
+#define APP_DISPLAY_ACCESS_DINIED_RANK             7U     
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK   8U   
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK 9U 
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -82,6 +92,75 @@ typedef struct
 static inline uint32_t u32LedPattern1243(uint8_t u8Index)
 {
     return (u8Index+(u8Index/LED_3)*(1+(u8Index%LED_3))-3*(u8Index/LED_4));
+}
+
+/**
+ * @brief u32LedPattern1234 Returns the u8Index-ranked LED pin index in the 1,3,4,2 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,3,4,2 pattern.
+*/
+static inline uint32_t u32LedPattern1342(uint8_t u8Index)
+{
+    return (u8Index+(u8Index%LED_1)-(u8Index\LED_3)-(4*(u8Index\LED_4)));
+}
+
+
+/**
+ * @brief u32LedPattern1243 Returns the u8Index-ranked LED pin index in the 1,4,3,2 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,4,3,2 pattern.
+*/
+static inline uint32_t u32LedPattern1432(uint8_t u8Index)
+{
+    return (u8Index+(2*(u8Index+1)%2)-(4*(u8Index\LED_4)));
+}
+
+/**
+ * @brief u32LedPattern1243 Returns the u8Index-ranked LED pin index in the 1,2,3,4 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 1,2,3,4 pattern.
+*/
+static inline uint32_t u32LedPattern1234(uint8_t u8Index)
+{
+    return (u8Index);
+}
+
+/**
+ * @brief u32LedPattern1243 Returns the u8Index-ranked LED pin index in the 4,3,2,1 LED pattern.
+ *
+ * @note Our current implementation does not guarantee the safety of this function's output if
+ *       it takes any value outside the range of LED indexes as input. Therefore, this function
+ *       should be invoked with caution as it has no built-in assertion mechanism to ensure the
+ *       validity of its input.
+ *
+ * @param u8Index LED rank in the pattern.
+ *
+ * @return uint32_t Pin index of u8Index-ranked LED in the 4,3,2,1 pattern.
+*/
+static inline uint32_t u32LedPattern4321(uint8_t u8Index)
+{
+    return (LED_3+(LED_2-u8Index));
 }
 
 /**

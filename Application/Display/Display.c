@@ -20,11 +20,15 @@
 #define APP_DISPLAY_LED_SWITCH_ON       0U
 #define APP_DISPLAY_LED_SWITCH_OFF      1U
 #define APP_DISPLAY_TIMER_NO_WAIT       0U
-#define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ID_VERIF_SUCCESS   | \
-                                         APP_DISPLAY_ID_VERIF_FAILURE   | \
-                                         APP_DISPLAY_PEER_CONNECTION    | \
-                                         APP_DISPLAY_PEER_DISCONNECTION | \
-                                         APP_DISPLAY_ADVERTISING_START)
+#define APP_DISPLAY_EVENT_MASK          (APP_DISPLAY_ADVERTISING_START         | \
+                                         APP_DISPLAY_PEER_CONNECTION           | \
+                                         APP_DISPLAY_PEER_DISCONNECTION        | \
+                                         APP_DISPLAY_VALID_USER_INPUT          | \
+                                         APP_DISPLAY_INVALID_USER_INPUT        | \
+                                         APP_DISPLAY_ACCESS_GRANTED            | \
+                                         APP_DISPLAY_ACCESS_DINIED             | \
+                                         APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   | \
+                                         APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP   )
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_DISPLAY_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Display_tstrState))
@@ -39,41 +43,45 @@ static TimerHandle_t pvDisplayTimerHandle;
 static volatile uint8_t u8LedCounter;
 static volatile uint8_t u8CycleCounter;
 static uint32_t u32CurrentEvent;
-static void vidDisplayIdVerifSuccess(void);
-static void vidDisplayIdVerifFailure(void);
+static void vidDisplayAdvertisingStart(void);
 static void vidDisplayPeerConnected(void);
 static void vidDisplayPeerDisonnected(void);
-static void vidDisplayAdvertisingStart(void);
+static void vidDisplayInputVerifSuccess(void);
+static void vidDisplayInputVerifFailure(void);
+static void vidDisplayAccessGranted(void);
+static void vidDisplayAccessDenied(void);
+static void vidDisplaySuccessfulAddOp(void);
+static void vidDisplaySuccessfulCheckOp(void);
 static const Display_tstrState strDisplayStateMachine[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS  , vidDisplayIdVerifSuccess  },
-    {APP_DISPLAY_ID_VERIF_FAILURE  , vidDisplayIdVerifFailure  },
-    {APP_DISPLAY_PEER_CONNECTION   , vidDisplayPeerConnected   },
-    {APP_DISPLAY_PEER_DISCONNECTION, vidDisplayPeerDisonnected },
-    {APP_DISPLAY_ADVERTISING_START , vidDisplayAdvertisingStart}
+    {APP_DISPLAY_ADVERTISING_START        , vidDisplayAdvertisingStart },
+    {APP_DISPLAY_PEER_CONNECTION          , vidDisplayPeerConnected    },
+    {APP_DISPLAY_PEER_DISCONNECTION       , vidDisplayPeerDisonnected  },
+    {APP_DISPLAY_VALID_USER_INPUT         , vidDisplayInputVerifSuccess},
+    {APP_DISPLAY_INVALID_USER_INPUT       , vidDisplayInputVerifFailure},
+    {APP_DISPLAY_ACCESS_GRANTED           , vidDisplayAccessGranted    },
+    {APP_DISPLAY_ACCESS_DINIED            , vidDisplayAccessDenied     },
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , vidDisplaySuccessfulAddOp  },
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp}
 };
 static const Display_tstrLedPattern strDisplayPatterns[] =
 {
-    {APP_DISPLAY_ID_VERIF_SUCCESS  , u32LedPattern1243},
-    {APP_DISPLAY_ID_VERIF_FAILURE  , u32LedPattern1423},
-    {APP_DISPLAY_PEER_CONNECTION   , u32LedPattern1324},
-    {APP_DISPLAY_PEER_DISCONNECTION, u32LedPattern4231},
-    {APP_DISPLAY_ADVERTISING_START , u32LedPattern2341}
+    {APP_DISPLAY_ADVERTISING_START        , u32LedPattern1342},
+    {APP_DISPLAY_PEER_CONNECTION          , u32LedPattern1324},
+    {APP_DISPLAY_PEER_DISCONNECTION       , u32LedPattern4231},
+    {APP_DISPLAY_VALID_USER_INPUT         , u32LedPattern2341},
+    {APP_DISPLAY_INVALID_USER_INPUT       , u32LedPattern1432},
+    {APP_DISPLAY_ACCESS_GRANTED           , u32LedPattern1243},
+    {APP_DISPLAY_ACCESS_DINIED            , u32LedPattern1423},
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , u32LedPattern1234},
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, u32LedPattern4321}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
-static void vidDisplayIdVerifSuccess(void)
+static void vidDisplayAdvertisingStart(void)
 {
     /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ID_VERIF_SUCCESS_RANK;
-    /* Start Timer */
-    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
-}
-
-static void vidDisplayIdVerifFailure(void)
-{
-    /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ID_VERIF_FAILURE_RANK;
+    u32CurrentEvent = APP_DISPLAY_ADVERTISING_START_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
@@ -94,10 +102,50 @@ static void vidDisplayPeerDisonnected(void)
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
 
-static void vidDisplayAdvertisingStart(void)
+static void vidDisplayInputVerifSuccess(void)
 {
     /* Set current event */
-    u32CurrentEvent = APP_DISPLAY_ADVERTISING_START_RANK;
+    u32CurrentEvent = APP_DISPLAY_VALID_USER_INPUT_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayInputVerifFailure(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_INVALID_USER_INPUT_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayAccessGranted(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_ACCESS_GRANTED_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplayAccessDenied(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_ACCESS_DINIED_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplaySuccessfulAddOp(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK;
+    /* Start Timer */
+    BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
+}
+
+static void vidDisplaySuccessfulCheckOp(void)
+{
+    /* Set current event */
+    u32CurrentEvent = APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK;
     /* Start Timer */
     BaseType_t lErrorCode = xTimerStart(pvDisplayTimerHandle, APP_DISPLAY_TIMER_NO_WAIT);
 }
