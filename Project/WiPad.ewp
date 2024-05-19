@@ -389,6 +389,7 @@
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
+                    <state>$PROJ_DIR$\..\Utilities\Time</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2574,6 +2575,12 @@
             <name>Math</name>
             <file>
                 <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Time</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Time\Time.c</name>
             </file>
         </group>
     </group>
