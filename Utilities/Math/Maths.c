@@ -8,6 +8,10 @@
 /***************************************   INCLUDES   ********************************************/
 #include "Maths.h"
 
+/******************************************   DEFINES   ******************************************/
+#define S32_UPPER_BOUND 0x7FFFFFFF
+#define INVALID_RETURN  0xFFFFFFFF
+
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 int32_t s32Power(uint8_t u8Base, uint8_t u8Exponent)
 {

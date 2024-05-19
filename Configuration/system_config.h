@@ -32,6 +32,10 @@
 #define MID_BLE_TASK_PRIORITY 2
 #define MID_BLE_TASK_QUEUE_LENGTH 5
 
+/***************************************   UTILITY DEFINES   *************************************/
+/* Time utility. Define UTC+n as n and UTC-n as 12+(12-n) */
+#define UTIL_UTC_TIME_ZONE 1
+
 /*************************************   PERIPHERAL DEFINES   ************************************/
 /* SPI */
 #define SPI_AL_MAX_MASTER_INSTANCE_COUNT 3
