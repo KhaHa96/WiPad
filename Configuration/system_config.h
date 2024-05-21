@@ -28,7 +28,7 @@
 
 /*************************************   MIDDLEWARE DEFINES   ************************************/
 /* Ble Middleware Service */
-#define MID_BLE_TASK_STACK_SIZE 256
+#define MID_BLE_TASK_STACK_SIZE 1024
 #define MID_BLE_TASK_PRIORITY 2
 #define MID_BLE_TASK_QUEUE_LENGTH 5
 

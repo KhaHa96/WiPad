@@ -29,7 +29,7 @@ int8_t s8StringCompare(const uint8_t *pu8String1, const uint8_t *pu8String2, uin
            we have added a precautionary assert condition to make sure both pointers aren't NULL
            in every loop iteration before dereferencing them, in case bad arguments were input into
            the function. */
-        while((pchString1 && pchString2) && *pchString1 && (*pchString1 == *pchString2) && (u8Length--))
+        while((pchString1 && pchString2) && *pchString1 && (*pchString1 == *pchString2) && (--u8Length))
         {
             /* Increment both pointers to compare next set of characters in the next iteration */
             ++pchString1;
@@ -57,7 +57,7 @@ bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and check whether they're numerals.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (u8Length--))
+        while(pchString && *pchString && (--u8Length))
         {
             if((*pchString < '0') || (*pchString > '9'))
             {
@@ -89,7 +89,7 @@ bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and check whether they're low case alphabeticals.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (u8Length--))
+        while(pchString && *pchString && (--u8Length))
         {
             if((*pchString < 'a') || (*pchString > 'z'))
             {

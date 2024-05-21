@@ -33,17 +33,22 @@ typedef enum
 typedef enum
 {
     AppMgr_LowerBoundEvt = 0,
-    AppMgr_DisplayAdvertising,    /* Advertising started                             */
-    AppMgr_DisplayConnected,      /* Peer connection established                     */
-    AppMgr_DisplayDisconnected,   /* Peer disconnection                              */
-    AppMgr_DisplayValidInput,     /* Valid user input                                */
-    AppMgr_DisplayInvalidInput,   /* Invalid user input                              */
-    AppMgr_DisplayAccessGranted,  /* Access granted                                  */
-    AppMgr_DisplayAccessDenied,   /* Access denied                                   */
-    AppMgr_DisplayAdminAdd,       /* Successful admin user add operation             */
-    AppMgr_DisplayAdminCheck,     /* Successful admin user info log operation        */
-    AppMgr_DisplayNotifsDisabled, /* User input detected with notifications disabled */
-    AppMgr_RegTestEvent1,         /* User registration test event                    */
+    AppMgr_DisplayAdvertising,    /* Advertising started                                      */
+    AppMgr_DisplayConnected,      /* Peer connection established                              */
+    AppMgr_DisplayDisconnected,   /* Peer disconnection                                       */
+    AppMgr_DisplayValidInput,     /* Valid user input                                         */
+    AppMgr_DisplayInvalidInput,   /* Invalid user input                                       */
+    AppMgr_DisplayAccessGranted,  /* Access granted                                           */
+    AppMgr_DisplayAccessDenied,   /* Access denied                                            */
+    AppMgr_DisplayAdminAdd,       /* Successful admin user add operation                      */
+    AppMgr_DisplayAdminCheck,     /* Successful admin user info log operation                 */
+    AppMgr_DisplayNotifsDisabled, /* User input detected with notifications disabled          */
+    AppMgr_RegNotifEnabled,       /* Peer enabled notifications on User Registration service  */
+    AppMgr_RegNotifDisabled,      /* Peer disabled notifications on User Registration service */
+    AppMgr_RegUsrInputRx,         /* Received user input on User Id/Password characteristic   */
+    AppMgr_AdmNotifEnabled,       /* Peer enabled notifications on Admin User service         */
+    AppMgr_AdmNotifDisabled,      /* Peer disabled notifications on Admin User service        */
+    AppMgr_AdmUsrInputRx,         /* Received user input on Command characteristic            */
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 

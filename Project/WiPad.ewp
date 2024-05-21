@@ -389,6 +389,7 @@
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
+                    <state>$PROJ_DIR$\..\Utilities\Strings</state>
                     <state>$PROJ_DIR$\..\Utilities\Time</state>
                 </option>
                 <option>
@@ -2551,6 +2552,9 @@
             </group>
             <group>
                 <name>NVM_Service</name>
+                <excluded>
+                    <configuration>Debug</configuration>
+                </excluded>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Services\NVM_Service\NVM_Service.c</name>
                 </file>
@@ -2575,6 +2579,12 @@
             <name>Math</name>
             <file>
                 <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Strings</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Strings\Strings.c</name>
             </file>
         </group>
         <group>

@@ -13,8 +13,16 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_USEREG_TEST_EVENT1 (1 << 0)
-#define APP_USEREG_TEST_EVENT2 (1 << 1)
+/* Event bits */
+#define APP_USEREG_NOTIF_ENABLED  (1 << 10)
+#define APP_USEREG_NOTIF_DISABLED (1 << 11)
+#define APP_USEREG_USR_INPUT_RX   (1 << 12)
+#define APP_USEADM_NOTIF_ENABLED  (1 << 13)
+#define APP_USEADM_NOTIF_DISABLED (1 << 14)
+#define APP_USEADM_USR_INPUT_RX   (1 << 15)
+
+/* Dispatchable events */
+#define BLE_USEREG_NOTIF_DISABLED 10U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -36,6 +44,16 @@ typedef struct
     uint32_t u32Trigger;
     RegistrationAction pfAction;
 }Registration_tstrState;
+
+/**
+ * Registration_tenuAdmCmdType Enumeration of the different possible Admin command types.
+*/
+typedef enum
+{
+    Adm_AddUser = 0, /* Admin add user command  */
+    Adm_UserData,    /* Admin user data command */
+    Adm_InvalidCmd   /* Admin invalid command   */
+}Registration_tenuAdmCmdType;
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**

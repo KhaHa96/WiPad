@@ -10,6 +10,7 @@
 #include "task.h"
 #include "queue.h"
 #include "event_groups.h"
+#include "Time.h"
 #include "Attribution.h"
 #include "BLE_Service.h"
 
@@ -31,10 +32,12 @@ static QueueHandle_t pvKeyAttQueueHandle;
 static EventGroupHandle_t pvKeyAttEventGroupHandle;
 static void vidKeyAttEvent1Process(void *pvArg);
 static void vidKeyAttEvent2Process(void *pvArg);
+static void vidTest(void *pvArg);
 static const Attribution_tstrState strKeyAttStateMachine[] =
 {
     {APP_KEYATT_TEST_EVENT1, vidKeyAttEvent1Process},
-    {APP_KEYATT_TEST_EVENT2, vidKeyAttEvent2Process}
+    {APP_KEYATT_TEST_EVENT2, vidKeyAttEvent2Process},
+    {APP_TEST,vidTest}
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -48,9 +51,19 @@ static void vidKeyAttEvent2Process(void *pvArg)
     __NOP();
 }
 
+static void vidTest(void *pvArg)
+{
+    vidBleGetCurrentTime();
+}
+
+uint8_t Buffer[] = "Khaled";
+uint16_t size = sizeof(Buffer) - 1;
+
 static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
 {
+    uint32_t time = u32TimeToEpoch(pstrCurrentTime);
     __NOP();
+    enuTransferNotification(Ble_Registration, Buffer, &size);
 }
 
 static void vidAttributionEvent_Process(uint32_t u32Trigger, void *pvData)
@@ -58,12 +71,11 @@ static void vidAttributionEvent_Process(uint32_t u32Trigger, void *pvData)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
-    uint32_t u32Event = (uint32_t)s32Power(APP_KEYATT_POWER_BASE, u32Trigger - 1);
     uint8_t u8TriggerCount = APP_KEYATT_TRIGGER_COUNT(strKeyAttStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
-        if(u32Event == (strKeyAttStateMachine + u8Index)->u32Trigger)
+        if(u32Trigger == (strKeyAttStateMachine + u8Index)->u32Trigger)
         {
             /* Invoke associated action and exit loop */
             (strKeyAttStateMachine + u8Index)->pfAction(pvData);
@@ -97,7 +109,7 @@ static void vidKeyAttTaskFunction(void *pvArg)
             {
                 /* We have no tasks of higher priority so we're guaranteed that no other
                    message will be received in the queue until this message is processed */
-                xQueueReceive(pvKeyAttQueueHandle, pvData, APP_KEYATT_POP_IMMEDIATELY);
+                xQueueReceive(pvKeyAttQueueHandle, &pvData, APP_KEYATT_POP_IMMEDIATELY);
             }
 
             /* Process received event */
@@ -120,7 +132,7 @@ App_tenuStatus enuAttribution_Init(void)
                              &pvKeyAttTaskHandle))
     {
         /* Create message queue for Key attribution application */
-        pvKeyAttQueueHandle = xQueueCreate(APP_KEYATT_QUEUE_LENGTH, sizeof(uint32_t));
+        pvKeyAttQueueHandle = xQueueCreate(APP_KEYATT_QUEUE_LENGTH, sizeof(void *));
 
         if(pvKeyAttQueueHandle)
         {
@@ -141,7 +153,7 @@ App_tenuStatus enuAttribution_GetNotified(uint32_t u32Event, void *pvData)
     {
         /* Push event-related data to local message queue */
         enuRetVal = (pdTRUE == xQueueSend(pvKeyAttQueueHandle,
-                                          pvData,
+                                          &pvData,
                                           APP_KEYATT_PUSH_IMMEDIATELY))
                                           ?Application_Success
                                           :Application_Failure;

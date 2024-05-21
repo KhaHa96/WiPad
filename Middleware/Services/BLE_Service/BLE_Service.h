@@ -9,16 +9,26 @@
 #define _MID_BLE_H_
 
 /****************************************   INCLUDES   *******************************************/
+#include <String.h>
+#include "Strings.h"
 #include "middleware_utils.h"
 #include "system_config.h"
 #include "ble_cts_c.h"
+#include "ble_att.h"
+#include "ble_adm.h"
+#include "ble_reg.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Dispatchable events */
-#define BLE_ADVERTISING_STARTED 1U
-#define BLE_CONNECTION_EVENT    2U
-#define BLE_DISCONNECTION_EVENT 3U
-
+#define BLE_ADVERTISING_STARTED        1U
+#define BLE_CONNECTION_EVENT           2U
+#define BLE_DISCONNECTION_EVENT        3U
+#define BLE_REG_NOTIF_ENABLED_HEADSUP  11U
+#define BLE_REG_NOTIF_DISABLED_HEADSUP 12U
+#define BLE_REG_USER_INPUT_RECEIVED    13U
+#define BLE_ADM_NOTIF_ENABLED_HEADSUP  14U
+#define BLE_ADM_NOTIF_DISABLED_HEADSUP 15U
+#define BLE_ADM_USER_INPUT_RECEIVED    16U
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -30,6 +40,15 @@ typedef enum
     Ble_Attribution,      /* ble_att service */
     Ble_Admin             /* ble_adm service */
 }Ble_tenuServices;
+
+/**
+ * Rx data structure upon being on the receiving end of a GATT client write event for all services.
+*/
+typedef struct
+{
+    uint8_t const *pu8Data; /* Pointer to Rx buffer    */
+    uint16_t u16Length;     /* Length of received data */
+}Ble_tstrRxData;
 
 /**
  * BleAction State machine event-triggered action function prototype.

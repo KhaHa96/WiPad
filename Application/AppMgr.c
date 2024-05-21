@@ -8,6 +8,9 @@
 /****************************************   INCLUDES   *******************************************/
 #include "AppMgr.h"
 
+/************************************   PRIVATE DEFINES   ****************************************/
+#define APP_MANAGER_POWER_BASE 2U
+
 /*************************************   PRIVATE MACROS   ****************************************/
 #define APPMGR_ASSERT_EVENT(ARG)        \
 (                                       \
@@ -41,7 +44,12 @@ static const AppMgr_tstrEventSub strEventSubscriptionList[] =
     {AppMgr_DisplayAdminAdd      , {App_DisplayId     }, 1},
     {AppMgr_DisplayAdminCheck    , {App_DisplayId     }, 1},
     {AppMgr_DisplayNotifsDisabled, {App_DisplayId     }, 1},
-    {AppMgr_RegTestEvent1        , {App_RegistrationId}, 1},
+    {AppMgr_RegNotifEnabled      , {App_RegistrationId}, 1},
+    {AppMgr_RegNotifDisabled     , {App_RegistrationId}, 1},
+    {AppMgr_RegUsrInputRx        , {App_RegistrationId}, 1},
+    {AppMgr_AdmNotifEnabled      , {App_RegistrationId}, 1},
+    {AppMgr_AdmNotifDisabled     , {App_RegistrationId}, 1},
+    {AppMgr_AdmUsrInputRx        , {App_RegistrationId}, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/
@@ -83,7 +91,9 @@ extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData)
                 {
                     if(strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif)
                     {
-                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif(u32Event, pvData);
+                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif((uint32_t)s32Power(APP_MANAGER_POWER_BASE,
+                                                                                                             u32Event-1),
+                                                                                                             pvData);
                     }
                 }
 

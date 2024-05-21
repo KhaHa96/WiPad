@@ -18,9 +18,6 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 #include "ble_conn_params.h"
-#include "ble_att.h"
-#include "ble_adm.h"
-#include "ble_reg.h"
 #include "ble_db_discovery.h"
 #include "bsp_btn_ble.h"
 #include "App_Types.h"
@@ -77,6 +74,7 @@ static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
 static volatile bool bTimeReadingPossible = false;
 static volatile bool bFirstAdvInCycle = true;
 static vidCtsCallback pfCtsCallback = NULL;
+static volatile bool bAttNotifEnabled = false;
 static ble_uuid_t strAdvUuids[] =
 {
     {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
@@ -181,13 +179,15 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
         {
         case BLE_REG_NOTIF_ENABLED:
         {
-
+            /* User Registration service's notifications enabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_REG_NOTIF_ENABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_REG_NOTIF_DISABLED:
         {
-
+            /* User Registration service's notifications disabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_REG_NOTIF_DISABLED_HEADSUP, NULL);
         }
         break;
 
@@ -199,7 +199,8 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 
         case BLE_REG_ID_PWD_RX:
         {
-            AppMgr_enuDispatchEvent(6,NULL);
+            /* Received user input on User Id/Password characteristic. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_REG_USER_INPUT_RECEIVED, (void *)&pstrEvent->strRxData);
         }
         break;
 
@@ -237,7 +238,7 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 
         case BLE_ATT_KEY_ACT_RX:
         {
-
+            (void)AppMgr_enuDispatchEvent(10, NULL);
         }
         break;
 
@@ -257,13 +258,15 @@ static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
         {
         case BLE_ADM_NOTIF_ENABLED:
         {
-
+            /* Admin User service's notifications enabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_ADM_NOTIF_ENABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_ADM_NOTIF_DISABLED:
         {
-
+            /* Admin User service's notifications disabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_ADM_NOTIF_DISABLED_HEADSUP, NULL);
         }
         break;
 
@@ -275,7 +278,20 @@ static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
 
         case BLE_ADM_CMD_RX:
         {
+            /* Received user input on User Command characteristic. Notify Registration application.
+               Note: Data must be preserved until the Registration application receives and
+               processes it. */
+            Ble_tstrRxData strRxData;
+            strRxData.pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length + 1);
+            strRxData.u16Length = pstrEvent->strRxData.u16Length;
 
+            /* Successfully allocated memory for data pointer */
+            if(strRxData.pu8Data)
+            {
+                /* Copy data into buffer and dispatch it to the Registration application */
+                memcpy((void *)strRxData.pu8Data, pstrEvent->strRxData.pu8Data, strRxData.u16Length);
+                (void)AppMgr_enuDispatchEvent(BLE_ADM_USER_INPUT_RECEIVED, (void *)&strRxData);
+            }
         }
         break;
 
@@ -384,6 +400,12 @@ static void vidPeerMgrEventHandler(pm_evt_t const *pstrEvent)
             (void)ble_db_discovery_start(&BleDbInstance, pstrEvent->conn_handle);
         }
         break;
+
+        case PM_EVT_CONN_SEC_FAILED:
+        {
+            /* Initiate advertising again */
+            (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
+        }
 
         default:
             /* Nothing to do */
