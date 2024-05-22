@@ -22,6 +22,10 @@
 #define APP_USEADM_USR_INPUT_RX   (1 << 15)
 
 /* Dispatchable events */
+#define BLE_USEREG_VALID_INPUT    4U
+#define BLE_USEREG_INVALID_INPUT  5U
+#define BLE_USEREG_USER_ADDED     8U
+#define BLE_USEREG_USER_DATA      9U
 #define BLE_USEREG_NOTIF_DISABLED 10U
 
 /**************************************   PUBLIC TYPES   *****************************************/

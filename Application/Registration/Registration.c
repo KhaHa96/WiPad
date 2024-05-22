@@ -18,7 +18,8 @@
 #define APP_USEREG_POWER_BASE           2U
 #define APP_USEREG_PUSH_IMMEDIATELY     0U
 #define APP_USEREG_POP_IMMEDIATELY      0U
-#define APP_ADMUSR_ID_LENGTH            8U
+#define APP_USEREG_KEY_PARAMETER_LENGTH 4U
+#define APP_USEREG_ID_LENGTH            8U
 #define AP_MAX_COMMAND_LENGTH           20U
 #define APP_USEREG_EVENT_MASK           (APP_USEREG_NOTIF_ENABLED  | \
                                          APP_USEREG_NOTIF_DISABLED | \
@@ -40,6 +41,7 @@ static EventGroupHandle_t pvUseRegEventGroupHandle;
 static volatile bool bRegNotifEnabled = false;
 static volatile bool bAdmNotifEnabled = false;
 static volatile bool bExpectingPwd = false;
+static volatile bool bUseSignedIn = false;
 static volatile bool bAdmSignedIn = false;
 static void vidUseRegNotifEnabled(void *pvArg);
 static void vidUseRegNotifDisabled(void *pvArg);
@@ -85,14 +87,63 @@ static void vidUseRegInputReceived(void *pvArg)
         /* Make sure valid parameters are passed */
         if(pvArg)
         {
-            /* Check whether we're expecting a user Id or a user password */
-            if(bExpectingPwd)
+            /* Check whether user is already signed in */
+            if(!bUseSignedIn)
             {
-                
+                /* Extract command from received data */
+                Ble_tstrRxData *pstrInput = (Ble_tstrRxData *)pvArg;
+
+                /* Check whether we're expecting a user Id or a user password */
+                if(bExpectingPwd)
+                {
+                    /* Make sure user input a valid password */
+
+                }
+                else
+                {
+                    /* Make sure user input is a valid Id */
+                    if(bIsAllNumerals(pstrInput->pu8Data, APP_USEREG_ID_LENGTH) &&
+                       (APP_USEREG_ID_LENGTH == pstrInput->u16Length))
+                    {
+                        /* TODO: Find Id in NVM */
+                        //if(/*TODO: found*/)
+                        {
+                            /* Id located in NVM. Toggle expecting password flag */
+                            bExpectingPwd = true;
+                            /* Ask user to input their password */
+                            uint8_t u8NotificationBuffer[] = "Please type password";
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                            /* Display visual cue */
+                            (void)AppMgr_enuDispatchEvent(BLE_USEREG_VALID_INPUT, NULL);
+                        }
+                        //else
+                        {
+                            /* Notify user that they haven't been found in WiPad's database */
+                            uint8_t u8NotificationBuffer[] = "Unregistered Id";
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                            /* Display visual cue */
+                            (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
+                        }
+                    }
+                    else
+                    {
+                        /* Notify user of invalid Id format */
+                        uint8_t u8NotificationBuffer[] = "Invalid! Try again";
+                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                        (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                        /* Display visual cue */
+                        (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
+                    }
+                }
             }
             else
             {
-
+                /* Notify user that they're already signed in */
+                uint8_t u8NotificationBuffer[] = "Already signed in";
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
             }
         }
     }
@@ -107,7 +158,6 @@ static void vidUseAdmNotifEnabled(void *pvArg)
 {
     /* Admin User service's notifications enabled. Toggle its notifications enabled flag */
     bAdmNotifEnabled = true;
-
     /* Prompt Admin user to sign in if they haven't already, otherwise display a simple greeting */
     const char *pchNotification = bAdmSignedIn?"Hi there Admin":"Please input your Id";
     uint16_t u16NotificationSize = strlen(pchNotification);
@@ -127,19 +177,24 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
     /* Make sure valid parameters are passed */
     if(pu8Data && (u8Length > 0) && (u8Length <= AP_MAX_COMMAND_LENGTH))
     {
-        /* Compare received input with Add user command base */
-        if(0 == s8StringCompare(pu8Data, u8AddUsrCmd, 5))
+        /* Only accept 15 and 20-character-long commands */
+        if((15 == u8Length) || (20 == u8Length))
         {
-            if((15 == u8Length) || (20 == u8Length))
+            /* Compare received input against Add user and User data command bases */
+            if(0 == s8StringCompare(pu8Data, u8AddUsrCmd, 5))
             {
                 /* Add user command received. Check whether input contains a valid user Id */
-                if(bIsAllNumerals(&pu8Data[5], APP_ADMUSR_ID_LENGTH))
+                if(bIsAllNumerals(&pu8Data[5], APP_USEREG_ID_LENGTH))
                 {
-                    if(0 == s8StringCompare(&pu8Data[13], "k1", 2))
+                    /* Check for specific key type specifiers in the received input */
+                    if(((0 == s8StringCompare(&pu8Data[13], "k1", 2))  ||
+                        (0 == s8StringCompare(&pu8Data[13], "k3", 2))  ||
+                        (0 == s8StringCompare(&pu8Data[13], "k5", 2))) &&
+                       (15 == u8Length))
                     {
                         enuRetVal = Adm_AddUser;
                     }
-                    else if(0 == s8StringCompare(&pu8Data[13], "k2", 2))
+                    else if((0 == s8StringCompare(&pu8Data[13], "k2", 2)) && (20 == u8Length))
                     {
                         if('c' == pu8Data[15])
                         {
@@ -148,19 +203,8 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
                                 enuRetVal = Adm_AddUser;
                             }
                         }
-                        else
-                        {
-                            enuRetVal = Adm_AddUser;
-                        }                        
                     }
-                    else if(0 == s8StringCompare(&pu8Data[13], "k3", 2))
-                    {
-                        if('\0' == pu8Data[15])
-                        {
-                            enuRetVal = Adm_AddUser;
-                        }
-                    }
-                    else if(0 == s8StringCompare(&pu8Data[13], "k4", 2))
+                    else if((0 == s8StringCompare(&pu8Data[13], "k4", 2)) && (20 == u8Length))
                     {
                         if('t' == pu8Data[15])
                         {
@@ -173,17 +217,15 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
                 }
             }
         }
-        else if(s8StringCompare(pu8Data, u8UsrDataCmd, 8))
+        else if(0 == s8StringCompare(pu8Data, u8UsrDataCmd, 8))
         {
+            /* User data commands are 16 characters long */
             if(16 == u8Length)
             {
                 /* User data command received. Check whether input contains a valid user Id */
-                if(bIsAllNumerals(&pu8Data[8], APP_ADMUSR_ID_LENGTH))
+                if(bIsAllNumerals(&pu8Data[8], APP_USEREG_ID_LENGTH))
                 {
-                    if('\0' == pu8Data[9])
-                    {
-                        enuRetVal = Adm_UserData;
-                    }
+                    enuRetVal = Adm_UserData;
                 }
             }
         }
@@ -199,36 +241,35 @@ static App_tenuKeyTypes enuDecodeAddCommand(const uint8_t *pu8Data, uint16_t *pu
     /* Make sure valid parameters are passed */
     if(pu8Data && pu16Arg)
     {
-        switch(pu8Data[15])
+        if('c' == pu8Data[15])
         {
-        case '\0':
-        {
-            enuRetVal = (App_tenuKeyTypes)atoi((char *)(&pu8Data[16]));
-            pu16Arg = NULL;
-        }
-        break;
-
-        case 'c':
-        {
-            /* Count-restricted key */
+            /* The atoi function expects a C-style string with a NULL-terminated character array */
+            char *pchKeyCountStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH+1);
+            memcpy(pchKeyCountStr, &pu8Data[16], APP_USEREG_KEY_PARAMETER_LENGTH);
+            pchKeyCountStr[APP_USEREG_KEY_PARAMETER_LENGTH] = '\0';
+            *pu16Arg = (uint16_t)atoi(pchKeyCountStr);
             enuRetVal = App_CountRestrictedKey;
-            /* Extract key count */
-            *pu16Arg = (uint16_t)atoi((char *)(&pu8Data[16]));
+            free(pchKeyCountStr);
         }
-        break;
-
-        case 't':
+        else if('t' == pu8Data[15])
         {
-            /* Time-restricted key */
+            /* The atoi function expects a C-style string with a NULL-terminated character array */
+            char *pchKeyTimeoutStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH+1);
+            memcpy(pchKeyTimeoutStr, &pu8Data[16], APP_USEREG_KEY_PARAMETER_LENGTH);
+            pchKeyTimeoutStr[APP_USEREG_KEY_PARAMETER_LENGTH] = '\0';
+            *pu16Arg = (uint16_t)atoi(pchKeyTimeoutStr);
             enuRetVal = App_TimeRestrictedKey;
-            /* Extract timeout */
-            *pu16Arg = (uint16_t)atoi((char *)(&pu8Data[16]));
+            free(pchKeyTimeoutStr);
         }
-        break;
-
-        default:
-            /* Nothing to do */
-            break;
+        else
+        {
+            /* The atoi function expects a C-style string with a NULL-terminated character array */
+            char *pchKeyStr = (char *)malloc(2);
+            memcpy(pchKeyStr, &pu8Data[14], 1);
+            pchKeyStr[1] = '\0';
+            pu16Arg = NULL;
+            enuRetVal = (App_tenuKeyTypes)atoi(pchKeyStr);
+            free(pchKeyStr);
         }
     }
 
@@ -264,6 +305,9 @@ static void vidUseAdmInputReceived(void *pvArg)
                     App_tenuKeyTypes enuKeyType = enuDecodeAddCommand(pstrCommand->pu8Data, pu16Argument);
 
                     /* Add new NVM entry */
+
+                    /* New user added successfully */
+                    (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_ADDED, NULL);
                 }
                 break;
 
@@ -272,6 +316,9 @@ static void vidUseAdmInputReceived(void *pvArg)
                     /* Extract user Id */
 
                     /* Add new NVM entry */
+
+                    /* User data extracted successfully */
+                    (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_DATA, NULL);
                 }
                 break;
 
@@ -280,9 +327,9 @@ static void vidUseAdmInputReceived(void *pvArg)
                     /* Notify user of invalid input */
                     uint8_t u8NotificationBuffer[] = "Invalid! Try again";
                     uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                    (void)enuTransferNotification(Ble_Admin,
-                                                  u8NotificationBuffer,
-                                                  &u16NotificationSize);
+                    (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+                    /* Display visual cue */
+                    (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
                 }
                 break;
 
@@ -298,6 +345,9 @@ static void vidUseAdmInputReceived(void *pvArg)
                 uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
                 (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
             }
+
+            /* Free allocated memory */
+            free((void *)((Ble_tstrRxData *)pvArg)->pu8Data);
         }
     }
     else

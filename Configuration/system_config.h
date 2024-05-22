@@ -33,7 +33,7 @@
 #define MID_BLE_TASK_QUEUE_LENGTH 5
 
 /***************************************   UTILITY DEFINES   *************************************/
-/* Time utility. Define UTC+n as n and UTC-n as 12+(12-n) */
+/* Time utility. Define UTC+n as n and UTC-n as 24-n */
 #define UTIL_UTC_TIME_ZONE 1
 
 /*************************************   PERIPHERAL DEFINES   ************************************/
