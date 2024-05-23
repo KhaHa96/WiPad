@@ -2552,9 +2552,6 @@
             </group>
             <group>
                 <name>NVM_Service</name>
-                <excluded>
-                    <configuration>Debug</configuration>
-                </excluded>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Services\NVM_Service\NVM_Service.c</name>
                 </file>

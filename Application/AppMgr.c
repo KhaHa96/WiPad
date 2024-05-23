@@ -49,7 +49,8 @@ static const AppMgr_tstrEventSub strEventSubscriptionList[] =
     {AppMgr_RegUsrInputRx        , {App_RegistrationId}, 1},
     {AppMgr_AdmNotifEnabled      , {App_RegistrationId}, 1},
     {AppMgr_AdmNotifDisabled     , {App_RegistrationId}, 1},
-    {AppMgr_AdmUsrInputRx        , {App_RegistrationId}, 1}
+    {AppMgr_AdmUsrInputRx        , {App_RegistrationId}, 1},
+    {AppMgr_AdmUsrAddedToNvm     , {App_RegistrationId}, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/

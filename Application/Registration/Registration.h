@@ -14,12 +14,13 @@
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Event bits */
-#define APP_USEREG_NOTIF_ENABLED  (1 << 10)
-#define APP_USEREG_NOTIF_DISABLED (1 << 11)
-#define APP_USEREG_USR_INPUT_RX   (1 << 12)
-#define APP_USEADM_NOTIF_ENABLED  (1 << 13)
-#define APP_USEADM_NOTIF_DISABLED (1 << 14)
-#define APP_USEADM_USR_INPUT_RX   (1 << 15)
+#define APP_USEREG_NOTIF_ENABLED    (1 << 10)
+#define APP_USEREG_NOTIF_DISABLED   (1 << 11)
+#define APP_USEREG_USR_INPUT_RX     (1 << 12)
+#define APP_USEADM_NOTIF_ENABLED    (1 << 13)
+#define APP_USEADM_NOTIF_DISABLED   (1 << 14)
+#define APP_USEADM_USR_INPUT_RX     (1 << 15)
+#define APP_USEADM_USR_ADDED_TO_NVM (1 << 16)
 
 /* Dispatchable events */
 #define BLE_USEREG_VALID_INPUT    4U

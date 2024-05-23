@@ -13,20 +13,24 @@
 #include "event_groups.h"
 #include "Registration.h"
 #include "BLE_Service.h"
+#include "NVM_Service.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_USEREG_POWER_BASE           2U
 #define APP_USEREG_PUSH_IMMEDIATELY     0U
 #define APP_USEREG_POP_IMMEDIATELY      0U
 #define APP_USEREG_KEY_PARAMETER_LENGTH 4U
+#define APP_USEREG_HALF_ID_LENGTH       4U
 #define APP_USEREG_ID_LENGTH            8U
+#define APP_USEREG_PASSWORD_LENGTH      12U
 #define AP_MAX_COMMAND_LENGTH           20U
-#define APP_USEREG_EVENT_MASK           (APP_USEREG_NOTIF_ENABLED  | \
-                                         APP_USEREG_NOTIF_DISABLED | \
-                                         APP_USEREG_USR_INPUT_RX   | \
-                                         APP_USEADM_NOTIF_ENABLED  | \
-                                         APP_USEADM_NOTIF_DISABLED | \
-                                         APP_USEADM_USR_INPUT_RX)
+#define APP_USEREG_EVENT_MASK           (APP_USEREG_NOTIF_ENABLED    | \
+                                         APP_USEREG_NOTIF_DISABLED   | \
+                                         APP_USEREG_USR_INPUT_RX     | \
+                                         APP_USEADM_NOTIF_ENABLED    | \
+                                         APP_USEADM_NOTIF_DISABLED   | \
+                                         APP_USEADM_USR_INPUT_RX     | \
+                                         APP_USEADM_USR_ADDED_TO_NVM   )
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_USEREG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
@@ -49,16 +53,19 @@ static void vidUseRegInputReceived(void *pvArg);
 static void vidUseAdmNotifEnabled(void *pvArg);
 static void vidUseAdmNotifDisabled(void *pvArg);
 static void vidUseAdmInputReceived(void *pvArg);
+static void vidUseAdmAddedToNvm(void *pvArg);
 static uint8_t u8AddUsrCmd[] = "mkusi";
 static uint8_t u8UsrDataCmd[] = "mkud -i ";
+static uint8_t u8InvalidPasswordBase[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 static const Registration_tstrState strUseRegStateMachine[] =
 {
-    {APP_USEREG_NOTIF_ENABLED , vidUseRegNotifEnabled },
-    {APP_USEREG_NOTIF_DISABLED, vidUseRegNotifDisabled},
-    {APP_USEREG_USR_INPUT_RX  , vidUseRegInputReceived},
-    {APP_USEADM_NOTIF_ENABLED , vidUseAdmNotifEnabled },
-    {APP_USEADM_NOTIF_DISABLED, vidUseAdmNotifDisabled},
-    {APP_USEADM_USR_INPUT_RX  , vidUseAdmInputReceived}
+    {APP_USEREG_NOTIF_ENABLED   , vidUseRegNotifEnabled },
+    {APP_USEREG_NOTIF_DISABLED  , vidUseRegNotifDisabled},
+    {APP_USEREG_USR_INPUT_RX    , vidUseRegInputReceived},
+    {APP_USEADM_NOTIF_ENABLED   , vidUseAdmNotifEnabled },
+    {APP_USEADM_NOTIF_DISABLED  , vidUseAdmNotifDisabled},
+    {APP_USEADM_USR_INPUT_RX    , vidUseAdmInputReceived},
+    {APP_USEADM_USR_ADDED_TO_NVM, vidUseAdmAddedToNvm   },
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -90,7 +97,7 @@ static void vidUseRegInputReceived(void *pvArg)
             /* Check whether user is already signed in */
             if(!bUseSignedIn)
             {
-                /* Extract command from received data */
+                /* Extract received data */
                 Ble_tstrRxData *pstrInput = (Ble_tstrRxData *)pvArg;
 
                 /* Check whether we're expecting a user Id or a user password */
@@ -105,11 +112,51 @@ static void vidUseRegInputReceived(void *pvArg)
                     if(bIsAllNumerals(pstrInput->pu8Data, APP_USEREG_ID_LENGTH) &&
                        (APP_USEREG_ID_LENGTH == pstrInput->u16Length))
                     {
-                        /* TODO: Find Id in NVM */
-                        //if(/*TODO: found*/)
+                        /* Extract record key from Id */
+                        fds_record_desc_t strRecordDesc = {0};
+                        fds_find_token_t strPersistentToken = {0};
+                        fds_find_token_t strExpirableToken = {0};
+                        char *pchRecordKey = (char *)malloc(APP_USEREG_HALF_ID_LENGTH+1);
+                        memcpy(pchRecordKey, &pstrInput->pu8Data[4], APP_USEREG_HALF_ID_LENGTH);
+                        pchRecordKey[APP_USEREG_HALF_ID_LENGTH] = '\0';
+                        uint16_t u16RecordKey = (uint16_t)atoi(pchRecordKey);
+                        free(pchRecordKey);
+
+                        /* Find user record in NVM */
+                        fds_flash_record_t strFdsRecord = {0};
+                        Nvm_tstrRecord strRecord;
+                        bool bRecordFound = false;
+                        uint8_t u8ReTries = 3;
+
+                        while((!bRecordFound) && (u8ReTries--))
+                        {
+                            if(Middleware_Success == enuNVM_FindRecord(u16RecordKey,
+                                                                       &strRecordDesc,
+                                                                       &strPersistentToken,
+                                                                       &strExpirableToken))
+                            {
+                                /* Read record content */
+                                if(Middleware_Success == enuNVM_ReadRecord(&strRecordDesc,
+                                                                           &strFdsRecord,
+                                                                           &strRecord))
+                                {
+                                    bRecordFound = (0 == s8StringCompare(&strRecord.u8Id[0],
+                                                                         &pstrInput->pu8Data[0],
+                                                                         APP_USEREG_ID_LENGTH));
+                                }
+                            }
+                        }
+
+                        if(bRecordFound)
                         {
                             /* Id located in NVM. Toggle expecting password flag */
                             bExpectingPwd = true;
+                            /* Check stored password */
+                            if(0 == memcmp(&strRecord.u8Password[0], &u8InvalidPasswordBase[0], 8))
+
+
+
+
                             /* Ask user to input their password */
                             uint8_t u8NotificationBuffer[] = "Please type password";
                             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
@@ -117,7 +164,7 @@ static void vidUseRegInputReceived(void *pvArg)
                             /* Display visual cue */
                             (void)AppMgr_enuDispatchEvent(BLE_USEREG_VALID_INPUT, NULL);
                         }
-                        //else
+                        else
                         {
                             /* Notify user that they haven't been found in WiPad's database */
                             uint8_t u8NotificationBuffer[] = "Unregistered Id";
@@ -298,27 +345,89 @@ static void vidUseAdmInputReceived(void *pvArg)
                 {
                 case Adm_AddUser:
                 {
-                    /* Extract user Id */
-
                     /* Decode Add user command to extract key type */
                     uint16_t *pu16Argument;
                     App_tenuKeyTypes enuKeyType = enuDecodeAddCommand(pstrCommand->pu8Data, pu16Argument);
 
+                    /* Create new NVM entry */
+                    Nvm_tenuFiles enuNvmFile;
+                    fds_record_desc_t strRecordDesc = {0};
+                    Nvm_tstrRecord strRecord;
+                    memcpy(strRecord.u8Id, &pstrCommand->pu8Data[5], APP_USEREG_ID_LENGTH);
+                    memset(strRecord.u8Password, 0xFF, APP_USEREG_PASSWORD_LENGTH);
+                    strRecord.enuKeyType = enuKeyType;
+                    if(App_CountRestrictedKey == enuKeyType)
+                    {
+                        strRecord.uKeyQuantifier.strCountRes.u16CountLimit = *pu16Argument;
+                        strRecord.uKeyQuantifier.strCountRes.u16UsedCount = 0;
+                        enuNvmFile = Nvm_ExpirableKeys;
+                    }
+                    else if(App_TimeRestrictedKey == enuKeyType)
+                    {
+                        strRecord.uKeyQuantifier.strTimeRes.bIsKeyActive = false;
+                        strRecord.uKeyQuantifier.strTimeRes.u16Timeout = *pu16Argument;
+                        enuNvmFile = Nvm_ExpirableKeys;
+                    }
+                    else
+                    {
+                        enuNvmFile = Nvm_PersistentKeys;
+                    }
                     /* Add new NVM entry */
-
-                    /* New user added successfully */
-                    (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_ADDED, NULL);
+                    (void)enuNVM_AddNewRecord(&strRecordDesc, &strRecord, enuNvmFile);
                 }
                 break;
 
                 case Adm_UserData:
                 {
-                    /* Extract user Id */
+                    /* Extract record key from command */
+                    fds_record_desc_t strRecordDesc = {0};
+                    fds_find_token_t strPersistentToken = {0};
+                    fds_find_token_t strExpirableToken = {0};
+                    char *pchRecordKey = (char *)malloc(APP_USEREG_HALF_ID_LENGTH+1);
+                    memcpy(pchRecordKey, &pstrCommand->pu8Data[9], APP_USEREG_HALF_ID_LENGTH);
+                    pchRecordKey[APP_USEREG_HALF_ID_LENGTH] = '\0';
+                    uint16_t u16RecordKey = (uint16_t)atoi(pchRecordKey);
+                    free(pchRecordKey);
 
-                    /* Add new NVM entry */
+                    fds_flash_record_t strFdsRecord = {0};
+                    Nvm_tstrRecord strRecord;
+                    bool bRecordFound = false;
+                    uint8_t u8ReTries = 3;
 
-                    /* User data extracted successfully */
-                    (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_DATA, NULL);
+                    /* Find user record in NVM */
+                    while((!bRecordFound) && (u8ReTries--))
+                    {
+                        if(Middleware_Success == enuNVM_FindRecord(u16RecordKey,
+                                                                   &strRecordDesc,
+                                                                   &strPersistentToken,
+                                                                   &strExpirableToken))
+                        {
+                            /* Read record content */
+                            if(Middleware_Success == enuNVM_ReadRecord(&strRecordDesc,
+                                                                       &strFdsRecord,
+                                                                       &strRecord))
+                            {
+                                bRecordFound = (0 == s8StringCompare(&strRecord.u8Id[0],
+                                                                     &pstrCommand->pu8Data[8],
+                                                                     APP_USEREG_ID_LENGTH));
+                            }
+                        }
+                    }
+
+                    if(bRecordFound)
+                    {
+                        /* User data extracted successfully */
+                        (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_DATA, NULL);
+
+
+                    }
+                    else
+                    {
+                        /* Notify user that record couldn't be found */
+                        uint8_t u8NotificationBuffer[] = "Could not find Id";
+                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                        (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                    }
                 }
                 break;
 
@@ -355,6 +464,12 @@ static void vidUseAdmInputReceived(void *pvArg)
         /* Received user input while notifications are disabled. Give user a visual heads-up */
         (void)AppMgr_enuDispatchEvent(BLE_USEREG_NOTIF_DISABLED, NULL);
     }
+}
+
+static void vidUseAdmAddedToNvm(void *pvArg)
+{
+    /* New user successfully added to NVM */
+    (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_ADDED, NULL);
 }
 
 static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)

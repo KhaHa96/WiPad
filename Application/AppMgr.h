@@ -49,6 +49,7 @@ typedef enum
     AppMgr_AdmNotifEnabled,       /* Peer enabled notifications on Admin User service         */
     AppMgr_AdmNotifDisabled,      /* Peer disabled notifications on Admin User service        */
     AppMgr_AdmUsrInputRx,         /* Received user input on Command characteristic            */
+    AppMgr_AdmUsrAddedToNvm,      /* Successfully added new user entry to NVM                 */
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 
