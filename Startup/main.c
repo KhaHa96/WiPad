@@ -13,6 +13,7 @@
 #include "boards.h"
 #include "bsp.h"
 #include "BLE_Service.h"
+#include "NVM_Service.h"
 #include "AppMgr.h"
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -35,6 +36,9 @@ int main(void)
 
     /* Initialize Ble stack task */
     Mid_tenuStatus enuMidStatus = enuBle_Init();
+
+    /* Initialize NVM middleware service */
+    enuMidStatus = enuNvm_Init();
 
     /* Start scheduler */
     vTaskStartScheduler();

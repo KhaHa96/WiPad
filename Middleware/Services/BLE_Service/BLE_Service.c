@@ -18,9 +18,6 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 #include "ble_conn_params.h"
-#include "ble_att.h"
-#include "ble_adm.h"
-#include "ble_reg.h"
 #include "ble_db_discovery.h"
 #include "bsp_btn_ble.h"
 #include "App_Types.h"
@@ -37,7 +34,7 @@
 #define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000U
 #define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3U
 #define BLE_ADVERTISING_INTERVAL               64U
-#define BLE_ADVERTISING_DURATION               18000U
+#define BLE_ADVERTISING_DURATION               6000U
 #define BLE_PERFORM_BONDING                    1U
 #define BLE_MITM_PROTECTION_NOT_REQUIRED       0U
 #define BLE_LE_SECURE_CONNECTIONS_DISABLED     0U
@@ -51,7 +48,7 @@
 #define BLE_REMOTE_IRK_ID_ADDRESS_DISTRIBUTE   1U
 
 /************************************   PRIVATE MACROS   *****************************************/
-#define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
+/* Ble service assert macro */
 #define BLE_SERVICE_ASSERT(svc)    \
 (                                  \
     ( svc == Ble_Registration ) || \
@@ -60,6 +57,7 @@
 )
 
 /************************************   GLOBAL VARIABLES   ***************************************/
+/* Global function used to propagate dispatchable events to other tasks */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /************************************   PRIVATE VARIABLES   **************************************/
@@ -77,6 +75,7 @@ static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
 static volatile bool bTimeReadingPossible = false;
 static volatile bool bFirstAdvInCycle = true;
 static vidCtsCallback pfCtsCallback = NULL;
+static volatile bool bAttNotifEnabled = false;
 static ble_uuid_t strAdvUuids[] =
 {
     {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
@@ -181,25 +180,41 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
         {
         case BLE_REG_NOTIF_ENABLED:
         {
-
+            /* User Registration service's notifications enabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_REG_NOTIF_ENABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_REG_NOTIF_DISABLED:
         {
-
-        }
-        break;
-
-        case BLE_REG_STATUS_TX:
-        {
-
+            /* User Registration service's notifications disabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_REG_NOTIF_DISABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_REG_ID_PWD_RX:
         {
-            AppMgr_enuDispatchEvent(6,NULL);
+            /* Received user input on Id/Pwd characteristic. Notify Registration application.
+               Note: Data must be preserved until the Registration application receives and
+               processes it. */
+            Ble_tstrRxData *pstrRxData = (Ble_tstrRxData *)malloc(sizeof(Ble_tstrRxData));
+
+            if(pstrRxData)
+            {
+                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length+1);
+                pstrRxData->u16Length = pstrEvent->strRxData.u16Length;
+
+                /* Successfully allocated memory for data pointer */
+                if(NULL == pstrRxData->pu8Data)
+                {
+                    /* Free allocated memory */
+                    free(pstrRxData);
+                }
+
+                /* Copy data into buffer and dispatch it to the Registration application */
+                memcpy((void *)pstrRxData->pu8Data, pstrEvent->strRxData.pu8Data, pstrRxData->u16Length);
+                (void)AppMgr_enuDispatchEvent(BLE_REG_USER_INPUT_RECEIVED, (void *)pstrRxData);
+            }
         }
         break;
 
@@ -219,25 +234,41 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
         {
         case BLE_ATT_NOTIF_ENABLED:
         {
-
+            /* Key Activation service's notifications enabled. Notify Attribution application */
+            (void)AppMgr_enuDispatchEvent(BLE_ATT_NOTIF_ENABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_ATT_NOTIF_DISABLED:
         {
-
-        }
-        break;
-
-        case BLE_ATT_STATUS_TX:
-        {
-
+            /* Key Activation service's notifications disabled. Notify Attribution application */
+            (void)AppMgr_enuDispatchEvent(BLE_ATT_NOTIF_DISABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_ATT_KEY_ACT_RX:
         {
+            /* Received user input on Key Activation characteristic. Notify Attribution application.
+               Note: Data must be preserved until the Attribution application receives and
+               processes it. */
+            Ble_tstrRxData *pstrRxData = (Ble_tstrRxData *)malloc(sizeof(Ble_tstrRxData));
 
+            if(pstrRxData)
+            {
+                pstrRxData->pu8Data = (uint8_t *)malloc(2);
+                pstrRxData->u16Length = 1;
+
+                /* Successfully allocated memory for data pointer */
+                if(NULL == pstrRxData->pu8Data)
+                {
+                    /* Free allocated memory */
+                    free(pstrRxData);
+                }
+
+                /* Copy data into buffer and dispatch it to the Registration application */
+                memcpy((void *)pstrRxData->pu8Data, &pstrEvent->u8RxByte, pstrRxData->u16Length);
+                (void)AppMgr_enuDispatchEvent(BLE_ATT_USER_INPUT_RECEIVED, (void *)pstrRxData);
+            }
         }
         break;
 
@@ -257,25 +288,41 @@ static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
         {
         case BLE_ADM_NOTIF_ENABLED:
         {
-
+            /* Admin User service's notifications enabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_ADM_NOTIF_ENABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_ADM_NOTIF_DISABLED:
         {
-
-        }
-        break;
-
-        case BLE_ADM_STATUS_TX:
-        {
-
+            /* Admin User service's notifications disabled. Notify Registration application */
+            (void)AppMgr_enuDispatchEvent(BLE_ADM_NOTIF_DISABLED_HEADSUP, NULL);
         }
         break;
 
         case BLE_ADM_CMD_RX:
         {
+            /* Received user input on User Command characteristic. Notify Registration application.
+               Note: Data must be preserved until the Registration application receives and
+               processes it. */
+            Ble_tstrRxData *pstrRxData = (Ble_tstrRxData *)malloc(sizeof(Ble_tstrRxData));
 
+            if(pstrRxData)
+            {
+                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length+1);
+                pstrRxData->u16Length = pstrEvent->strRxData.u16Length;
+
+                /* Successfully allocated memory for data pointer */
+                if(NULL == pstrRxData->pu8Data)
+                {
+                    /* Free allocated memory */
+                    free(pstrRxData);
+                }
+
+                /* Copy data into buffer and dispatch it to the Registration application */
+                memcpy((void *)pstrRxData->pu8Data, pstrEvent->strRxData.pu8Data, pstrRxData->u16Length);
+                (void)AppMgr_enuDispatchEvent(BLE_ADM_USER_INPUT_RECEIVED, (void *)pstrRxData);
+            }
         }
         break;
 
@@ -384,6 +431,12 @@ static void vidPeerMgrEventHandler(pm_evt_t const *pstrEvent)
             (void)ble_db_discovery_start(&BleDbInstance, pstrEvent->conn_handle);
         }
         break;
+
+        case PM_EVT_CONN_SEC_FAILED:
+        {
+            /* Initiate advertising again */
+            (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
+        }
 
         default:
             /* Nothing to do */

@@ -45,14 +45,14 @@ uint32_t u32TimeToEpoch(exact_time_256_t *pstrTime)
            numbers divisible by 4 are leap years, except those divisible by 100 and not by 400. */
 
         uint8_t u8Mrc;
-        /* Compute the month aligning coefficient. Note: In the original algorithm, this
-           coefficient is used as (Month-14)/12. It's supposed to yield -1 for the monthes of
+        /* Compute the-month aligning coefficient. Note: In the original algorithm, this
+           coefficient is used as (Month-14)/12. It's supposed to yield -1 for the months of
            January and February and 0 for the rest of the months. */
         u8Mrc = (MONTH_REALIGN_COEFF - pstrTime->day_date_time.date_time.month) / MONTHS_IN_YEAR;
 
         /* Compute the number of days since March 1st 4801 BC. This won't account for
            irregularities such as the leap year rule. Those will be taken into account later. This
-           Works by rounding up years in groups of 4 and comuting the number of days in a 4
+           works by rounding up years in groups of 4 and computing the number of days in a 4
            consecutive-year cycle. The number of days in the current year will also be accounted
            for later. */
         u32RetVal += ((3 * REGULAR_YEAR_DAY_COUNT + LEAP_YEAR_DAY_COUNT) *
@@ -74,7 +74,7 @@ uint32_t u32TimeToEpoch(exact_time_256_t *pstrTime)
         /* Add day-count in current month */
         u32RetVal += pstrTime->day_date_time.date_time.day;
 
-        /* readjust to account for extra days added to simplify computations */
+        /* Readjust to account for extra days added to simplify computations */
         u32RetVal -= EXTRA_DAYS;
 
         /* Compute number of Julian days since January 1st 1970 and convert to seconds */

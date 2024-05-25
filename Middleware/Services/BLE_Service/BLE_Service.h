@@ -9,16 +9,29 @@
 #define _MID_BLE_H_
 
 /****************************************   INCLUDES   *******************************************/
+#include <String.h>
+#include "Strings.h"
 #include "middleware_utils.h"
 #include "system_config.h"
 #include "ble_cts_c.h"
+#include "ble_att.h"
+#include "ble_adm.h"
+#include "ble_reg.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-/* Dispatchable events */
-#define BLE_ADVERTISING_STARTED 1U
-#define BLE_CONNECTION_EVENT    2U
-#define BLE_DISCONNECTION_EVENT 3U
-
+/* BLE_Service's dispatchable events */
+#define BLE_ADVERTISING_STARTED        1U  /* Started advertising                               */
+#define BLE_CONNECTION_EVENT           2U  /* Connection with peer established                  */
+#define BLE_DISCONNECTION_EVENT        3U  /* Disconnected from peer                            */
+#define BLE_REG_NOTIF_ENABLED_HEADSUP  11U /* Peer enabled notifications on ble_reg             */
+#define BLE_REG_NOTIF_DISABLED_HEADSUP 12U /* Peer disabled notifications on ble_reg            */
+#define BLE_REG_USER_INPUT_RECEIVED    13U /* Received data from peer on Id/Pwd characteristic  */
+#define BLE_ADM_NOTIF_ENABLED_HEADSUP  14U /* Peer enabled notifications on ble_adm             */
+#define BLE_ADM_NOTIF_DISABLED_HEADSUP 15U /* Peer disabled notifications on ble_adm            */
+#define BLE_ADM_USER_INPUT_RECEIVED    16U /* Received data from peer on command characteristic */
+#define BLE_ATT_NOTIF_ENABLED_HEADSUP  19U /* Peer enabled notifications on ble_att             */
+#define BLE_ATT_NOTIF_DISABLED_HEADSUP 20U /* Peer disabled notifications on ble_att            */
+#define BLE_ATT_USER_INPUT_RECEIVED    22U /* Received data from peer on Key activation char    */
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -30,6 +43,15 @@ typedef enum
     Ble_Attribution,      /* ble_att service */
     Ble_Admin             /* ble_adm service */
 }Ble_tenuServices;
+
+/**
+ * Rx data structure upon being on the receiving end of a GATT client write event for all services.
+*/
+typedef struct
+{
+    uint8_t const *pu8Data; /* Pointer to Rx buffer    */
+    uint16_t u16Length;     /* Length of received data */
+}Ble_tstrRxData;
 
 /**
  * BleAction State machine event-triggered action function prototype.

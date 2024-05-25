@@ -14,7 +14,6 @@
 #include "nrf_gpio.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_DISPLAY_POWER_BASE          2U
 #define APP_DISPLAY_LED_COUNT           4U
 #define APP_DISPLAY_DEFAULT_CYCLE_COUNT 4U
 #define APP_DISPLAY_LED_SWITCH_ON       0U
@@ -28,7 +27,8 @@
                                          APP_DISPLAY_ACCESS_GRANTED            | \
                                          APP_DISPLAY_ACCESS_DENIED             | \
                                          APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   | \
-                                         APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP   )
+                                         APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP | \
+                                         APP_DISPLAY_DISABLED_NOTIFICATIONS      )
 
 /************************************   PRIVATE MACROS   *****************************************/
 #define APP_DISPLAY_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Display_tstrState))
@@ -211,12 +211,11 @@ static void vidDisplayEvent_Process(uint32_t u32Trigger)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
-    uint32_t u32Event = (uint32_t)s32Power(APP_DISPLAY_POWER_BASE, u32Trigger - 1);
     uint8_t u8TriggerCount = APP_DISPLAY_TRIGGER_COUNT(strDisplayStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
-        if(u32Event == (strDisplayStateMachine + u8Index)->u32Trigger)
+        if(u32Trigger == (strDisplayStateMachine + u8Index)->u32Trigger)
         {
             /* Invoke associated action and exit loop */
             (strDisplayStateMachine + u8Index)->pfAction();

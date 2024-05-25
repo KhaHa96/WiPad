@@ -13,8 +13,24 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_USEREG_TEST_EVENT1 (1 << 0)
-#define APP_USEREG_TEST_EVENT2 (1 << 1)
+/* Event bits */
+#define APP_USEREG_PEER_DISCONNECTION (1 << 2 )     /* Disconnected from peer                    */
+#define APP_USEREG_NOTIF_ENABLED      (1 << 10)     /* Peer enabled notifications on ble_reg     */
+#define APP_USEREG_NOTIF_DISABLED     (1 << 11)     /* Peer disabled notifications on ble_reg    */
+#define APP_USEREG_USR_INPUT_RX       (1 << 12)     /* Received data from peer on Id/Pwd charac  */
+#define APP_USEADM_NOTIF_ENABLED      (1 << 13)     /* Peer enabled notifications on ble_adm     */
+#define APP_USEADM_NOTIF_DISABLED     (1 << 14)     /* Peer disabled notifications on ble_adm    */
+#define APP_USEADM_USR_INPUT_RX       (1 << 15)     /* Received data from peer on command charac */
+#define APP_USEADM_USR_ADDED_TO_NVM   (1 << 16)     /* New user added to NVM                     */
+#define APP_USEADM_PASSWORD_UPDATED   (1 << 17)     /* User password updated                     */
+
+/* Dispatchable events */
+#define BLE_USEREG_VALID_INPUT    4U       /* User entered a valid input display pattern         */
+#define BLE_USEREG_INVALID_INPUT  5U       /* User entered an invalid input display pattern      */
+#define BLE_USEREG_USER_ADDED     8U       /* User added successfully to NVM display pattern     */
+#define BLE_USEREG_USER_DATA      9U       /* User data extracted successfully display pattern   */
+#define BLE_USEREG_NOTIF_DISABLED 10U      /* Received data with notifs disabled display pattern */
+#define BLE_USEREG_USER_SIGNED_IN 21U      /* Notify attribution of user signing in successfully */
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -29,6 +45,16 @@
 typedef void (*RegistrationAction)(void *pvArg);
 
 /**
+ * Registration_tenuAdmCmdType Enumeration of the different possible Admin command types.
+*/
+typedef enum
+{
+    Adm_AddUser = 0, /* Admin add user command  */
+    Adm_UserData,    /* Admin user data command */
+    Adm_InvalidCmd   /* Admin invalid command   */
+}Registration_tenuAdmCmdType;
+
+/**
  * Registration_tstrState State-defining structure for the Registration application.
 */
 typedef struct
@@ -39,7 +65,7 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuRegistration_Init Creates User registration task, event group to receive notifications
+ * @brief enuRegistration_Init Creates User Registration task, event group to receive notifications
  *        from other tasks and message queue to hold data potentially accompanying incoming events.
  *
  * @note This function is invoked by the Application Manager.
@@ -52,14 +78,14 @@ typedef struct
 App_tenuStatus enuRegistration_Init(void);
 
 /**
- * @brief enuRegistration_GetNotified Notifies User registration task of an incoming event by
+ * @brief enuRegistration_GetNotified Notifies User Registration task of an incoming event by
  *        setting it in local event group and setting its accompanying data in local message
  *        queue.
  *
  * @note This function is invoked by the Application Manager signaling that another task
- *       wants to communicate with the User registration task.
+ *       wants to communicate with the User Registration task.
  *
- * @pre This function can't be called unless User registration task is initialized and running.
+ * @pre This function can't be called unless User Registration task is initialized and running.
  *
  * @param u32Event Event to be posted in local event group.
  * @param pvData Pointer to event-related data.

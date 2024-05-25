@@ -29,6 +29,19 @@
 int8_t s8StringCompare(const uint8_t *pu8String1, const uint8_t *pu8String2, uint8_t u8Length);
 
 /**
+ * @brief bContainsNumeral Checks whether a string contains at least one numeric character.
+ *
+ * @warning This function takes a data buffer as input. Failing to provide a valid string will
+ *          yield an erroneous result.
+ *
+ * @param pu8String Pointer to string.
+ * @param u8Length Number of characters to check.
+ *
+ * @return bool true if string contains at least one numeric character, false otherwise.
+ */
+bool bContainsNumeral(const uint8_t *pu8String, uint8_t u8Length);
+
+/**
  * @brief bIsAllNumerals Checks whether all characters in a string are numerals.
  *
  * @warning This function takes a data buffer as input. Failing to provide a valid string will
@@ -55,5 +68,18 @@ bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length);
  * @return bool true if all characters in string are low case alphabeticals, false otherwise.
  */
 bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length);
+
+/**
+ * @brief bContainsSpecialChar Checks whether a string contains at least one special character.
+ *
+ * @warning This function takes a data buffer as input. Failing to provide a valid string will
+ *          yield an erroneous result.
+ *
+ * @param pu8String Pointer to string.
+ * @param u8Length Number of characters to check.
+ *
+ * @return bool true if string contains at least one special character, false otherwise.
+ */
+bool bContainsSpecialChar(const uint8_t *pu8String, uint8_t u8Length);
 
 #endif /* _UTIL_STRING_H_ */

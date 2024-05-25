@@ -13,8 +13,18 @@
 #include "system_config.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define APP_KEYATT_TEST_EVENT1 (1 << 0)
-#define APP_KEYATT_TEST_EVENT2 (1 << 1)
+/* Event bits */
+#define APP_KEYATT_DISCONNECTION  (1 << 2 ) /* Disconnected from peer                           */
+#define APP_KEYATT_NOTIF_ENABLED  (1 << 18) /* Peer enabled notifications on ble_att            */
+#define APP_KEYATT_NOTIF_DISABLED (1 << 19) /* Peer disabled notifications on ble_att           */
+#define APP_KEYATT_USER_SIGNED_IN (1 << 20) /* Active user successfully signed in               */
+#define APP_KEYATT_USR_INPUT_RX   (1 << 21) /* Received data from peer on Key Activation charac */
+
+/* Dispatchable events */
+#define BLE_KEYATT_INVALID_INPUT  5U  /* User entered an invalid input display pattern      */
+#define BLE_KEYATT_GRANT_ACCESS   6U  /* Key activated legitimately and access is granted   */
+#define BLE_KEYATT_ACCESS_DENIED  7U  /* Key activation request rejected                    */
+#define BLE_KEYATT_NOTIF_DISABLED 10U /* Received data with notifs disabled display pattern */
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**

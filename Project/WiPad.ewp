@@ -389,6 +389,7 @@
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
+                    <state>$PROJ_DIR$\..\Utilities\Strings</state>
                     <state>$PROJ_DIR$\..\Utilities\Time</state>
                 </option>
                 <option>
@@ -2539,6 +2540,9 @@
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_ble.c</name>
                 </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_soc.c</name>
+                </file>
             </group>
         </group>
         <group>
@@ -2575,6 +2579,12 @@
             <name>Math</name>
             <file>
                 <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Strings</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Strings\Strings.c</name>
             </file>
         </group>
         <group>
