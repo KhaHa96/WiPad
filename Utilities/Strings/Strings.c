@@ -57,7 +57,7 @@ bool bContainsNumeral(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and find the first numeric character if any.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (--u8Length))
+        while(pchString && *pchString && u8Length)
         {
             if((*pchString >= '0') && (*pchString <= '9'))
             {
@@ -66,8 +66,10 @@ bool bContainsNumeral(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration */
+            /* Increment pointer to check next character in the next iteration and decrement string
+               length */
             pchString++;
+            u8Length--;
         }
     }
 
@@ -89,7 +91,7 @@ bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and check whether they're numerals.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (--u8Length))
+        while(pchString && *pchString && u8Length)
         {
             if((*pchString < '0') || (*pchString > '9'))
             {
@@ -98,8 +100,10 @@ bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration */
+            /* Increment pointer to check next character in the next iteration and decrement string
+               length */
             pchString++;
+            u8Length--;
         }
     }
 
@@ -121,7 +125,7 @@ bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and check whether they're low case alphabeticals.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (--u8Length))
+        while(pchString && *pchString && u8Length)
         {
             if((*pchString < 'a') || (*pchString > 'z'))
             {
@@ -130,8 +134,10 @@ bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration */
+            /* Increment pointer to check next character in the next iteration decrement string
+               length*/
             pchString++;
+            u8Length--;
         }
     }
 
@@ -153,7 +159,7 @@ bool bContainsSpecialChar(const uint8_t *pu8String, uint8_t u8Length)
         /* Go through the string's characters and find the first special character if any.
            Note: The non-NULL pointer assert is unnecessary and has been added as a precautionary
            measure in case this function is fed a bad string */
-        while(pchString && *pchString && (--u8Length))
+        while(pchString && *pchString && u8Length)
         {
             if(((*pchString < '0') || (*pchString > '9')) &&
                ((*pchString < 'a') || (*pchString > 'z')) &&
@@ -164,8 +170,10 @@ bool bContainsSpecialChar(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration */
+            /* Increment pointer to check next character in the next iteration decrement string
+               length */
             pchString++;
+            u8Length--;
         }
     }
 

@@ -36,3 +36,16 @@ int32_t s32Power(uint8_t u8Base, uint8_t u8Exponent)
 
     return s32RetVal;
 }
+
+uint8_t u8DigitCount(uint32_t u32Integer)
+{
+    uint8_t u8RetVal = 1;
+
+    while(u32Integer >= 10)
+    {
+        u32Integer /= 10;
+        u8RetVal++;
+    }
+
+    return u8RetVal;
+}

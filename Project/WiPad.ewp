@@ -2540,6 +2540,9 @@
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_ble.c</name>
                 </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_soc.c</name>
+                </file>
             </group>
         </group>
         <group>

@@ -12,13 +12,19 @@
 /************************************   PRIVATE DEFINES   ****************************************/
 #define NVM_PERSISTENT_KEYS_FILE_ID 0x8010
 #define NVM_EXPIRABLE_KEYS_FILE_ID  0x9010
-#define NVM_HALF_ID_LENGTH          4U
+#define NVM_PEER_MANAGER_ADDR_START 0xC000
+#define NVM_ID_LENGTH               8U
 
 /************************************   GLOBAL VARIABLES   ***************************************/
+/* Global function used to propagate dispatchable events to other tasks */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /************************************   PRIVATE VARIABLES   **************************************/
+/* Flag indicating whether NVM_Service is initialized */
 static bool bIsInitialized = false;
+
+/* Flag indicating whether or not the current record update is a password registration operation */
+static bool bIsPwdRegistration = false;
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
 static void vidNvmEventHandler(fds_evt_t const *pstrEvent)
@@ -40,22 +46,36 @@ static void vidNvmEventHandler(fds_evt_t const *pstrEvent)
 
         case FDS_EVT_WRITE:
         {
-            if(NRF_SUCCESS == pstrEvent->result)
+            /* Peer manager uses the 0xC000 -- 0xFFFF address range and stores records with key
+               values that happen to follow in that integer range as a way of tagging them as Peer
+               manager records. It's therefore safe to assume that FDS records with key values
+               outside of the Peer manager's address range are application records. */
+            if((NRF_SUCCESS == pstrEvent->result) &&
+               (pstrEvent->write.record_key < NVM_PEER_MANAGER_ADDR_START))
             {
-                /* Send notification to peer */
-                uint8_t u8NotificationBuffer[] = "User added";
-                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
-
                 /* Notify Registration application of successful operation */
                 (void)AppMgr_enuDispatchEvent(NVM_ENTRY_ADDED, NULL);
             }
         }
         break;
 
+        case FDS_EVT_UPDATE:
+        {
+            if((NRF_SUCCESS == pstrEvent->result) && bIsPwdRegistration)
+            {
+                /* Notify Registration application of successful operation */
+                (void)AppMgr_enuDispatchEvent(NVM_PASSWORD_REGISTERED, NULL);
+            }
+        }
+        break;
+
         case FDS_EVT_DEL_RECORD:
         {
-
+            if(NRF_SUCCESS == pstrEvent->result)
+            {
+                /* Added for debugging */
+                __NOP();
+            }
         }
         break;
 
@@ -85,12 +105,12 @@ Mid_tenuStatus enuNVM_AddNewRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
-    /* Make sure valid parameters are passed */
+    /* Make sure valid parameters are passed and NVM_Service is initialized */
     if(pstrRcDesc && pstrRecord && (enuFile < Nvm_MaxFiles) && bIsInitialized)
     {
         /* We use two seperate files for expirable and persistent keys.
-           Note: FDS imposes no major restrictions on file id and record key values (record keys)
-           must be distinct from 0x0000 and file Ids must be distinct from 0xFFFF. However, we need
+           Note: FDS imposes no major restrictions on file id and record key values (record keys
+           must be distinct from 0x0000 and file Ids must be distinct from 0xFFFF). However, we need
            to particularly identify records with unique keys to be able to quickly find them between
            softdevice events. To establish this uniqueness, we use the four first numbers of the
            user Id. If this is not enough to distinguish between two entries that happen to have
@@ -98,15 +118,15 @@ Mid_tenuStatus enuNVM_AddNewRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord
            apart. */
 
         /* Create string out of the four first numbers of user's Id */
-        char *pchRecordKey = (char *)malloc(NVM_HALF_ID_LENGTH+1);
-        memcpy(pchRecordKey, &pstrRecord->u8Id[4], NVM_HALF_ID_LENGTH);
-        pchRecordKey[NVM_HALF_ID_LENGTH] = '\0';
+        char *pchRecordKey = (char *)malloc((NVM_ID_LENGTH/2)+1);
+        memcpy(pchRecordKey, &pstrRecord->u8Id[4], NVM_ID_LENGTH/2);
+        pchRecordKey[NVM_ID_LENGTH/2] = '\0';
 
         /* Make sure data length is 4-byte aligned */
         fds_record_t const strFdsRecord =
         {
             .file_id = enuFile?NVM_EXPIRABLE_KEYS_FILE_ID:NVM_PERSISTENT_KEYS_FILE_ID,
-            .key = (uint16_t)atoi(&pchRecordKey[4]),
+            .key = (uint16_t)atoi(pchRecordKey),
             .data.p_data = pstrRecord,
             .data.length_words = (sizeof(*pstrRecord)+3) / sizeof(uint32_t),
         };
@@ -127,8 +147,8 @@ Mid_tenuStatus enuNVM_FindRecord(uint16_t u16RecordKey, fds_record_desc_t *pstrR
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
-    /* Make sure valid parameters are passed */
-    if(u16RecordKey)
+    /* Make sure valid parameters are passed and NVM_Service is initialized */
+    if(u16RecordKey && bIsInitialized)
     {
         memset(pstrRecordDesc, 0, sizeof(fds_record_desc_t));
 
@@ -158,8 +178,8 @@ Mid_tenuStatus enuNVM_ReadRecord(fds_record_desc_t *pstrRecordDesc, fds_flash_re
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
-    /* Make sure valid parameters are passed */
-    if(pstrRecordDesc && pstrRecord)
+    /* Make sure valid parameters are passed and NVM_Service is initialized */
+    if(pstrRecordDesc && pstrRecord && bIsInitialized)
     {
         /* Open record */
         if(NRF_SUCCESS == fds_record_open(pstrRecordDesc, pstrRecord))
@@ -168,11 +188,62 @@ Mid_tenuStatus enuNVM_ReadRecord(fds_record_desc_t *pstrRecordDesc, fds_flash_re
             memcpy(pstrData, pstrRecord->p_data, sizeof(Nvm_tstrRecord));
 
             /* Close record when done reading to allow garbage collection to eventually reclaim
-               record's memory spacein flash */
+               record's memory space in flash */
             enuRetVal = (NRF_SUCCESS == fds_record_close(pstrRecordDesc))
                                                         ?Middleware_Success
                                                         :Middleware_Failure;
         }
+    }
+
+    return enuRetVal;
+}
+
+Mid_tenuStatus enuNVM_UpdateRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord const *pstrRecord, Nvm_tenuFiles enuFile, bool bPwdReg)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+
+    /* Make sure valid parameters are passed and NVM_Service is initialized */
+    if(pstrRcDesc && pstrRecord && (enuFile < Nvm_MaxFiles) && bIsInitialized)
+    {
+        /* Create string out of the four first numbers of user's Id */
+        char *pchRecordKey = (char *)malloc((NVM_ID_LENGTH/2)+1);
+        memcpy(pchRecordKey, &pstrRecord->u8Id[4], NVM_ID_LENGTH/2);
+        pchRecordKey[NVM_ID_LENGTH/2] = '\0';
+
+        /* Make sure data length is 4-byte aligned */
+        fds_record_t const strFdsRecord =
+        {
+            .file_id = enuFile?NVM_EXPIRABLE_KEYS_FILE_ID:NVM_PERSISTENT_KEYS_FILE_ID,
+            .key = (uint16_t)atoi(pchRecordKey),
+            .data.p_data = pstrRecord,
+            .data.length_words = (sizeof(*pstrRecord)+3) / sizeof(uint32_t),
+        };
+
+        /* Free allocated memory */
+        free(pchRecordKey);
+
+        /* Set password registration flag if this update is to save a new password */
+        bIsPwdRegistration = bPwdReg;
+
+        /* Add new record to NVM */
+        enuRetVal = (NRF_SUCCESS == fds_record_update(pstrRcDesc, &strFdsRecord))
+                                                      ?Middleware_Success
+                                                      :Middleware_Failure;
+    }
+
+    return enuRetVal;
+}
+
+Mid_tenuStatus enuNVM_DeleteRecord(fds_record_desc_t *pstrRcDesc)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+
+    /* Make sure valid arguments are passed and NVM_Service is initialized */
+    if(pstrRcDesc && bIsInitialized)
+    {
+        enuRetVal = (NRF_SUCCESS == fds_record_delete(pstrRcDesc))
+                                                      ?Middleware_Success
+                                                      :Middleware_Failure;
     }
 
     return enuRetVal;

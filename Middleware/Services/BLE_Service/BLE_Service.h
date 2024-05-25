@@ -19,16 +19,19 @@
 #include "ble_reg.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-/* Dispatchable events */
-#define BLE_ADVERTISING_STARTED        1U
-#define BLE_CONNECTION_EVENT           2U
-#define BLE_DISCONNECTION_EVENT        3U
-#define BLE_REG_NOTIF_ENABLED_HEADSUP  11U
-#define BLE_REG_NOTIF_DISABLED_HEADSUP 12U
-#define BLE_REG_USER_INPUT_RECEIVED    13U
-#define BLE_ADM_NOTIF_ENABLED_HEADSUP  14U
-#define BLE_ADM_NOTIF_DISABLED_HEADSUP 15U
-#define BLE_ADM_USER_INPUT_RECEIVED    16U
+/* BLE_Service's dispatchable events */
+#define BLE_ADVERTISING_STARTED        1U  /* Started advertising                               */
+#define BLE_CONNECTION_EVENT           2U  /* Connection with peer established                  */
+#define BLE_DISCONNECTION_EVENT        3U  /* Disconnected from peer                            */
+#define BLE_REG_NOTIF_ENABLED_HEADSUP  11U /* Peer enabled notifications on ble_reg             */
+#define BLE_REG_NOTIF_DISABLED_HEADSUP 12U /* Peer disabled notifications on ble_reg            */
+#define BLE_REG_USER_INPUT_RECEIVED    13U /* Received data from peer on Id/Pwd characteristic  */
+#define BLE_ADM_NOTIF_ENABLED_HEADSUP  14U /* Peer enabled notifications on ble_adm             */
+#define BLE_ADM_NOTIF_DISABLED_HEADSUP 15U /* Peer disabled notifications on ble_adm            */
+#define BLE_ADM_USER_INPUT_RECEIVED    16U /* Received data from peer on command characteristic */
+#define BLE_ATT_NOTIF_ENABLED_HEADSUP  19U /* Peer enabled notifications on ble_att             */
+#define BLE_ATT_NOTIF_DISABLED_HEADSUP 20U /* Peer disabled notifications on ble_att            */
+#define BLE_ATT_USER_INPUT_RECEIVED    22U /* Received data from peer on Key activation char    */
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**

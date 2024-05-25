@@ -14,7 +14,6 @@
 #include "nrf_gpio.h"
 
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_DISPLAY_POWER_BASE          2U
 #define APP_DISPLAY_LED_COUNT           4U
 #define APP_DISPLAY_DEFAULT_CYCLE_COUNT 4U
 #define APP_DISPLAY_LED_SWITCH_ON       0U
