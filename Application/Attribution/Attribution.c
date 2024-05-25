@@ -32,6 +32,9 @@
 /* Converts time in minutes to time in seconds */
 #define APP_KEYATT_MINS_TO_SECS(MIN) (MIN*60)
 
+/* Converts time in seconds to time in minutes */
+#define APP_KEYATT_SECS_TO_MINS(SEC) (SEC/60)
+
 /************************************   GLOBAL VARIABLES   ***************************************/
 /* Global function used to propagate dispatchable events to other tasks */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
@@ -220,12 +223,6 @@ static void vidKeyAttInputReceived(void *pvArg)
                     {
                         if(!strActiveRecord.uKeyQuantifier.bOneTimeExpired)
                         {
-                            /* One-time key activated. Send notification to peer */
-                            uint8_t u8NotificationBuffer[] = "Welcome!";
-                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                            (void)enuTransferNotification(Ble_Attribution,
-                                                          u8NotificationBuffer,
-                                                          &u16NotificationSize);
                             /* Grant access */
                             (void)AppMgr_enuDispatchEvent(BLE_KEYATT_GRANT_ACCESS, NULL);
 
@@ -237,6 +234,12 @@ static void vidKeyAttInputReceived(void *pvArg)
                                                       &strActiveRecord,
                                                       Nvm_ExpirableKeys,
                                                       false);
+                            /* One-time key activated. Send notification to peer */
+                            uint8_t u8NotificationBuffer[] = "One-time key: 0";
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            (void)enuTransferNotification(Ble_Attribution,
+                                                          u8NotificationBuffer,
+                                                          &u16NotificationSize);
                         }
                         else
                         {
@@ -260,12 +263,6 @@ static void vidKeyAttInputReceived(void *pvArg)
                         if(strActiveRecord.uKeyQuantifier.strCountRes.u16UsedCount <
                            strActiveRecord.uKeyQuantifier.strCountRes.u16CountLimit)
                         {
-                            /* Count-restricted key activated. Send notification to peer */
-                            uint8_t u8NotificationBuffer[] = "Welcome!";
-                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                            (void)enuTransferNotification(Ble_Attribution,
-                                                          u8NotificationBuffer,
-                                                          &u16NotificationSize);
                             /* Grant access */
                             (void)AppMgr_enuDispatchEvent(BLE_KEYATT_GRANT_ACCESS, NULL);
 
@@ -277,6 +274,21 @@ static void vidKeyAttInputReceived(void *pvArg)
                                                       &strActiveRecord,
                                                       Nvm_ExpirableKeys,
                                                       false);
+                            
+                            /* Notify user of key status */
+                            uint8_t u8NotificationBuffer[] = "Count-limited: ";
+                            uint8_t u8LimitDigitCnt = u8DigitCount(strActiveRecord.uKeyQuantifier.strCountRes.u16CountLimit - 
+                                                                   strActiveRecord.uKeyQuantifier.strCountRes.u16UsedCount);
+                            char chTimeoutStr[5];
+                            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
+                            strActiveRecord.uKeyQuantifier.strCountRes.u16CountLimit -
+                            strActiveRecord.uKeyQuantifier.strCountRes.u16UsedCount);
+
+                            strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt+1);
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
+
+                            /* Transfer notification to peer */
+                            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
                         }
                         else
                         {
@@ -373,8 +385,10 @@ static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
     /* Check whether time-restricted key has been activated already */
     if(strActiveRecord.uKeyQuantifier.strTimeRes.bIsKeyActive)
     {
-        if((u32TimeToEpoch(pstrCurrentTime) -
-           strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime) >=
+        /* Get current timestamp */
+        uint32_t u32CurrentTime = u32TimeToEpoch(pstrCurrentTime);
+
+        if((u32CurrentTime - strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime) >=
            APP_KEYATT_MINS_TO_SECS(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout))
         {
             /* Key Expired. Send notification to peer */
@@ -389,22 +403,46 @@ static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
             /* Delete user entry from NVM */
             (void)enuNVM_DeleteRecord(&strActiveRecordDesc);
         }
+        else
+        {
+            /* Notify user of remaining key lifespan */
+            uint8_t u8NotificationBuffer[] = "Time-limited: ";
+            uint8_t u8LimitDigitCnt = u8DigitCount(APP_KEYATT_SECS_TO_MINS(strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime +
+                                                   APP_KEYATT_MINS_TO_SECS(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout) -
+                                                   u32CurrentTime));
+            char chTimeoutStr[5];
+            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
+                     APP_KEYATT_SECS_TO_MINS(strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime +
+                     APP_KEYATT_MINS_TO_SECS(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout) -
+                     u32CurrentTime));
+
+            strncpy((char *)&u8NotificationBuffer[14], chTimeoutStr, u8LimitDigitCnt+1);
+            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
+
+            /* Transfer notification to peer */
+            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+        }
     }
     else
     {
         /* Time-restricted key activated. Send notification to peer */
-        uint8_t u8NotificationBuffer[] = "Welcome!";
-        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-        (void)enuTransferNotification(Ble_Attribution,
-                                      u8NotificationBuffer,
-                                      &u16NotificationSize);
+        uint8_t u8NotificationBuffer[] = "Time-limited: ";
+        uint8_t u8LimitDigitCnt = u8DigitCount(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout);
+        char chTimeoutStr[5];
+        snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d", strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout);
+        strncpy((char *)&u8NotificationBuffer[14], chTimeoutStr, u8LimitDigitCnt+1);
+        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
+        (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+
         /* Grant access */
         (void)AppMgr_enuDispatchEvent(BLE_KEYATT_GRANT_ACCESS, NULL);
 
         /* Toggle key activation state */
         strActiveRecord.uKeyQuantifier.strTimeRes.bIsKeyActive = true;
+
         /* Store key activation time */
         strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime = u32TimeToEpoch(pstrCurrentTime);
+
         /* Update user entry record in NVM */
         (void)enuNVM_UpdateRecord(&strActiveRecordDesc,
                                   &strActiveRecord,
