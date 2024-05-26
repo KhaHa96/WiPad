@@ -12,6 +12,7 @@
 #include "middleware_utils.h"
 #include "system_config.h"
 #include "App_types.h"
+#include "ble_cts_c.h"
 #include "fds.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
@@ -59,6 +60,7 @@ typedef struct
 {
     uint8_t u8Id[NVM_ID_SIZE];           /* User Id                         */
     uint8_t u8Password[NVM_PWD_SIZE];    /* User password                   */
+    exact_time_256_t strLastKnownUse;    /* Last time this key was used     */
     App_tenuKeyTypes enuKeyType;         /* User's key type                 */
     union{
         Nvm_tstrCountResKey strCountRes; /* Count-restricted key quantifier */
