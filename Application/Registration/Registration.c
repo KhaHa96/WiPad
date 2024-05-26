@@ -539,12 +539,25 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
         {
         case App_OneTimeKey:
         {
-            /* One-time expirable key */
-            uint8_t u8NotificationBuffer[] = "One-time expirable";
-            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+            if(pstrRecord->uKeyQuantifier.bOneTimeExpired)
+            {
+                /* One-time expirable key has been used */
+                uint8_t u8NotificationBuffer[] = "One-time: Used";
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
 
-            /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+                /* Transfer notification to peer */
+                (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+            }
+            else
+            {
+                /* One-time expirable key still available */
+                uint8_t u8NotificationBuffer[] = "One-time expirable";
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+
+                /* Transfer notification to peer */
+                (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+                
+            }
         }
         break;
 
@@ -555,7 +568,8 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             /* Copy count-limit value into buffer in a human-readable format */
             uint8_t u8LimitDigitCnt = u8DigitCount(pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit);
             char chTimeoutStr[5];
-            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d", pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit);
+            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d", pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit -
+                                                               pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
             strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt+1);
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
 
