@@ -345,10 +345,8 @@
                     <state>$PROJ_DIR$\..\Board_Support\MCU\legacy</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\clock</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
-                    <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\gpio</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\boards</state>
-                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
@@ -2227,24 +2225,6 @@
     </group>
     <group>
         <name>Board_Support</name>
-        <group>
-            <name>Drivers</name>
-            <group>
-                <name>High_Level_Drivers</name>
-            </group>
-            <group>
-                <name>Low_Level_Abstraction</name>
-                <group>
-                    <name>Spi</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\Drivers\Low_Level_Abstraction\Spi\Spi_al.c</name>
-                    </file>
-                </group>
-                <group>
-                    <name>Twi</name>
-                </group>
-            </group>
-        </group>
         <group>
             <name>MCU</name>
             <group>
