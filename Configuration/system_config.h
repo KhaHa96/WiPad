@@ -38,14 +38,6 @@
 #define UTIL_UTC_TIME_ZONE 1
 
 /*************************************   PERIPHERAL DEFINES   ************************************/
-/* SPI */
-#define SPI_AL_MAX_MASTER_INSTANCE_COUNT 3
-#define SPI_AL_MAX_SLAVE_INSTANCE_COUNT 3
-#define SPI_MOSI_PIN 2
-#define SPI_MISO_PIN 3
-#define SPI_CS_PIN 4
-#define SPI_CLOCK_PIN 1
-
 /* LEDS */
 #define LED_1 17
 #define LED_2 18
