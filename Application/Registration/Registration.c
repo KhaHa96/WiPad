@@ -556,7 +556,6 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
 
                 /* Transfer notification to peer */
                 (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
-                
             }
         }
         break;
@@ -661,6 +660,7 @@ static void vidUseAdmInputReceived(void *pvArg)
                     /* Set Id extracted from command, invalid password and key type in NVM entry */
                     memcpy(strRecord.u8Id, &pstrCommand->pu8Data[5], APP_USEREG_ID_LENGTH);
                     memset(strRecord.u8Password, 0xFF, APP_USEREG_MAX_PASSWORD_LENGTH);
+                    memset(&strRecord.strLastKnownUse, 0, sizeof(exact_time_256_t));
                     strRecord.enuKeyType = enuKeyType;
                     if(App_CountRestrictedKey == enuKeyType)
                     {
