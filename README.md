@@ -22,7 +22,8 @@ Upon registration, a user is granted a key to use in future access attempts. WiP
 * **Time-restricted key**: Expires after a predefined time span has elapsed since it's been used for the first time.
 * **Admin key**: Never expires and can only be used by WiPad's Admin.
 
-WiPad's Admin is in many ways a super user that dictates the rules every other user will have to abide by:
+WiPad's Admin is in many ways a super user that dictates the rules every other user will have to abide by.
+
 **Admin's role**: WiPad's Admin is responsible for adding users to the system's database for them to be identified upon actually trying to use it. Failing to do so will result in users getting rejected for not being recognized by the device. This recognition relies on a universally unique 8-digit number that every user should have and is expected to know when interacting with WiPad. A user's key type is also assigned to them by the Admin when they're first added to the device's database.
 
 **Admin commands**: WiPad's Admin can either add a new user or request information about a registered user's key type and status. These are respectively achieved by typing in the following commands:
