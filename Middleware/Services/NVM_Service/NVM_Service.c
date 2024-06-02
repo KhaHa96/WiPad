@@ -47,7 +47,7 @@ static void vidNvmEventHandler(fds_evt_t const *pstrEvent)
         case FDS_EVT_WRITE:
         {
             /* Peer manager uses the 0xC000 -- 0xFFFF address range and stores records with key
-               values that happen to follow in that integer range as a way of tagging them as Peer
+               values that happen to fall in that integer range as a way of tagging them as Peer
                manager records. It's therefore safe to assume that FDS records with key values
                outside of the Peer manager's address range are application records. */
             if((NRF_SUCCESS == pstrEvent->result) &&
@@ -241,6 +241,7 @@ Mid_tenuStatus enuNVM_DeleteRecord(fds_record_desc_t *pstrRcDesc)
     /* Make sure valid arguments are passed and NVM_Service is initialized */
     if(pstrRcDesc && bIsInitialized)
     {
+        /* Delete record from NVM file system */
         enuRetVal = (NRF_SUCCESS == fds_record_delete(pstrRcDesc))
                                                       ?Middleware_Success
                                                       :Middleware_Failure;

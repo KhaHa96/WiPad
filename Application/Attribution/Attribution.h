@@ -1,5 +1,5 @@
-/* --------------------------   Key attribution app for nRF52832   ----------------------------- */
-/*  File      -  Key attribution application header file                                         */
+/* --------------------------   Key Attribution app for nRF52832   ----------------------------- */
+/*  File      -  Key Attribution application header file                                         */
 /*  target    -  nRF52832                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
@@ -14,11 +14,11 @@
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Event bits */
-#define APP_KEYATT_DISCONNECTION  (1 << 2 ) /* Disconnected from peer                           */
-#define APP_KEYATT_NOTIF_ENABLED  (1 << 18) /* Peer enabled notifications on ble_att            */
-#define APP_KEYATT_NOTIF_DISABLED (1 << 19) /* Peer disabled notifications on ble_att           */
-#define APP_KEYATT_USER_SIGNED_IN (1 << 20) /* Active user successfully signed in               */
-#define APP_KEYATT_USR_INPUT_RX   (1 << 21) /* Received data from peer on Key Activation charac */
+#define APP_KEYATT_DISCONNECTION  (1 << 2 )  /* Disconnected from peer                           */
+#define APP_KEYATT_NOTIF_ENABLED  (1 << 18)  /* Peer enabled notifications on ble_att            */
+#define APP_KEYATT_NOTIF_DISABLED (1 << 19)  /* Peer disabled notifications on ble_att           */
+#define APP_KEYATT_USER_SIGNED_IN (1 << 20)  /* Active user successfully signed in               */
+#define APP_KEYATT_USR_INPUT_RX   (1 << 21)  /* Received data from peer on Key Activation charac */
 
 /* Dispatchable events */
 #define BLE_KEYATT_INVALID_INPUT  5U  /* User entered an invalid input display pattern      */
@@ -49,7 +49,7 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuAttribution_Init Creates Key attribution task, event group to receive notifications
+ * @brief enuAttribution_Init Creates Key Attribution task, event group to receive notifications
  *        from other tasks and message queue to hold data potentially accompanying incoming events.
  *
  * @note This function is invoked by the Application Manager.
@@ -69,7 +69,7 @@ App_tenuStatus enuAttribution_Init(void);
  * @note This function is invoked by the Application Manager signaling that another task
  *       wants to communicate with the Key Attribution task.
  *
- * @pre This function can't be called unless Key Attribution task is initialized and running.
+ * @pre This function can't be called unless the Key Attribution task is initialized and running.
  *
  * @param u32Event Event to be posted in local event group.
  * @param pvData Pointer to event-related data.

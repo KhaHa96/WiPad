@@ -31,53 +31,62 @@
                                          APP_DISPLAY_DISABLED_NOTIFICATIONS      )
 
 /************************************   PRIVATE MACROS   *****************************************/
+/* Compute state machine trigger count */
 #define APP_DISPLAY_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Display_tstrState))
+
+/* Event and associated display pattern aligning macro */
 #define APP_DISPLAY_ALIGN_EVENT(arg) (arg - 1)
+
+/* Macro to get previoud LED pin index in pattern */
 #define APP_DISPLAY_PENULTIMATE_LED(arg) ((arg-(arg/LED_2)+3*(LED_1/arg)))
 
 /************************************   PRIVATE VARIABLES   **************************************/
-static TaskHandle_t pvDisplayTaskHandle;
-static QueueHandle_t pvDisplayQueueHandle;
-static EventGroupHandle_t pvDisplayEventGroupHandle;
-static TimerHandle_t pvDisplayTimerHandle;
-static volatile uint8_t u8LedCounter;
-static volatile uint8_t u8CycleCounter;
-static uint32_t u32CurrentEvent;
-static uint8_t u8LedsState = 1;
-static void vidDisplayAdvertisingStart(void);
-static void vidDisplayPeerConnected(void);
-static void vidDisplayPeerDisonnected(void);
-static void vidDisplayInputVerifSuccess(void);
-static void vidDisplayInputVerifFailure(void);
-static void vidDisplayAccessGranted(void);
-static void vidDisplayAccessDenied(void);
-static void vidDisplaySuccessfulAddOp(void);
-static void vidDisplaySuccessfulCheckOp(void);
-static void vidDisplayDisabledNotifs(void);
+static TaskHandle_t pvDisplayTaskHandle;             /* Display task handle                      */
+static QueueHandle_t pvDisplayQueueHandle;           /* Display queue handle                     */
+static EventGroupHandle_t pvDisplayEventGroupHandle; /* Display event group handle               */
+static TimerHandle_t pvDisplayTimerHandle;           /* Display timer handle                     */
+static volatile uint8_t u8LedCounter;                /* Current LED's rank in pattern            */
+static volatile uint8_t u8CycleCounter;              /* Current cycle in display pattern         */
+static uint32_t u32CurrentEvent;                     /* Current event whose pattern is displayed */
+static uint8_t u8LedsState = 1;                      /* LED state in current half cycle          */
+static void vidDisplayAdvertisingStart(void);        /* Advertising started func prototype       */
+static void vidDisplayPeerConnected(void);           /* Connection established func prototype    */
+static void vidDisplayPeerDisonnected(void);         /* Disconnected from peer func prototype    */
+static void vidDisplayInputVerifSuccess(void);       /* Valid input received func prototype      */
+static void vidDisplayInputVerifFailure(void);       /* Invalid input received func prototype    */
+static void vidDisplayAccessGranted(void);           /* Access granted func prototype            */
+static void vidDisplayAccessDenied(void);            /* Access denied func prototype             */
+static void vidDisplaySuccessfulAddOp(void);         /* New user added func prototype            */
+static void vidDisplaySuccessfulCheckOp(void);       /* User data requested func prototype       */
+static void vidDisplayDisabledNotifs(void);          /* Notifications disabled func prototype    */
+
+/* Display state machine's entry list */
 static const Display_tstrState strDisplayStateMachine[] =
 {
-    {APP_DISPLAY_ADVERTISING_START        , vidDisplayAdvertisingStart },
-    {APP_DISPLAY_PEER_CONNECTION          , vidDisplayPeerConnected    },
-    {APP_DISPLAY_PEER_DISCONNECTION       , vidDisplayPeerDisonnected  },
-    {APP_DISPLAY_VALID_USER_INPUT         , vidDisplayInputVerifSuccess},
-    {APP_DISPLAY_INVALID_USER_INPUT       , vidDisplayInputVerifFailure},
-    {APP_DISPLAY_ACCESS_GRANTED           , vidDisplayAccessGranted    },
-    {APP_DISPLAY_ACCESS_DENIED            , vidDisplayAccessDenied     },
-    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , vidDisplaySuccessfulAddOp  },
-    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp},
-    {APP_DISPLAY_DISABLED_NOTIFICATIONS   , vidDisplayDisabledNotifs   }
+    {APP_DISPLAY_ADVERTISING_START        , vidDisplayAdvertisingStart }, /* Advertising started */
+    {APP_DISPLAY_PEER_CONNECTION          , vidDisplayPeerConnected    }, /* Connected to peer   */
+    {APP_DISPLAY_PEER_DISCONNECTION       , vidDisplayPeerDisonnected  }, /* Peer disconnection  */
+    {APP_DISPLAY_VALID_USER_INPUT         , vidDisplayInputVerifSuccess}, /* Valid input         */
+    {APP_DISPLAY_INVALID_USER_INPUT       , vidDisplayInputVerifFailure}, /* Invalid input       */
+    {APP_DISPLAY_ACCESS_GRANTED           , vidDisplayAccessGranted    }, /* Access granted      */
+    {APP_DISPLAY_ACCESS_DENIED            , vidDisplayAccessDenied     }, /* Access denied       */
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , vidDisplaySuccessfulAddOp  }, /* New user added      */
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, vidDisplaySuccessfulCheckOp}, /* User data requested */
+    {APP_DISPLAY_DISABLED_NOTIFICATIONS   , vidDisplayDisabledNotifs   }  /* Notifs disabled     */
 };
+
+/* Display patterns function list */
 static const Display_tstrLedPattern strDisplayPatterns[] =
 {
-    {APP_DISPLAY_ADVERTISING_START        , u32LedPattern1342},
-    {APP_DISPLAY_PEER_CONNECTION          , u32LedPattern1324},
-    {APP_DISPLAY_PEER_DISCONNECTION       , u32LedPattern4231},
-    {APP_DISPLAY_VALID_USER_INPUT         , u32LedPattern2341},
-    {APP_DISPLAY_INVALID_USER_INPUT       , u32LedPattern1432},
-    {APP_DISPLAY_ACCESS_GRANTED           , u32LedPattern1243},
-    {APP_DISPLAY_ACCESS_DENIED            , u32LedPattern1423},
-    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , u32LedPattern1234},
-    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, u32LedPattern4321}
+    {APP_DISPLAY_ADVERTISING_START        , u32LedPattern1342},       /* 1,3,4,2 display pattern */
+    {APP_DISPLAY_PEER_CONNECTION          , u32LedPattern1324},       /* 1,3,2,4 display pattern */
+    {APP_DISPLAY_PEER_DISCONNECTION       , u32LedPattern4231},       /* 4,2,3,1 display pattern */
+    {APP_DISPLAY_VALID_USER_INPUT         , u32LedPattern2341},       /* 2,3,4,1 display pattern */
+    {APP_DISPLAY_INVALID_USER_INPUT       , u32LedPattern1432},       /* 1,4,3,2 display pattern */
+    {APP_DISPLAY_ACCESS_GRANTED           , u32LedPattern1243},       /* 1,2,4,3 display pattern */
+    {APP_DISPLAY_ACCESS_DENIED            , u32LedPattern1423},       /* 1,4,2,3 display pattern */
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP  , u32LedPattern1234},       /* 1,2,3,4 display pattern */
+    {APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP, u32LedPattern4321}        /* 4,3,2,1 display pattern */
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/

@@ -87,9 +87,8 @@ typedef struct
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
 /**
- * @brief enuBle_Init Creates Ble stack task, event group to signal receiving events from the
- *        application layer through the Application Manager, message queue to hold data potentially
- *        accompanying incoming events and initializes the Ble stack.
+ * @brief enuBle_Init Creates Ble stack task, initializes the Ble stack and sets up all Ble
+ *        observers.
  *
  * @note This function is invoked by the Main function.
  *
@@ -105,7 +104,7 @@ Mid_tenuStatus enuBle_Init(void);
  *
  * @note Acquiring a current time reading from peer is an asynchronous process, the outcome of
  *       which is obtained through a callback that should already have been registered by the
- *       calling module.
+ *       calling module by the time this function is called.
  *
  * @pre This function requires a connection and bond be established and a current time data
  *      callback be registered.

@@ -1,12 +1,11 @@
-/* -------------------------   User registration app for nRF52832   ---------------------------- */
-/*  File      -  User registration application source file                                       */
+/* -------------------------   User Registration app for nRF52832   ---------------------------- */
+/*  File      -  User Registration application source file                                       */
 /*  target    -  nRF52832                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
 
 /****************************************   INCLUDES   *******************************************/
-#include <stdlib.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -59,7 +58,7 @@ typedef struct
     fds_record_desc_t *pstrRecordDesc;     /* Record descriptor                          */
     fds_find_token_t *pstrPersistentToken; /* Record find token for persistent keys file */
     fds_find_token_t *pstrExpirableToken;  /* Record find token for expirable keys file  */
-    fds_flash_record_t *pstrFdsRecord;     /* Record as sen by FDS                       */
+    fds_flash_record_t *pstrFdsRecord;     /* Record as seen by FDS                      */
     Nvm_tstrRecord *pstrAppRecord;         /* Record as seen by the application          */
 }App_tstrRecordSearch;
 
@@ -120,7 +119,7 @@ static bool bUserRecordFound(App_tstrRecordSearch *pstrRecordFind)
         {
             /* We use the first 4 numbers of a user Id as a key for that user's entire NVM record.
                This leaves a slight margin of chance for 2 users having the same first 4 numbers of
-               their Id to have the same record key. If they also happen to have similar keys (as
+               their Ids to have the same record key. If they also happen to have similar keys (as
                in both expirable or both persistent), they will be indiscernible. */
             if(Middleware_Success == enuNVM_FindRecord(pstrRecordFind->u16RecordKey,
                                                        pstrRecordFind->pstrRecordDesc,
@@ -312,7 +311,9 @@ static void vidUseRegInputReceived(void *pvArg)
                         /* Notify user of invalid password format */
                         uint8_t u8NotificationBuffer[] = "Invalid! Try again";
                         uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                        (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                        (void)enuTransferNotification(Ble_Registration,
+                                                      u8NotificationBuffer,
+                                                      &u16NotificationSize);
                         /* Display visual cue */
                         (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
                     }
@@ -379,7 +380,9 @@ static void vidUseRegInputReceived(void *pvArg)
                         /* Notify user of invalid Id format */
                         uint8_t u8NotificationBuffer[] = "Invalid! Try again";
                         uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                        (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                        (void)enuTransferNotification(Ble_Registration,
+                                                      u8NotificationBuffer,
+                                                      &u16NotificationSize);
                         /* Display visual cue */
                         (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
                     }
@@ -390,7 +393,9 @@ static void vidUseRegInputReceived(void *pvArg)
                 /* Notify user that they're already signed in */
                 uint8_t u8NotificationBuffer[] = "Already signed in";
                 uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-                (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
+                (void)enuTransferNotification(Ble_Registration,
+                                              u8NotificationBuffer,
+                                              &u16NotificationSize);
             }
 
             /* Free allocated memory */
@@ -429,7 +434,7 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
     /* Make sure valid parameters are passed */
     if(pu8Data && (u8Length > 0) && (u8Length <= APP_USEREG_MAX_COMMAND_LENGTH))
     {
-        /* Only accept 15, 16 and 20-character-long commands (Add user with persistant key, get
+        /* Only accept 15, 16 and 20 character-long commands (Add user with persistant key, get
            user data and add user with expirable key commands are 15, 16 and 20 characters long
            respectively). */
         if((15 == u8Length) || (20 == u8Length))
@@ -544,18 +549,20 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
                 /* One-time expirable key has been used */
                 uint8_t u8NotificationBuffer[] = "One-time: Used";
                 uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
                 /* Transfer notification to peer */
-                (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+                (void)enuTransferNotification(Ble_Admin,
+                                              u8NotificationBuffer,
+                                              &u16NotificationSize);
             }
             else
             {
                 /* One-time expirable key still available */
                 uint8_t u8NotificationBuffer[] = "One-time expirable";
                 uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
                 /* Transfer notification to peer */
-                (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
+                (void)enuTransferNotification(Ble_Admin,
+                                              u8NotificationBuffer,
+                                              &u16NotificationSize);
             }
         }
         break;
@@ -567,8 +574,9 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             /* Copy count-limit value into buffer in a human-readable format */
             uint8_t u8LimitDigitCnt = u8DigitCount(pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit);
             char chTimeoutStr[5];
-            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d", pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit -
-                                                               pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
+            snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
+                     pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit -
+                     pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
             strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt+1);
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
 
@@ -582,7 +590,6 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             /* Unlimited persistent key */
             uint8_t u8NotificationBuffer[] = "Unlimited persistent";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
         }
@@ -609,7 +616,6 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             /* Admin persistent key */
             uint8_t u8NotificationBuffer[] = "Admin persistent";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
         }
@@ -651,7 +657,6 @@ static void vidUseAdmInputReceived(void *pvArg)
                     App_tenuKeyTypes enuKeyType = enuDecodeAddCommand(pstrCommand->pu8Data,
                                                                       pstrCommand->u16Length,
                                                                       &u16Argument);
-
                     /* Create new NVM entry */
                     Nvm_tenuFiles enuNvmFile;
                     fds_record_desc_t strRecordDesc = {0};
@@ -678,6 +683,7 @@ static void vidUseAdmInputReceived(void *pvArg)
                     }
                     else if(App_OneTimeKey == enuKeyType)
                     {
+                        /* Clear one-time key expiration flag */
                         strRecord.uKeyQuantifier.bOneTimeExpired = false;
                         enuNvmFile = Nvm_ExpirableKeys;
                     }
@@ -717,9 +723,6 @@ static void vidUseAdmInputReceived(void *pvArg)
                     {
                         /* User data extracted successfully. Send user data to peer */
                         vidUserDataNotify(&strRecord);
-
-                        /* TODO: Print it on CLI */
-
                         /* Display visual cue */
                         (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_DATA, NULL);
                     }
@@ -786,25 +789,6 @@ static void vidUseAdmAddedToNvm(void *pvArg)
     (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_ADDED, NULL);
 }
 
-static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)
-{
-    /* Go through trigger list to find trigger.
-       Note: We use a while loop as we require that no two distinct actions have the
-       same trigger in a State trigger listing */
-    uint8_t u8TriggerCount = APP_USEREG_TRIGGER_COUNT(strUseRegStateMachine);
-    uint8_t u8Index = 0;
-    while(u8Index < u8TriggerCount)
-    {
-        if(u32Trigger == (strUseRegStateMachine + u8Index)->u32Trigger)
-        {
-            /* Invoke associated action and exit loop */
-            (strUseRegStateMachine + u8Index)->pfAction(pvData);
-            break;
-        }
-        u8Index++;
-    }
-}
-
 static void vidUserPasswordUpdated(void *pvArg)
 {
     /* Send notification to peer */
@@ -851,6 +835,25 @@ static void vidUserPasswordUpdated(void *pvArg)
         /* Dispatch structure to the Attribution application */
         (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_SIGNED_IN,
                                       (void *)pstrRecordDispatch);
+    }
+}
+
+static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)
+{
+    /* Go through trigger list to find trigger.
+       Note: We use a while loop as we require that no two distinct actions have the
+       same trigger in a State trigger listing */
+    uint8_t u8TriggerCount = APP_USEREG_TRIGGER_COUNT(strUseRegStateMachine);
+    uint8_t u8Index = 0;
+    while(u8Index < u8TriggerCount)
+    {
+        if(u32Trigger == (strUseRegStateMachine + u8Index)->u32Trigger)
+        {
+            /* Invoke associated action and exit loop */
+            (strUseRegStateMachine + u8Index)->pfAction(pvData);
+            break;
+        }
+        u8Index++;
     }
 }
 

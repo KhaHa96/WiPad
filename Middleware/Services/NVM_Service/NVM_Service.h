@@ -39,9 +39,9 @@ typedef enum
 */
 typedef struct
 {
-    bool bIsKeyActive;
-    uint16_t u16Timeout;
-    uint32_t u32ActivationTime;
+    bool bIsKeyActive;          /* Has key been activated                   */
+    uint16_t u16Timeout;        /* Key life span in minutes                 */
+    uint32_t u32ActivationTime; /* Timestamp of when this key was activated */
 }Nvm_tstrTimeResKey;
 
 /**
@@ -49,8 +49,8 @@ typedef struct
 */
 typedef struct
 {
-    uint16_t u16CountLimit;
-    uint16_t u16UsedCount;
+    uint16_t u16CountLimit; /* Maximum number of times key can be used */
+    uint16_t u16UsedCount;  /* Number of times key has been used       */
 }Nvm_tstrCountResKey;
 
 /**
@@ -134,7 +134,7 @@ Mid_tenuStatus enuNVM_AddNewRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord
 Mid_tenuStatus enuNVM_FindRecord(uint16_t u16RecordKey, fds_record_desc_t *pstrRecordDesc, fds_find_token_t *pstrPersistentKeyToken, fds_find_token_t *pstrExpirableKeyToken);
 
 /**
- * @brief enuNVM_ReadRecord Extracts record data from NVM.
+ * @brief enuNVM_ReadRecord Extracts data record from NVM.
  *
  * @note This is a synchronous call. Every read operation involves opening a record, copying its
  *       content then closing it again.
@@ -157,7 +157,7 @@ Mid_tenuStatus enuNVM_ReadRecord(fds_record_desc_t *pstrRecordDesc, fds_flash_re
  *       flash storage and is therefore unable to physically alter the content of a record
  *       stored in the file system. What it does instead is it duplicates the record, includes
  *       the update in the new copy and invalidates the original record, essentially allowing
- *       it to be freed when garbage is cleaned.
+ *       it to be freed when garbage is collected.
  *
  * @note This is an asynchronous call. Completion is reported through the FDS_EVT_UPDATE event in
  *       vidNvmEventHandler.
@@ -178,7 +178,7 @@ Mid_tenuStatus enuNVM_UpdateRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord
  * @brief enuNVM_DeleteRecord Deletes a record from the NVM file system.
  *
  * @note This function does not actually delete records, rather it invalidates them so they can
- *       no longer be found nor opened. It essentially enables garbage cleaning to reclaim the
+ *       no longer be found nor opened. It essentially enables garbage collection to reclaim the
  *       flash storage space previously occupied by the invalidated record.
  *
  * @note This is an asynchronous call. Completion is reported through the FDS_EVT_DEL_RECORD event

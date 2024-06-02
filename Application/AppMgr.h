@@ -9,8 +9,6 @@
 #define _APP_MGR_H_
 
 /****************************************   INCLUDES   *******************************************/
-#include "App_Types.h"
-#include "system_config.h"
 #include "Attribution.h"
 #include "Registration.h"
 #include "Display.h"

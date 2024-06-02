@@ -134,7 +134,7 @@ bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration decrement string
+            /* Increment pointer to check next character in the next iteration and decrement string
                length*/
             pchString++;
             u8Length--;
@@ -170,7 +170,7 @@ bool bContainsSpecialChar(const uint8_t *pu8String, uint8_t u8Length)
                 break;
             }
 
-            /* Increment pointer to check next character in the next iteration decrement string
+            /* Increment pointer to check next character in the next iteration and decrement string
                length */
             pchString++;
             u8Length--;

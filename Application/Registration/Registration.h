@@ -1,5 +1,5 @@
 /* -------------------------   User Registration app for nRF52832   ---------------------------- */
-/*  File      -  User registration application header file                                       */
+/*  File      -  User Registration application header file                                       */
 /*  target    -  nRF52832                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */

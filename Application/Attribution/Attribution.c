@@ -1,5 +1,5 @@
-/* --------------------------   Key attribution app for nRF52832   ----------------------------- */
-/*  File      -  Key attribution application source file                                         */
+/* --------------------------   Key Attribution app for nRF52832   ----------------------------- */
+/*  File      -  Key Attribution application source file                                         */
 /*  target    -  nRF52832                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
@@ -52,13 +52,15 @@ static void vidKeyAttUserSignedIn(void *pvArg);     /* User signed in function p
 static void vidKeyAttInputReceived(void *pvArg);    /* Input received on ble_att func prototype  */
 static fds_record_desc_t strActiveRecordDesc = {0}; /* Active NVM record's descriptor            */
 static Nvm_tstrRecord strActiveRecord = {0};        /* Active NVM record data content            */
+
+/* Attribution state machine's entry list */
 static const Attribution_tstrState strKeyAttStateMachine[] =
 {
-    {APP_KEYATT_DISCONNECTION , vidKeyAttDisconnected },
-    {APP_KEYATT_NOTIF_ENABLED , vidKeyAttNotifEnabled },
-    {APP_KEYATT_NOTIF_DISABLED, vidKeyAttNotifDisabled},
-    {APP_KEYATT_USER_SIGNED_IN, vidKeyAttUserSignedIn },
-    {APP_KEYATT_USR_INPUT_RX  , vidKeyAttInputReceived},
+    {APP_KEYATT_DISCONNECTION , vidKeyAttDisconnected },   /* Disconnected from peer             */
+    {APP_KEYATT_NOTIF_ENABLED , vidKeyAttNotifEnabled },   /* Notifications enabled on ble_att   */
+    {APP_KEYATT_NOTIF_DISABLED, vidKeyAttNotifDisabled},   /* Notifications disabled on ble_att  */
+    {APP_KEYATT_USER_SIGNED_IN, vidKeyAttUserSignedIn },   /* Active user successfully signed in */
+    {APP_KEYATT_USR_INPUT_RX  , vidKeyAttInputReceived},   /* Input received on ble_att          */
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -74,9 +76,10 @@ static void vidUserKeyNotify(Nvm_tstrRecord *pstrRecord)
             /* One-time expirable key */
             uint8_t u8NotificationBuffer[] = "One-time expirable";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
             /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+            (void)enuTransferNotification(Ble_Attribution,
+                                          u8NotificationBuffer,
+                                          &u16NotificationSize);
         }
         break;
 
@@ -84,18 +87,20 @@ static void vidUserKeyNotify(Nvm_tstrRecord *pstrRecord)
         {
             /* Count-restricted expirable key */
             uint8_t u8NotificationBuffer[] = "Count-limited: ";
+
             /* Copy count-limit value into buffer in a human-readable format */
             uint8_t u8LimitDigitCnt = u8DigitCount(pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit);
             char chTimeoutStr[5];
             snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
                      pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit -
                      pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
-
             strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt+1);
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
 
             /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+            (void)enuTransferNotification(Ble_Attribution,
+                                          u8NotificationBuffer,
+                                          &u16NotificationSize);
         }
         break;
 
@@ -104,9 +109,10 @@ static void vidUserKeyNotify(Nvm_tstrRecord *pstrRecord)
             /* Unlimited persistent key */
             uint8_t u8NotificationBuffer[] = "Unlimited persistent";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
             /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+            (void)enuTransferNotification(Ble_Attribution,
+                                          u8NotificationBuffer,
+                                          &u16NotificationSize);
         }
         break;
 
@@ -115,9 +121,10 @@ static void vidUserKeyNotify(Nvm_tstrRecord *pstrRecord)
             /* Time-restricted expirable key */
             uint8_t u8NotificationBuffer[] = "Time-limited";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer);
-
             /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+            (void)enuTransferNotification(Ble_Attribution,
+                                          u8NotificationBuffer,
+                                          &u16NotificationSize);
         }
         break;
 
@@ -126,9 +133,10 @@ static void vidUserKeyNotify(Nvm_tstrRecord *pstrRecord)
             /* Admin persistent key */
             uint8_t u8NotificationBuffer[] = "Admin persistent";
             uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
-
             /* Transfer notification to peer */
-            (void)enuTransferNotification(Ble_Attribution, u8NotificationBuffer, &u16NotificationSize);
+            (void)enuTransferNotification(Ble_Attribution,
+                                          u8NotificationBuffer,
+                                          &u16NotificationSize);
         }
         break;
 
@@ -153,6 +161,8 @@ static void vidKeyAttNotifEnabled(void *pvArg)
     /* Key Attribution service's notifications enabled. Toggle its notifications enabled flag */
     bAttNotifEnabled = true;
 
+    /* Check whether user has already signed in. If so, send notification to peer containing their
+       key type */
     if(bAttUserSignedIn)
     {
         /* Notify user of their key type */
@@ -265,10 +275,10 @@ static void vidKeyAttInputReceived(void *pvArg)
 
                             /* Increment use count */
                             strActiveRecord.uKeyQuantifier.strCountRes.u16UsedCount++;
-                            
+
                             /* Notify user of key status */
                             uint8_t u8NotificationBuffer[] = "Count-limited: ";
-                            uint8_t u8LimitDigitCnt = u8DigitCount(strActiveRecord.uKeyQuantifier.strCountRes.u16CountLimit - 
+                            uint8_t u8LimitDigitCnt = u8DigitCount(strActiveRecord.uKeyQuantifier.strCountRes.u16CountLimit -
                                                                    strActiveRecord.uKeyQuantifier.strCountRes.u16UsedCount);
                             char chTimeoutStr[5];
                             snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
@@ -443,7 +453,7 @@ static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
             }
             else
             {
-                /* Notify user of remaining key lifespan */
+                /* Notify user of remaining key life span */
                 uint8_t u8NotificationBuffer[] = "Time-limited: ";
                 uint8_t u8LimitDigitCnt = u8DigitCount(APP_KEYATT_SECS_TO_MINS(strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime +
                                                        APP_KEYATT_MINS_TO_SECS(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout) -
@@ -453,7 +463,6 @@ static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
                          APP_KEYATT_SECS_TO_MINS(strActiveRecord.uKeyQuantifier.strTimeRes.u32ActivationTime +
                          APP_KEYATT_MINS_TO_SECS(strActiveRecord.uKeyQuantifier.strTimeRes.u16Timeout) -
                          u32CurrentTime));
-
                 strncpy((char *)&u8NotificationBuffer[14], chTimeoutStr, u8LimitDigitCnt+1);
                 uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
 
@@ -495,7 +504,7 @@ static void vidCurrentTimeCallback(exact_time_256_t *pstrCurrentTime)
         }
     }
     break;
-    
+
     case App_AdminKey:
     {
         /* Update NVM record */

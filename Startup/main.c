@@ -6,15 +6,13 @@
 /* --------------------------------------------------------------------------------------------- */
 
 /****************************************   INCLUDES   *******************************************/
-#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "nrf_drv_clock.h"
-#include "boards.h"
 #include "bsp.h"
+#include "AppMgr.h"
 #include "BLE_Service.h"
 #include "NVM_Service.h"
-#include "AppMgr.h"
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
 void vApplicationIdleHook( void )
@@ -32,13 +30,13 @@ int main(void)
     bsp_init(BSP_INIT_BUTTONS, NULL);
 
     /* Initialize application tasks */
-    App_tenuStatus enuAppStatus = AppMgr_enuInit();
+    (void)AppMgr_enuInit();
 
     /* Initialize Ble stack task */
-    Mid_tenuStatus enuMidStatus = enuBle_Init();
+    (void)enuBle_Init();
 
     /* Initialize NVM middleware service */
-    enuMidStatus = enuNvm_Init();
+    (void)enuNvm_Init();
 
     /* Start scheduler */
     vTaskStartScheduler();

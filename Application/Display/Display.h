@@ -14,28 +14,28 @@
 
 /*************************************   PUBLIC DEFINES   ****************************************/
 /* Event bits */
-#define APP_DISPLAY_ADVERTISING_START         (1 << 0)
-#define APP_DISPLAY_PEER_CONNECTION           (1 << 1)
-#define APP_DISPLAY_PEER_DISCONNECTION        (1 << 2)
-#define APP_DISPLAY_VALID_USER_INPUT          (1 << 3)
-#define APP_DISPLAY_INVALID_USER_INPUT        (1 << 4)
-#define APP_DISPLAY_ACCESS_GRANTED            (1 << 5)
-#define APP_DISPLAY_ACCESS_DENIED             (1 << 6)
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   (1 << 7)
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP (1 << 8)
-#define APP_DISPLAY_DISABLED_NOTIFICATIONS    (1 << 9)
+#define APP_DISPLAY_ADVERTISING_START         (1 << 0) /* Advertising started                    */
+#define APP_DISPLAY_PEER_CONNECTION           (1 << 1) /* Connection with peer established       */
+#define APP_DISPLAY_PEER_DISCONNECTION        (1 << 2) /* Disconnected from peer                 */
+#define APP_DISPLAY_VALID_USER_INPUT          (1 << 3) /* Received valid user input              */
+#define APP_DISPLAY_INVALID_USER_INPUT        (1 << 4) /* Received invalid user input            */
+#define APP_DISPLAY_ACCESS_GRANTED            (1 << 5) /* Access granted                         */
+#define APP_DISPLAY_ACCESS_DENIED             (1 << 6) /* Access denied                          */
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP   (1 << 7) /* Admin successfully added a new user    */
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP (1 << 8) /* Admin successfully requested user data */
+#define APP_DISPLAY_DISABLED_NOTIFICATIONS    (1 << 9) /* Received data with notifs disabled     */
 
 /* Event ranks */
-#define APP_DISPLAY_ADVERTISING_START_RANK         1U
-#define APP_DISPLAY_PEER_CONNECTION_RANK           2U
-#define APP_DISPLAY_PEER_DISCONNECTION_RANK        3U
-#define APP_DISPLAY_VALID_USER_INPUT_RANK          4U
-#define APP_DISPLAY_INVALID_USER_INPUT_RANK        5U
-#define APP_DISPLAY_ACCESS_GRANTED_RANK            6U
-#define APP_DISPLAY_ACCESS_DENIED_RANK             7U
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK   8U
-#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK 9U
-#define APP_DISPLAY_DISABLED_NOTIFICATIONS_RANK    10U
+#define APP_DISPLAY_ADVERTISING_START_RANK         1U  /* Advertising started display pattern    */
+#define APP_DISPLAY_PEER_CONNECTION_RANK           2U  /* Connection established display pattern */
+#define APP_DISPLAY_PEER_DISCONNECTION_RANK        3U  /* Disconnected from peer display pattern */
+#define APP_DISPLAY_VALID_USER_INPUT_RANK          4U  /* Received valid input display pattern   */
+#define APP_DISPLAY_INVALID_USER_INPUT_RANK        5U  /* Received invalid input display pattern */
+#define APP_DISPLAY_ACCESS_GRANTED_RANK            6U  /* Access granted display pattern         */
+#define APP_DISPLAY_ACCESS_DENIED_RANK             7U  /* Access denied display pattern          */
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_ADD_OP_RANK   8U  /* New user added display pattern         */
+#define APP_DISPLAY_ADMIN_SUCCESSFUL_CHECK_OP_RANK 9U  /* User data requested display pattern    */
+#define APP_DISPLAY_DISABLED_NOTIFICATIONS_RANK    10U /* Notifications disabled display pattern */
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**

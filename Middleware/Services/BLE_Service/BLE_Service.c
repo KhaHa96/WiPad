@@ -61,22 +61,23 @@
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /************************************   PRIVATE VARIABLES   **************************************/
-NRF_BLE_GATT_DEF(BleGattInstance);
-NRF_BLE_QWR_DEF(BleQwrInstance);
-NRF_BLE_GQ_DEF(BleGqInstance, NRF_SDH_BLE_PERIPHERAL_LINK_COUNT, NRF_BLE_GQ_QUEUE_SIZE);
-BLE_DB_DISCOVERY_DEF(BleDbInstance);
-BLE_USEREG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);
-BLE_CTS_C_DEF(BleCtsInstance);
-BLE_ADVERTISING_DEF(BleAdvInstance);
-static TaskHandle_t pvBLETaskHandle;
-static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;
-static volatile bool bTimeReadingPossible = false;
-static volatile bool bFirstAdvInCycle = true;
-static vidCtsCallback pfCtsCallback = NULL;
-static volatile bool bAttNotifEnabled = false;
-static ble_uuid_t strAdvUuids[] =
+NRF_BLE_GATT_DEF(BleGattInstance);                               /* Gatt module instance         */
+NRF_BLE_QWR_DEF(BleQwrInstance);                                 /* Queued writes instance       */
+NRF_BLE_GQ_DEF(BleGqInstance,                                    /* Gatt queue instance          */
+               NRF_SDH_BLE_PERIPHERAL_LINK_COUNT,
+               NRF_BLE_GQ_QUEUE_SIZE);
+BLE_DB_DISCOVERY_DEF(BleDbInstance);                             /* Database discovery instance  */
+BLE_USEREG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT); /* ble_reg's instance           */
+BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT); /* ble_att's instance           */
+BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);     /* ble_adm's instance           */
+BLE_CTS_C_DEF(BleCtsInstance);                                   /* CTS's instance               */
+BLE_ADVERTISING_DEF(BleAdvInstance);                             /* Advertising module instance  */
+static TaskHandle_t pvBLETaskHandle;                             /* Ble_Service's task handle    */
+static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;         /* Active connection handle     */
+static volatile bool bTimeReadingPossible = false;               /* Is a CTS reading possible    */
+static volatile bool bFirstAdvInCycle = true;         /* Is first time advertising since wake up */
+static vidCtsCallback pfCtsCallback = NULL;           /* Placeholder for CTS callback            */
+static ble_uuid_t strAdvUuids[] =                     /* Advertised services list                */
 {
     {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
 };
@@ -265,7 +266,7 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
                     free(pstrRxData);
                 }
 
-                /* Copy data into buffer and dispatch it to the Registration application */
+                /* Copy data into buffer and dispatch it to the Attribution application */
                 memcpy((void *)pstrRxData->pu8Data, &pstrEvent->u8RxByte, pstrRxData->u16Length);
                 (void)AppMgr_enuDispatchEvent(BLE_ATT_USER_INPUT_RECEIVED, (void *)pstrRxData);
             }
@@ -742,18 +743,21 @@ Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8
         {
         case Ble_Registration:
         {
+            /* Send notification to ble_reg's Status characteristic */
             enuRetVal = enuBleUseRegTransferData(&BleUseRegInstance, pu8Data, pu16Length, u16ConnHandle);
         }
         break;
 
         case Ble_Attribution:
         {
+            /* Send notification to ble_att's Status characteristic */
             enuRetVal = enuBleKeyAttTransferData(&BleKeyAttInstance, pu8Data, pu16Length, u16ConnHandle);
         }
         break;
 
         case Ble_Admin:
         {
+            /* Send notification to ble_adm's Status characteristic */
             enuRetVal = enuBleAdmTransferData(&BleAdminInstance, pu8Data, pu16Length, u16ConnHandle);
         }
         break;
