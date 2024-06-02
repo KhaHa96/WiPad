@@ -9,6 +9,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "BLE_Service.h"
+#include "NVM_Service.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
 #include "ble_gap.h"
@@ -76,6 +77,7 @@ static TaskHandle_t pvBLETaskHandle;                             /* Ble_Service'
 static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;         /* Active connection handle     */
 static volatile bool bTimeReadingPossible = false;               /* Is a CTS reading possible    */
 static volatile bool bFirstAdvInCycle = true;         /* Is first time advertising since wake up */
+static volatile bool bFlashStorageCleared = false;    /* Has flash storage been cleared          */
 static vidCtsCallback pfCtsCallback = NULL;           /* Placeholder for CTS callback            */
 static ble_uuid_t strAdvUuids[] =                     /* Advertised services list                */
 {
@@ -154,6 +156,13 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
             /* Advertising timed out. Prepare wakeup buttons and go to sleep */
             if(NRF_SUCCESS == bsp_btn_ble_sleep_mode_prepare())
             {
+                /* Request clearing space in flash storage */
+                if(Middleware_Success == enuNVM_ClearFlashStorage())
+                {
+                    /* Clearing flash storage is an asynchronous operation. Wait for outcome */
+                    while(!bFlashStorageCleared){}
+                }
+
                 /* Enter system-off mode. Wakeup will only be possible through a reset */
                 (void)sd_power_system_off();
                 /* Empty loop to keep CPU busy in debug mode */
@@ -775,4 +784,10 @@ void vidRegisterCtsCallback(vidCtsCallback pfCallback)
 {
     /* Register Attribution application's current time data callback */
     pfCtsCallback = pfCallback;
+}
+
+void vidFlashStorageClearCallback(void)
+{
+    /* Set flash storage cleared flag */
+    bFlashStorageCleared = true;
 }

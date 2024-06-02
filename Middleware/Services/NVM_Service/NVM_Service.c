@@ -15,6 +15,10 @@
 #define NVM_PEER_MANAGER_ADDR_START 0xC000
 #define NVM_ID_LENGTH               8U
 
+/*************************************   PRIVATE MACROS   ****************************************/
+/* Compute size in bytes of dirty flash storage records */
+#define NVM_DIRTY_RECORDS_SIZE(dirty_records) (dirty_records * sizeof(Nvm_tstrRecord))
+
 /************************************   GLOBAL VARIABLES   ***************************************/
 /* Global function used to propagate dispatchable events to other tasks */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
@@ -75,6 +79,16 @@ static void vidNvmEventHandler(fds_evt_t const *pstrEvent)
             {
                 /* Added for debugging */
                 __NOP();
+            }
+        }
+        break;
+
+        case FDS_EVT_GC:
+        {
+            if(NRF_SUCCESS == pstrEvent->result)
+            {
+                /* Notify Ble_Service of flash storage being cleared */
+                vidFlashStorageClearCallback();
             }
         }
         break;
@@ -245,6 +259,31 @@ Mid_tenuStatus enuNVM_DeleteRecord(fds_record_desc_t *pstrRcDesc)
         enuRetVal = (NRF_SUCCESS == fds_record_delete(pstrRcDesc))
                                                       ?Middleware_Success
                                                       :Middleware_Failure;
+    }
+
+    return enuRetVal;
+}
+
+Mid_tenuStatus enuNVM_ClearFlashStorage(void)
+{
+    Mid_tenuStatus enuRetVal = Middleware_Failure;
+    fds_stat_t strFdsStats = {0};
+
+    /* Retrieve NVM file system statistics */
+    if(NRF_SUCCESS == fds_stat(&strFdsStats))
+    {
+        /* If more than 2/3 of available flash storage space is dirty, proceed to garbage
+           collection.
+           Note: WiPad in its default configuartion uses 3 virtual FDS pages, each of which is
+           1024 bytes large. This means garbage collection will happen once 2048 bytes of flash
+           storage space have been soiled. This is done to minimize the amount of times garbage
+           collection is performed throughout the device's lifetime. */
+        if(NVM_DIRTY_RECORDS_SIZE(strFdsStats.dirty_records) >=
+           2*(FDS_VIRTUAL_PAGES*FDS_VIRTUAL_PAGE_SIZE)/3)
+        {
+            /* Garbage collect to reclaim unused flash storage space */
+            enuRetVal = (NRF_SUCCESS == fds_gc())?Middleware_Success:Middleware_Failure;
+        }
     }
 
     return enuRetVal;

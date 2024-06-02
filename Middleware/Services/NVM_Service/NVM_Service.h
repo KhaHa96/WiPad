@@ -193,4 +193,18 @@ Mid_tenuStatus enuNVM_UpdateRecord(fds_record_desc_t *pstrRcDesc, Nvm_tstrRecord
  */
 Mid_tenuStatus enuNVM_DeleteRecord(fds_record_desc_t *pstrRcDesc);
 
+/**
+ * @brief enuNVM_ClearFlashStorage Performs garbage collection to reclaim invalidated flash storage
+ *        space.
+ *
+ * @note This is an asynchronous call. Completion is reported through the FDS_EVT_GC event
+ *       in vidNvmEventHandler.
+ *
+ * @pre enuNvm_Init must be called before attempting any flash storage clearing.
+ *
+ * @return Mid_tenuStatus Middleware_Success if flash clearing request was successfully queued,
+ *         Middleware_Failure otherwise.
+ */
+Mid_tenuStatus enuNVM_ClearFlashStorage(void);
+
 #endif /* _MID_NVM_H_ */

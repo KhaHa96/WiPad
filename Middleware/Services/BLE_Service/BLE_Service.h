@@ -138,4 +138,12 @@ Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8
  */
 void vidRegisterCtsCallback(vidCtsCallback pfCallback);
 
+/**
+ * @brief vidFlashStorageClearCallback Called by the NVM_Service when flash storage has been
+ *        cleared successfully.
+ *
+ * @return Nothing.
+ */
+void vidFlashStorageClearCallback(void);
+
 #endif /* _MID_BLE_H_ */

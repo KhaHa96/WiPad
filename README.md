@@ -50,5 +50,4 @@ WiPad's Admin is in many ways a super user that dictates the rules every other u
 
 **Time zone**: WiPad's time management varies slightly depending on the time zone where it's being deployed. This can be set in system_config.h.
 
-
-
+**Starting out**: When starting out with a clean slate, an Admin user's 8-digit Id must be registered in the device's flash storage. This can't be done at run-time since WiPad will always request a user's Id before allowing any further interaction. Once an Admin user Id has been stored, normal proceedings can resume with the Admin user registering a password then adding other users to the system's database. **Note**: Make sure the record stored in flash memory respects the user entry format defined by the Nvm_tstrRecord data type.
