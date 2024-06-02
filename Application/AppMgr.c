@@ -8,6 +8,9 @@
 /****************************************   INCLUDES   *******************************************/
 #include "AppMgr.h"
 
+/************************************   PRIVATE DEFINES   ****************************************/
+#define APP_MANAGER_POWER_BASE 2U
+
 /*************************************   PRIVATE MACROS   ****************************************/
 #define APPMGR_ASSERT_EVENT(ARG)        \
 (                                       \
@@ -31,10 +34,28 @@ static const AppMgr_tstrInterface strApplicationList[] =
  */
 static const AppMgr_tstrEventSub strEventSubscriptionList[] =
 {
-    {AppMgr_RegTestEvent1      , {App_RegistrationId}, 1},
-    {AppMgr_DisplayIdSuccessEvt, {App_DisplayId     }, 1},
-    {AppMgr_DisplayConnected   , {App_DisplayId     }, 1},
-    {AppMgr_DisplayDisconnected, {App_DisplayId     }, 1}
+    {AppMgr_DisplayAdvertising   , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayConnected     , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayDisconnected  , {App_DisplayId, App_RegistrationId, App_AttributionId}, 3},
+    {AppMgr_DisplayValidInput    , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayInvalidInput  , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayAccessGranted , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayAccessDenied  , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayAdminAdd      , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayAdminCheck    , {App_DisplayId                                       }, 1},
+    {AppMgr_DisplayNotifsDisabled, {App_DisplayId                                       }, 1},
+    {AppMgr_RegNotifEnabled      , {App_RegistrationId                                  }, 1},
+    {AppMgr_RegNotifDisabled     , {App_RegistrationId                                  }, 1},
+    {AppMgr_RegUsrInputRx        , {App_RegistrationId                                  }, 1},
+    {AppMgr_AdmNotifEnabled      , {App_RegistrationId                                  }, 1},
+    {AppMgr_AdmNotifDisabled     , {App_RegistrationId                                  }, 1},
+    {AppMgr_AdmUsrInputRx        , {App_RegistrationId                                  }, 1},
+    {AppMgr_AdmUsrAddedToNvm     , {App_RegistrationId                                  }, 1},
+    {AppMgr_RegPasswordUpdated   , {App_RegistrationId                                  }, 1},
+    {AppMgr_AttNotifEnabled      , {App_AttributionId                                   }, 1},
+    {AppMgr_AttNotifDisabled     , {App_AttributionId                                   }, 1},
+    {AppMgr_AttUserSignedIn      , {App_AttributionId                                   }, 1},
+    {AppMgr_AttInputRx           , {App_AttributionId                                   }, 1}
 };
 
 /*************************************   PUBLIC FUNCTIONS   **************************************/
@@ -76,7 +97,9 @@ extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData)
                 {
                     if(strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif)
                     {
-                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif(u32Event, pvData);
+                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif((uint32_t)s32Power(APP_MANAGER_POWER_BASE,
+                                                                                                             u32Event-1),
+                                                                                                             pvData);
                     }
                 }
 

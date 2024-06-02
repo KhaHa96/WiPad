@@ -9,8 +9,6 @@
 #define _APP_MGR_H_
 
 /****************************************   INCLUDES   *******************************************/
-#include "App_Types.h"
-#include "system_config.h"
 #include "Attribution.h"
 #include "Registration.h"
 #include "Display.h"
@@ -21,9 +19,9 @@
 */
 typedef enum
 {
-    App_RegistrationId = 0, /* User registration application ID */
-    App_AttributionId,      /* Key attribution application ID   */
-    App_DisplayId           /* Display application ID           */
+    App_AttributionId = 0, /* Key attribution application ID   */
+    App_RegistrationId,    /* User registration application ID */
+    App_DisplayId          /* Display application ID           */
 }AppMgr_tenuAppId;
 
 /**
@@ -33,10 +31,28 @@ typedef enum
 typedef enum
 {
     AppMgr_LowerBoundEvt = 0,
-    AppMgr_RegTestEvent1,       /* User registration test event                  */
-    AppMgr_DisplayIdSuccessEvt, /* User ID authentication performed successfully */
-    AppMgr_DisplayConnected,    /* Peer connection established                   */
-    AppMgr_DisplayDisconnected, /* Peer disconnection                            */
+    AppMgr_DisplayAdvertising,    /* Advertising started                                          */
+    AppMgr_DisplayConnected,      /* Peer connection established                                  */
+    AppMgr_DisplayDisconnected,   /* Peer disconnection                                           */
+    AppMgr_DisplayValidInput,     /* Valid user input                                             */
+    AppMgr_DisplayInvalidInput,   /* Invalid user input                                           */
+    AppMgr_DisplayAccessGranted,  /* Access granted                                               */
+    AppMgr_DisplayAccessDenied,   /* Access denied                                                */
+    AppMgr_DisplayAdminAdd,       /* Successful admin user add operation                          */
+    AppMgr_DisplayAdminCheck,     /* Successful admin user info log operation                     */
+    AppMgr_DisplayNotifsDisabled, /* User input detected with notifications disabled              */
+    AppMgr_RegNotifEnabled,       /* Peer enabled notifications on User Registration service      */
+    AppMgr_RegNotifDisabled,      /* Peer disabled notifications on User Registration service     */
+    AppMgr_RegUsrInputRx,         /* Received user input on User Id/Password characteristic       */
+    AppMgr_AdmNotifEnabled,       /* Peer enabled notifications on Admin User service             */
+    AppMgr_AdmNotifDisabled,      /* Peer disabled notifications on Admin User service            */
+    AppMgr_AdmUsrInputRx,         /* Received user input on Command characteristic                */
+    AppMgr_AdmUsrAddedToNvm,      /* Successfully added new user entry to NVM                     */
+    AppMgr_RegPasswordUpdated,    /* Successfully registered password                             */
+    AppMgr_AttNotifEnabled,       /* Peer enabled notifications on Key Attribution service        */
+    AppMgr_AttNotifDisabled,      /* Peer disabled notifications on Key Attribution service       */
+    AppMgr_AttUserSignedIn,       /* Active user successfully went through authentication process */
+    AppMgr_AttInputRx,            /* Received user input on Key Activation characteristic         */
     AppMgr_UpperBoundEvt
 }AppMgr_tenuEvents;
 

@@ -211,6 +211,7 @@
                 <option>
                     <name>CCDefines</name>
                     <state>NRF52832_XXAA</state>
+                    <state>BOARD_PCA10040</state>
                     <state>NRF_SD_BLE_API_VERSION=7</state>
                     <state>S132</state>
                     <state>SOFTDEVICE_PRESENT</state>
@@ -344,8 +345,8 @@
                     <state>$PROJ_DIR$\..\Board_Support\MCU\legacy</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\clock</state>
                     <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
-                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
-                    <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\gpio</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\boards</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
@@ -356,24 +357,38 @@
                     <state>$PROJ_DIR$\..\Middleware\Libraries\fprintf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\queue</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
                     <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\mutex</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fds</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_fifo</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fstorage</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\bsp</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\button</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_db_discovery</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_cts_c</state>
                     <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
                     <state>$PROJ_DIR$\..\Middleware\Services</state>
                     <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services\NVM_Service</state>
                     <state>$PROJ_DIR$\..\Application</state>
                     <state>$PROJ_DIR$\..\Application\Attribution</state>
                     <state>$PROJ_DIR$\..\Application\Registration</state>
                     <state>$PROJ_DIR$\..\Application\Display</state>
                     <state>$PROJ_DIR$\..\Utilities\Math</state>
+                    <state>$PROJ_DIR$\..\Utilities\Strings</state>
+                    <state>$PROJ_DIR$\..\Utilities\Time</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1120,11 +1135,11 @@
                 </option>
                 <option>
                     <name>Input description</name>
-                    <state></state>
+                    <state>Full formatting, with multibyte support.</state>
                 </option>
                 <option>
                     <name>Output description</name>
-                    <state></state>
+                    <state>Full formatting, with multibyte support.</state>
                 </option>
                 <option>
                     <name>GOutputBinary</name>
@@ -1132,21 +1147,21 @@
                 </option>
                 <option>
                     <name>OGCoreOrChip</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>GRuntimeLibSelect</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>2</state>
                 </option>
                 <option>
                     <name>GRuntimeLibSelectSlave</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>2</state>
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state></state>
+                    <state>Use the full configuration of the C/C++ runtime library. Full locale interface, C locale, file descriptor support, multibytes in printf and scanf, and hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -1154,11 +1169,11 @@
                 </option>
                 <option>
                     <name>OGLastSavedByProductVersion</name>
-                    <state></state>
+                    <state>9.10.2.39304</state>
                 </option>
                 <option>
                     <name>OGChipSelectEditMenu</name>
-                    <state></state>
+                    <state>nRF52832_xxAA	NordicSemi nRF52832_xxAA</state>
                 </option>
                 <option>
                     <name>GenLowLevelInterface</name>
@@ -1166,7 +1181,7 @@
                 </option>
                 <option>
                     <name>GEndianModeBE</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OGBufferedTerminalOutput</name>
@@ -1178,12 +1193,12 @@
                 </option>
                 <option>
                     <name>RTConfigPath2</name>
-                    <state></state>
+                    <state>$TOOLKIT_DIR$\inc\c\DLib_Config_Full.h</state>
                 </option>
                 <option>
                     <name>GBECoreSlave</name>
                     <version>30</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
@@ -1200,21 +1215,21 @@
                 <option>
                     <name>CoreVariant</name>
                     <version>30</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>GFPUDeviceSlave</name>
-                    <state>-</state>
+                    <state>nRF52832_xxAA	NordicSemi nRF52832_xxAA</state>
                 </option>
                 <option>
                     <name>FPU2</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>4</state>
                 </option>
                 <option>
                     <name>NrRegs</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>NEON</name>
@@ -1223,7 +1238,7 @@
                 <option>
                     <name>GFPUCoreSlave2</name>
                     <version>30</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>OGCMSISPackSelectDevice</name>
@@ -1239,20 +1254,20 @@
                 <option>
                     <name>OGPrintfVariant</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OGPrintfMultibyteSupport</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OGScanfVariant</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OGScanfMultibyteSupport</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>GenLocaleTags</name>
@@ -1264,7 +1279,7 @@
                 </option>
                 <option>
                     <name>DSPExtension</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>TrustZone</name>
@@ -1295,6 +1310,11 @@
                 <option>
                     <name>CCDefines</name>
                     <state>NDEBUG</state>
+                    <state>NRF52832_XXAA</state>
+                    <state>BOARD_PCA10040</state>
+                    <state>NRF_SD_BLE_API_VERSION=7</state>
+                    <state>S132</state>
+                    <state>SOFTDEVICE_PRESENT</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -1334,7 +1354,7 @@
                 </option>
                 <option>
                     <name>CCDiagSuppress</name>
-                    <state></state>
+                    <state>Pe111, Go029</state>
                 </option>
                 <option>
                     <name>CCDiagRemark</name>
@@ -1355,7 +1375,7 @@
                 <option>
                     <name>CCAllowList</name>
                     <version>1</version>
-                    <state>11111110</state>
+                    <state>00000000</state>
                 </option>
                 <option>
                     <name>CCDebugInfo</name>
@@ -1371,7 +1391,7 @@
                 </option>
                 <option>
                     <name>IExtraOptionsCheck</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IExtraOptions</name>
@@ -1403,7 +1423,7 @@
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.o</state>
                 </option>
                 <option>
                     <name>CCLibConfigHeader</name>
@@ -1415,7 +1435,59 @@
                 </option>
                 <option>
                     <name>CCIncludePath2</name>
-                    <state></state>
+                    <state>$PROJ_DIR$\Toolchain</state>
+                    <state>$PROJ_DIR$\..\Kernel\FreeRTOS\source\include</state>
+                    <state>$PROJ_DIR$\..\Kernel\FreeRTOS\portable\IAR\nrf52</state>
+                    <state>$PROJ_DIR$\..\Kernel\FreeRTOS\portable\CMSIS\nrf52</state>
+                    <state>$PROJ_DIR$\..\Configuration</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\hal</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\legacy</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\clock</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\power</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\spi</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\gpio</state>
+                    <state>$PROJ_DIR$\..\Board_Support\MCU\boards</state>
+                    <state>$PROJ_DIR$\..\Board_Support\Drivers</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\util</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\log</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\strerror</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\log\src</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\memobj</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\balloc</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fprintf</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\ringbuf</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\queue</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\timer</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\mutex</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fds</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\atomic_fifo</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\fstorage</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\bsp</state>
+                    <state>$PROJ_DIR$\..\Middleware\Libraries\button</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_advertising</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_db_discovery</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gatt</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_adm</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_att</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_cts_c</state>
+                    <state>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services</state>
+                    <state>$PROJ_DIR$\..\Middleware\Services\BLE_Service</state>
+                    <state>$PROJ_DIR$\..\Application</state>
+                    <state>$PROJ_DIR$\..\Application\Attribution</state>
+                    <state>$PROJ_DIR$\..\Application\Registration</state>
+                    <state>$PROJ_DIR$\..\Application\Display</state>
+                    <state>$PROJ_DIR$\..\Utilities\Math</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1431,7 +1503,7 @@
                 </option>
                 <option>
                     <name>CCOptLevel</name>
-                    <state>3</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCOptStrategy</name>
@@ -1440,7 +1512,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -1579,7 +1651,7 @@
                 </option>
                 <option>
                     <name>ADebug</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>AltRegisterNames</name>
@@ -1663,7 +1735,7 @@
                 </option>
                 <option>
                     <name>AOutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.o</state>
                 </option>
                 <option>
                     <name>ALimitErrorsCheck</name>
@@ -1709,15 +1781,15 @@
                 <option>
                     <name>OOCOutputFormat</name>
                     <version>3</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OCOutputOverride</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OOCOutputFile</name>
-                    <state></state>
+                    <state>WiPad.hex</state>
                 </option>
                 <option>
                     <name>OOCCommandLineProducer</name>
@@ -1725,7 +1797,7 @@
                 </option>
                 <option>
                     <name>OOCObjCopyEnable</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
             </data>
         </settings>
@@ -1764,7 +1836,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>###Unitialized###</state>
+                    <state>WiPad.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -1824,11 +1896,11 @@
                 </option>
                 <option>
                     <name>IlinkIcfOverride</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state>lnk0t.icf</state>
+                    <state>$PROJ_DIR$\WiPad.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>
@@ -1888,7 +1960,7 @@
                 </option>
                 <option>
                     <name>IlinkProgramEntryLabel</name>
-                    <state></state>
+                    <state>__iar_program_start</state>
                 </option>
                 <option>
                     <name>DoFill</name>
@@ -2061,7 +2133,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>WiPad_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
@@ -2154,33 +2226,27 @@
     <group>
         <name>Board_Support</name>
         <group>
-            <name>Drivers</name>
+            <name>MCU</name>
             <group>
-                <name>High_Level_Drivers</name>
+                <name>boards</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\boards\boards.c</name>
+                </file>
             </group>
             <group>
-                <name>Low_Level_Abstraction</name>
-                <group>
-                    <name>Spi</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\Drivers\Low_Level_Abstraction\Spi\Spi_al.c</name>
-                    </file>
-                </group>
-                <group>
-                    <name>Twi</name>
-                </group>
+                <name>clock</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrf_drv_clock.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrfx_clock.c</name>
+                </file>
             </group>
             <group>
-                <name>MCU</name>
-                <group>
-                    <name>clock</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrf_drv_clock.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\Board_Support\MCU\clock\nrfx_clock.c</name>
-                    </file>
-                </group>
+                <name>gpio</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Board_Support\MCU\gpio\nrfx_gpiote.c</name>
+                </file>
             </group>
         </group>
     </group>
@@ -2234,6 +2300,12 @@
                 </file>
             </group>
             <group>
+                <name>atomic_fifo</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\atomic_fifo\nrf_atfifo.c</name>
+                </file>
+            </group>
+            <group>
                 <name>atomic_flags</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\atomic_flags\nrf_atflags.c</name>
@@ -2246,9 +2318,39 @@
                 </file>
             </group>
             <group>
+                <name>bsp</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\bsp\bsp.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\bsp\bsp_btn_ble.c</name>
+                </file>
+            </group>
+            <group>
+                <name>button</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\button\app_button.c</name>
+                </file>
+            </group>
+            <group>
                 <name>experimental_section_vars</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\experimental_section_vars\nrf_section_iter.c</name>
+                </file>
+            </group>
+            <group>
+                <name>fds</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fds\fds.c</name>
+                </file>
+            </group>
+            <group>
+                <name>fstorage</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fstorage\nrf_fstorage.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\fstorage\nrf_fstorage_sd.c</name>
                 </file>
             </group>
             <group>
@@ -2261,6 +2363,12 @@
                 <name>memobj</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Libraries\memobj\nrf_memobj.c</name>
+                </file>
+            </group>
+            <group>
+                <name>queue</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Libraries\queue\nrf_queue.c</name>
                 </file>
             </group>
             <group>
@@ -2299,6 +2407,12 @@
                     </file>
                 </group>
                 <group>
+                    <name>ble_db_discovery</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_db_discovery\ble_db_discovery.c</name>
+                    </file>
+                </group>
+                <group>
                     <name>ble_link_ctx_manager</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_link_ctx_manager\ble_link_ctx_manager.c</name>
@@ -2319,6 +2433,12 @@
                         </file>
                     </group>
                     <group>
+                        <name>ble_cts_c</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_cts_c\ble_cts_c.c</name>
+                        </file>
+                    </group>
+                    <group>
                         <name>ble_reg</name>
                         <file>
                             <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\ble_services\ble_reg\ble_reg.c</name>
@@ -2332,9 +2452,51 @@
                     </file>
                 </group>
                 <group>
+                    <name>nrf_ble_gq</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_gq\nrf_ble_gq.c</name>
+                    </file>
+                </group>
+                <group>
                     <name>nrf_ble_qwr</name>
                     <file>
                         <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\nrf_ble_qwr\nrf_ble_qwr.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>peer_manager</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\gatt_cache_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\gatts_cache_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\id_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_data_storage.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_database.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_id.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_manager.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\peer_manager_handler.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\pm_buffer.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\security_dispatcher.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Middleware\RF_Stack\BLE_Stack\peer_manager\security_manager.c</name>
                     </file>
                 </group>
                 <file>
@@ -2358,6 +2520,9 @@
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_ble.c</name>
                 </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\RF_Stack\Softdevice\nrf_sdh_soc.c</name>
+                </file>
             </group>
         </group>
         <group>
@@ -2366,6 +2531,12 @@
                 <name>BLE_Service</name>
                 <file>
                     <name>$PROJ_DIR$\..\Middleware\Services\BLE_Service\BLE_Service.c</name>
+                </file>
+            </group>
+            <group>
+                <name>NVM_Service</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Middleware\Services\NVM_Service\NVM_Service.c</name>
                 </file>
             </group>
         </group>
@@ -2388,6 +2559,18 @@
             <name>Math</name>
             <file>
                 <name>$PROJ_DIR$\..\Utilities\Math\Maths.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Strings</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Strings\Strings.c</name>
+            </file>
+        </group>
+        <group>
+            <name>Time</name>
+            <file>
+                <name>$PROJ_DIR$\..\Utilities\Time\Time.c</name>
             </file>
         </group>
     </group>

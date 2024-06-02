@@ -22,4 +22,18 @@ typedef enum
     Application_Failure      /* Operation failed                 */
 }App_tenuStatus;
 
+/**
+ * App_tenuKeyTypes Enumeration of the different available key types.
+*/
+typedef enum
+{
+    App_KeyLowerBound = 0,
+    App_OneTimeKey,         /* One-time key, valid for a single use                     */
+    App_CountRestrictedKey, /* Count-restricted key, valid for a finite number of times */
+    App_UnlimitedKey,       /* Unlimited key, infinitely reusable                       */
+    App_TimeRestrictedKey,  /* Time-restricted key, valid for a limited time span       */
+    App_AdminKey,           /* Admin key, granted to authenticated Admin users only     */
+    App_KeyUpperBound
+}App_tenuKeyTypes;
+
 #endif /* _APP_TYPES_H_ */

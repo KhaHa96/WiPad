@@ -44,6 +44,7 @@ out
 *.uvguix.*
 *.scvd
 Project/Debug/
+Project/Release/
 Project/settings/
 Project/*.dep
 Project/*.ewt

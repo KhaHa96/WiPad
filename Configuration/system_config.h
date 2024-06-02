@@ -15,6 +15,7 @@
 #define APP_USEREG_TASK_STACK_SIZE 256
 #define APP_USEREG_TASK_PRIORITY 2
 #define APP_USEREG_QUEUE_LENGTH 5
+#define APP_USEREG_MAX_CROSS_IDS 3
 
 /* Key Attribution application */
 #define APP_KEYATT_TASK_STACK_SIZE 256
@@ -28,19 +29,15 @@
 
 /*************************************   MIDDLEWARE DEFINES   ************************************/
 /* Ble Middleware Service */
-#define MID_BLE_TASK_STACK_SIZE 256
+#define MID_BLE_TASK_STACK_SIZE 1024
 #define MID_BLE_TASK_PRIORITY 2
 #define MID_BLE_TASK_QUEUE_LENGTH 5
 
-/*************************************   PERIPHERAL DEFINES   ************************************/
-/* SPI */
-#define SPI_AL_MAX_MASTER_INSTANCE_COUNT 3
-#define SPI_AL_MAX_SLAVE_INSTANCE_COUNT 3
-#define SPI_MOSI_PIN 2
-#define SPI_MISO_PIN 3
-#define SPI_CS_PIN 4
-#define SPI_CLOCK_PIN 1
+/***************************************   UTILITY DEFINES   *************************************/
+/* Time utility. Define UTC+n as n and UTC-n as 24-n */
+#define UTIL_UTC_TIME_ZONE 1
 
+/*************************************   PERIPHERAL DEFINES   ************************************/
 /* LEDS */
 #define LED_1 17
 #define LED_2 18

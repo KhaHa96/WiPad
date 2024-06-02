@@ -11,10 +11,6 @@
 /******************************************   INCLUDES   *****************************************/
 #include <stdint.h>
 
-/******************************************   DEFINES   ******************************************/
-#define S32_UPPER_BOUND 0x7FFFFFFF
-#define INVALID_RETURN  0xFFFFFFFF
-
 /***************************************   PUBLIC MACROS   ***************************************/
 #define MODULUS(x) ((x >= 0)?x:-x)
 
@@ -33,5 +29,14 @@
  *         0xFFFFFFFF otherwise.
  */
 int32_t s32Power(uint8_t u8Base, uint8_t u8Exponent);
+
+/**
+ * @brief u8DigitCount Computes the number of digits contained in a given integer.
+ *
+ * @param u32Integer Integer whose number of digits is to be computed.
+ *
+ * @return uint8_t Number of digits in the given integer.
+ */
+uint8_t u8DigitCount(uint32_t u32Integer);
 
 #endif /* _UTIL_MATH_H_ */
