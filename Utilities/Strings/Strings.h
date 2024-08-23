@@ -1,32 +1,33 @@
-/* ----------------------------   String utilities for nRF52832   ------------------------------ */
-/*  File      -  String utilities header file                                                    */
-/*  target    -  nRF52832                                                                        */
+/* -----------------------------   NVM Service for nRF51422   ---------------------------------- */
+/*  File      -  NVM Service source file                                                         */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
-/*  created   -  May, 2024                                                                       */
+/*  created   -  July, 2024                                                                       */
 /* --------------------------------------------------------------------------------------------- */
 
 #ifndef _UTIL_STRING_H_
 #define _UTIL_STRING_H_
 
-/******************************************   INCLUDES   *****************************************/
+/****************************************   INCLUDES   *******************************************/
 #include <stdint.h>
 #include <stdbool.h>
 
-/*************************************   PUBLIC FUNCTIONS   **************************************/
+/************************************   PRIVATE FUNCTIONS   **************************************/
+
 /**
- * @brief s8StringCompare Compares two strings on a character by character basis.
+ * @brief bIsAllLowCaseAlpha Checks whether all characters in a string are low case alphabeticals.
  *
- * @warning This function takes two data buffers as input. Failing to provide two valid strings
- *          will yield an erroneous result.
+ * @note This function is case-sensitive.
  *
- * @param pu8String1 Pointer to first string.
- * @param pu8String2 Pointer to second string.
- * @param u8Length Number of characters to compare.
+ * @warning This function takes a data buffer as input. Failing to provide a valid string will
+ *          yield an erroneous result.
  *
- * @return int8_t 2 if input is invalid, 1 if first string is larger, -1 if second string is larger
- *         and 0 if both strings are equal.
+ * @param pu8String Pointer to string.
+ * @param u8Length Number of characters to check.
+ *
+ * @return bool true if all characters in string are low case alphabeticals, false otherwise.
  */
-int8_t s8StringCompare(const uint8_t *pu8String1, const uint8_t *pu8String2, uint8_t u8Length);
+bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length);
 
 /**
  * @brief bContainsNumeral Checks whether a string contains at least one numeric character.
@@ -55,9 +56,22 @@ bool bContainsNumeral(const uint8_t *pu8String, uint8_t u8Length);
 bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length);
 
 /**
- * @brief bIsAllLowCaseAlpha Checks whether all characters in a string are low case alphabeticals.
+ * @brief s8StringCompare Compares two strings on a character by character basis.
  *
- * @note This function is case-sensitive.
+ * @warning This function takes two data buffers as input. Failing to provide two valid strings
+ *          will yield an erroneous result.
+ *
+ * @param pu8String1 Pointer to first string.
+ * @param pu8String2 Pointer to second string.
+ * @param u8Length Number of characters to compare.
+ *
+ * @return int8_t 2 if input is invalid, 1 if first string is larger, -1 if second string is larger
+ *         and 0 if both strings are equal.
+ */
+int8_t s8StringCompare(const uint8_t *pu8String1, const uint8_t *pu8String2, uint8_t u8Length);
+
+/**
+ * @brief bContainsNumeral Checks whether a string contains at least one numeric character.
  *
  * @warning This function takes a data buffer as input. Failing to provide a valid string will
  *          yield an erroneous result.
@@ -65,9 +79,9 @@ bool bIsAllNumerals(const uint8_t *pu8String, uint8_t u8Length);
  * @param pu8String Pointer to string.
  * @param u8Length Number of characters to check.
  *
- * @return bool true if all characters in string are low case alphabeticals, false otherwise.
+ * @return bool true if string contains at least one numeric character, false otherwise.
  */
-bool bIsAllLowCaseAlpha(const uint8_t *pu8String, uint8_t u8Length);
+bool bContainsNumeral(const uint8_t *pu8String, uint8_t u8Length);
 
 /**
  * @brief bContainsSpecialChar Checks whether a string contains at least one special character.

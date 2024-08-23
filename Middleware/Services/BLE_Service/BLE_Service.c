@@ -1,6 +1,6 @@
-/* -----------------------------   BLE Service for nRF52832   ---------------------------------- */
+/* -----------------------------   BLE Service for nRF51422   ---------------------------------- */
 /*  File      -  BLE Service source file                                                         */
-/*  target    -  nRF52832                                                                        */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -10,183 +10,141 @@
 #include "task.h"
 #include "BLE_Service.h"
 #include "NVM_Service.h"
-#include "nrf_sdh.h"
-#include "nrf_sdh_ble.h"
-#include "ble_gap.h"
-#include "nrf_ble_gatt.h"
-#include "nrf_ble_qwr.h"
+#include "event_groups.h"
+#include "semphr.h"
+#include "softdevice_handler.h"
 #include "ble_advertising.h"
-#include "peer_manager.h"
-#include "peer_manager_handler.h"
 #include "ble_conn_params.h"
+#include "ble_reg.h"
+#include "ble_att.h"
+#include "ble_adm.h"
+#include "ble_cts_c.h"
 #include "ble_db_discovery.h"
-#include "bsp_btn_ble.h"
+#include "peer_manager.h"
+#include "AppMgr.h"
 #include "App_Types.h"
-
-/************************************   PRIVATE DEFINES   ****************************************/
-#define BLE_CONN_CFG_TAG                       1U
-#define BLE_ADV_DEVICE_NAME                    "WiPad"
-#define BLE_MIN_CONN_INTERVAL                  MSEC_TO_UNITS(100, UNIT_1_25_MS)
-#define BLE_MAX_CONN_INTERVAL                  MSEC_TO_UNITS(200, UNIT_1_25_MS)
-#define BLE_SLAVE_LATENCY                      0U
-#define BLE_CONN_SUP_TIMEOUT                   MSEC_TO_UNITS(4000, UNIT_10_MS)
-#define BLE_RAM_START_ADDRESS                  0U
-#define BLE_FIRST_CONN_PARAM_UPDATE_DELAY      5000U
-#define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY    30000U
-#define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3U
-#define BLE_ADVERTISING_INTERVAL               64U
-#define BLE_ADVERTISING_DURATION               6000U
-#define BLE_PERFORM_BONDING                    1U
-#define BLE_MITM_PROTECTION_NOT_REQUIRED       0U
-#define BLE_LE_SECURE_CONNECTIONS_DISABLED     0U
-#define BLE_KEYPRESS_NOTIFS_DISABLED           0U
-#define BLE_OOB_NOT_AVAILABLE                  0U
-#define BLE_MIN_ENCRYPTION_KEY_SIZE            7U
-#define BLE_MAX_ENCRYPTION_KEY_SIZE            16U
-#define BLE_LOCAL_LTK_MASTER_ID_DISTRIBUTE     1U
-#define BLE_LOCAL_IRK_ID_ADDRESS_DISTRIBUTE    1U
-#define BLE_REMOTE_LTK_MASTER_ID_DISTRIBUTE    1U
-#define BLE_REMOTE_IRK_ID_ADDRESS_DISTRIBUTE   1U
+#include "nrf_ble_gatt.h"
+/*****************************************   DEFINES   *******************************************/
+#define BLE_CENTRAL_LINK_COUNT 0
+#define BLE_PERIPHERAL_LINK_COUNT 1
+#define BLE_ADV_DEVICE_NAME "WiPad"
+#define BLE_MIN_CONN_INTERVAL MSEC_TO_UNITS(100, UNIT_1_25_MS)
+#define BLE_MAX_CONN_INTERVAL MSEC_TO_UNITS(200, UNIT_1_25_MS)
+#define BLE_SLAVE_LATENCY 0
+#define BLE_CONN_SUP_TIMEOUT MSEC_TO_UNITS(4000, UNIT_10_MS)
+#define BLE_FIRST_CONN_PARAM_UPDATE_DELAY 5000
+#define BLE_REGULAR_CONN_PARAM_UPDATE_DELAY 30000
+#define BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS 3
+#define BLE_ADVERTISING_INTERVAL 64
+#define BLE_ADVERTISING_DURATION_IN_SECONDS 180
+#define BLE_EVENT_NO_WAIT (TickType_t)0UL
+#define BLE_EVENT_MASK (BLE_ADVERTISING_STARTED)
 
 /************************************   PRIVATE MACROS   *****************************************/
-/* Ble service assert macro */
-#define BLE_SERVICE_ASSERT(svc)    \
-(                                  \
-    ( svc == Ble_Registration ) || \
-    ( svc == Ble_Attribution  ) || \
-    ( svc == Ble_Admin        )    \
-)
+#define BLE_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Ble_tstrState))
 
-/************************************   GLOBAL VARIABLES   ***************************************/
-/* Global function used to propagate dispatchable events to other tasks */
-extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
+/* Ble service assert macro */
+#define BLE_SERVICE_ASSERT(svc)      \
+    (                                \
+        (svc == Ble_Registration) || \
+        (svc == Ble_Attribution) ||  \
+        (svc == Ble_Admin))
+/*******************************   PRIVATE FUNCTION PROTOTYPES   *********************************/
+static void vidBleStartAdvertising(void);
 
 /************************************   PRIVATE VARIABLES   **************************************/
-NRF_BLE_GATT_DEF(BleGattInstance);                               /* Gatt module instance         */
-NRF_BLE_QWR_DEF(BleQwrInstance);                                 /* Queued writes instance       */
+static TaskHandle_t pvBleTaskHandle;
+static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID; /* Active connection handle     */
+static SemaphoreHandle_t pvBleSemaphoreHandle;
+static EventGroupHandle_t pvBleEventGroupHandle;
+static ble_use_reg_t strBleUseRegInstance;           /* User registration service's instance*/
+static ble_key_att_t strBleKeyAttInstance;          /* Key attribution service's instance */
+static ble_adm_use_t strAdmUseInstance;             /* Admin user service's instance   */
+static volatile bool bTimeReadingPossible = false; /* Is a CTS reading possible    */
+static volatile bool bFirstAdvInCycle = true;      /* Is first time advertising since wake up */
+static volatile bool bFlashStorageCleared = false; /* Has flash storage been cleared          */
+static vidCtsCallback pfCtsCallback = NULL;        /* Placeholder for CTS callback            */
+static ble_cts_c_t BleCtsInstance;                 /* CTS's instance               */
+
+static ble_uuid_t strAdvUuids[] =
+    {
+        {BLE_USE_REG_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}};
+
+static const Ble_tstrState strBleStateMachine[] =
+    {
+        {BLE_ADVERTISING_STARTED, vidBleStartAdvertising}};
+
 NRF_BLE_GQ_DEF(BleGqInstance,                                    /* Gatt queue instance          */
                NRF_SDH_BLE_PERIPHERAL_LINK_COUNT,
                NRF_BLE_GQ_QUEUE_SIZE);
-BLE_DB_DISCOVERY_DEF(BleDbInstance);                             /* Database discovery instance  */
-BLE_USEREG_DEF(BleUseRegInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT); /* ble_reg's instance           */
-BLE_KEYATT_DEF(BleKeyAttInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT); /* ble_att's instance           */
-BLE_ADM_DEF(BleAdminInstance, NRF_SDH_BLE_TOTAL_LINK_COUNT);     /* ble_adm's instance           */
-BLE_CTS_C_DEF(BleCtsInstance);                                   /* CTS's instance               */
-BLE_ADVERTISING_DEF(BleAdvInstance);                             /* Advertising module instance  */
-static TaskHandle_t pvBLETaskHandle;                             /* Ble_Service's task handle    */
-static uint16_t u16ConnHandle = BLE_CONN_HANDLE_INVALID;         /* Active connection handle     */
-static volatile bool bTimeReadingPossible = false;               /* Is a CTS reading possible    */
-static volatile bool bFirstAdvInCycle = true;         /* Is first time advertising since wake up */
-static volatile bool bFlashStorageCleared = false;    /* Has flash storage been cleared          */
-static vidCtsCallback pfCtsCallback = NULL;           /* Placeholder for CTS callback            */
-static ble_uuid_t strAdvUuids[] =                     /* Advertised services list                */
-{
-    {BLE_KEYATT_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}
-};
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
-void SD_EVT_IRQHandler(void)
+static void vidTaskNotify(void)
 {
     /* Initialize task yield request to pdFALSE */
-    BaseType_t lYieldRequest = pdFALSE;
+    BaseType_t yield_req = pdFALSE;
 
-    /* Notify Softdevice RTOS task of an incoming event from BLE stack */
-    vTaskNotifyGiveFromISR(pvBLETaskHandle, &lYieldRequest);
+    /* Notify Softdevice RTOS task of an incoming event from BLE stack by giving the Semaphore */
+    xSemaphoreGiveFromISR(pvBleSemaphoreHandle, &yield_req);
 
     /* If lYieldRequest was set to pdTRUE after the previous call, then a task of higher priority
        than the currently active task has been unblocked as a result of sending out an event
        notification. This requires an immediate context switch to the newly unblocked task. */
-    portYIELD_FROM_ISR(lYieldRequest);
+    portYIELD_FROM_ISR(yield_req);
+}
+
+static uint32_t SD_EVT_IRQHandler(void)
+{
+    /* Notify Ble task of incoming Softdevice event */
+    vidTaskNotify();
+
+    return NRF_SUCCESS;
+}
+
+static void vidBleEvent_Process(uint32_t u32Trigger)
+{
+    /* Go through trigger list to find trigger.
+       Note: We use a while loop as we require that no two distinct actions have the
+       same trigger in a State trigger listing */
+    uint8_t u8TriggerCount = BLE_TRIGGER_COUNT(strBleStateMachine);
+    uint8_t u8Index = 0;
+    while(u8Index < u8TriggerCount)
+    {
+        if(u32Trigger == (strBleStateMachine + u8Index)->u32Trigger)
+        {
+            /* Invoke associated action and exit loop */
+            (strBleStateMachine + u8Index)->pfAction();
+            break;
+        }
+        u8Index++;
+    }
 }
 
 static void vidBleStartAdvertising(void)
 {
-    /* Note: WiPad uses a one-time discardable bond policy which means it requires peers
-       to perform bonding every time they connect just to be able to access their CTS
-       server. All bond data is completely erased before initiating advertising. */
-    if(NRF_SUCCESS == pm_peers_delete())
-    {
-        /* Initiate advertising */
-        (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
-    }
+    /* Initiate advertising */
+    (void)ble_advertising_start(BLE_ADV_MODE_FAST);
 }
 
-static void vidConnParamErrorHandler(uint32_t u32Error)
+static void vidBleEvtDispatch(ble_evt_t *pstrEvent)
 {
-    APP_ERROR_HANDLER(u32Error);
+    vidBleAdmUseEventHandler(&strAdmUseInstance, pstrEvent);
+    vidBleKeyAttEventHandler(&strBleKeyAttInstance, pstrEvent);
+    vidBleUseRegEventHandler(&strBleUseRegInstance, pstrEvent);
 }
 
-static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
-{
-    /* Make sure valid arguments are passed */
-    if(pstrEvent)
-    {
-        /* Secure an established connection */
-        pm_handler_secure_on_connection(pstrEvent);
+// hereeeee
 
-        switch (pstrEvent->header.evt_id)
-        {
-        case BLE_GAP_EVT_CONNECTED:
-        {
-            /* Preserve current connection handle */
-            u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
-            /* Assign current connection handle to Queued Writes module's instance */
-            (void)nrf_ble_qwr_conn_handle_assign(&BleQwrInstance, u16ConnHandle);
-            /* Trigger connection LED pattern */
-            (void)AppMgr_enuDispatchEvent(BLE_CONNECTION_EVENT, NULL);
-        }
-        break;
-
-        case BLE_GAP_EVT_DISCONNECTED:
-        {
-            /* Clear connection handle placeholder */
-            u16ConnHandle = BLE_CONN_HANDLE_INVALID;
-            /* Clear connection handle in Current Time Service's instance structure */
-            if(BleCtsInstance.conn_handle == pstrEvent->evt.gap_evt.conn_handle)
-            {
-                BleCtsInstance.conn_handle = BLE_CONN_HANDLE_INVALID;
-            }
-            /* Trigger disconnection LED pattern */
-            (void)AppMgr_enuDispatchEvent(BLE_DISCONNECTION_EVENT, NULL);
-        }
-        break;
-
-        case BLE_GAP_EVT_ADV_SET_TERMINATED:
-        {
-            /* Advertising timed out. Prepare wakeup buttons and go to sleep */
-            if(NRF_SUCCESS == bsp_btn_ble_sleep_mode_prepare())
-            {
-                /* Request clearing space in flash storage */
-                if(Middleware_Success == enuNVM_ClearFlashStorage())
-                {
-                    /* Clearing flash storage is an asynchronous operation. Wait for outcome */
-                    while(!bFlashStorageCleared){}
-                }
-
-                /* Enter system-off mode. Wakeup will only be possible through a reset */
-                (void)sd_power_system_off();
-                /* Empty loop to keep CPU busy in debug mode */
-                while(1)
-                {
-                    __NOP();
-                }
-            }
-        }
-        break;
-
-        default:
-            /* Nothing to do */
-            break;
-        }
-    }
-}
+/*
+uint8_t Buffer1[] = "User Registration ";
+uint16_t u16SizeBuffer1 = sizeof(Buffer1) - 1;  */
 
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
     /* Make sure valid arguments are passed */
     if(pstrEvent)
     {
-        switch(pstrEvent->enuEventType)
+        switch (pstrEvent->enuEventType)
         {
         case BLE_REG_NOTIF_ENABLED:
         {
@@ -211,7 +169,7 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 
             if(pstrRxData)
             {
-                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length+1);
+                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length + 1);
                 pstrRxData->u16Length = pstrEvent->strRxData.u16Length;
 
                 /* Successfully allocated memory for data pointer */
@@ -234,6 +192,9 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
         }
     }
 }
+/*
+uint8_t Buffer2[] = "Key Attribution ser";
+uint16_t u16SizeBuffer2 = sizeof(Buffer2) - 1;*/
 
 static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 {
@@ -288,8 +249,7 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
         }
     }
 }
-
-static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
+static void vidKeyAdmEventHandler(BleAdm_tstrEvent *pstrEvent)
 {
     /* Make sure valid arguments are passed */
     if(pstrEvent)
@@ -317,13 +277,13 @@ static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
                processes it. */
             Ble_tstrRxData *pstrRxData = (Ble_tstrRxData *)malloc(sizeof(Ble_tstrRxData));
 
-            if(pstrRxData)
+            if (pstrRxData)
             {
-                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length+1);
+                pstrRxData->pu8Data = (uint8_t *)malloc(pstrEvent->strRxData.u16Length + 1);
                 pstrRxData->u16Length = pstrEvent->strRxData.u16Length;
 
                 /* Successfully allocated memory for data pointer */
-                if(NULL == pstrRxData->pu8Data)
+                if (NULL == pstrRxData->pu8Data)
                 {
                     /* Free allocated memory */
                     free(pstrRxData);
@@ -342,7 +302,6 @@ static void vidAdminEventHandler(BleAdm_tstrEvent *pstrEvent)
         }
     }
 }
-
 static void vidCtsEventHandler(ble_cts_c_t *pstrCtsInstance, ble_cts_c_evt_t *pstrEvent)
 {
     /* Make sure valid arguments are passed */
@@ -394,91 +353,117 @@ static void vidDataBaseDiscHandler(ble_db_discovery_evt_t *pstrEvent)
     /* Invoke database discovery handler to handle Current Time Service related events */
     ble_cts_c_on_db_disc_evt(&BleCtsInstance, pstrEvent);
 }
-
-static void vidQwrErrorHandler(uint32_t u32Error)
-{
-    APP_ERROR_HANDLER(u32Error);
-}
-
 static void vidAdvEventHandler(ble_adv_evt_t enuEvent)
 {
-    switch (enuEvent)
-    {
-    case BLE_ADV_EVT_FAST:
-    {
-        if(bFirstAdvInCycle)
-        {
-            /* Trigger advertising start LED pattern */
-            (void)AppMgr_enuDispatchEvent(BLE_ADVERTISING_STARTED, NULL);
-            /* Clear first advertising flag */
-            bFirstAdvInCycle = false;
-        }
-    }
-    break;
-
-    default:
-        /* Nothing to do */
-        break;
-    }
 }
 
-static void vidPeerMgrEventHandler(pm_evt_t const *pstrEvent)
+static void vidConnParamEventHandler(ble_conn_params_evt_t *pstrEvent)
+{
+}
+
+static void vidConnParamErrorHandler(uint32_t u32Error)
+{
+}
+static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 {
     /* Make sure valid arguments are passed */
     if(pstrEvent)
-    {   /* Start encrypting link if connected to an already bonded peer */
-        pm_handler_on_pm_evt(pstrEvent);
-        /* Disconnect if connection couldn't be secured */
-        pm_handler_disconnect_on_sec_failure(pstrEvent);
-        /* Clean bonding data residue in flash memory */
-        pm_handler_flash_clean(pstrEvent);
+    {
+        /* Secure an established connection */
+        pm_sm_evt_handler(pstrEvent);
 
-        switch(pstrEvent->evt_id)
+        switch(pstrEvent->header.evt_id)
         {
-        case PM_EVT_CONN_SEC_SUCCEEDED:
+        case BLE_GAP_EVT_CONNECTED:
         {
-            /* Discover peer's services */
-            (void)ble_db_discovery_start(&BleDbInstance, pstrEvent->conn_handle);
+            /* Preserve current connection handle */
+            u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
+            /* Trigger connection LED pattern */
+            (void)AppMgr_enuDispatchEvent(BLE_CONNECTION_EVENT, NULL);
         }
         break;
 
-        case PM_EVT_CONN_SEC_FAILED:
+        case BLE_GAP_EVT_DISCONNECTED:
         {
-            /* Initiate advertising again */
-            (void)ble_advertising_start(&BleAdvInstance, BLE_ADV_MODE_FAST);
+            /* Clear connection handle placeholder */
+            u16ConnHandle = BLE_CONN_HANDLE_INVALID;
+            /* Clear connection handle in Current Time Service's instance structure */
+            if(BleCtsInstance.conn_handle == pstrEvent->evt.gap_evt.conn_handle)
+            {
+                BleCtsInstance.conn_handle = BLE_CONN_HANDLE_INVALID;
+            }
+            /* Trigger disconnection LED pattern */
+            (void)AppMgr_enuDispatchEvent(BLE_DISCONNECTION_EVENT, NULL);
         }
+        break;
+
+        case BLE_GAP_EVT_TIMEOUT:
+        {
+            /* Advertising timed out. Prepare wakeup buttons and go to sleep */
+            if (NRF_SUCCESS == bsp_btn_ble_sleep_mode_prepare())
+            {
+                /* Request clearing space in flash storage */
+                if(Middleware_Success == enuNVM_ClearFlashStorage())
+                {
+                    /* Clearing flash storage is an asynchronous operation. Wait for outcome */
+                    while(!bFlashStorageCleared)
+                    {
+                    }
+                }
+
+                /* Enter system-off mode. Wakeup will only be possible through a reset */
+                (void)sd_power_system_off();
+                /* Empty loop to keep CPU busy in debug mode */
+                while (1)
+                {
+                    __NOP();
+                }
+            }
+        }
+        break;
 
         default:
             /* Nothing to do */
             break;
         }
     }
-
 }
-
+static void vidSystemEvtDispatch(uint32_t u32SystemEvent)
+{
+    ble_evt_t ble_evt;
+    // Populate the ble_evt structure with the system event data
+    vidBleEventHandler((ble_evt_t const *)&ble_evt, ((void *)0));
+}
 static Mid_tenuStatus enuBleStackInit(void)
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
-    /* Dispatch Softdevice enable request */
-    if(NRF_SUCCESS == nrf_sdh_enable_request())
-    {
-        /* Apply Softdevice's default configuration */
-        uint32_t u32RamStart = BLE_RAM_START_ADDRESS;
-        if(NRF_SUCCESS == nrf_sdh_ble_default_cfg_set(BLE_CONN_CFG_TAG, &u32RamStart))
-        {
-            /* Enable BLE Softdevice */
-            enuRetVal = (NRF_SUCCESS == nrf_sdh_ble_enable(&u32RamStart))
-                                        ?Middleware_Success
-                                        :Middleware_Failure;
+    /* Set Softdevice's low frequency clock source */
+    nrf_clock_lf_cfg_t strLfClkCfg = {.source = NRF_CLOCK_LF_SRC_XTAL,
+                                      .rc_ctiv = 0,
+                                      .rc_temp_ctiv = 0,
+                                      .xtal_accuracy = NRF_CLOCK_LF_XTAL_ACCURACY_20_PPM};
 
-            if(Middleware_Success == enuRetVal)
+    /* Initialize the SoftDevice handler module */
+    SOFTDEVICE_HANDLER_INIT(&strLfClkCfg, SD_EVT_IRQHandler);
+
+    /* Fetch Softdevice's default enable parameters */
+    ble_enable_params_t strBleEnableParams;
+    if (NRF_SUCCESS == softdevice_enable_get_default_config(BLE_CENTRAL_LINK_COUNT,
+                                                            BLE_PERIPHERAL_LINK_COUNT,
+                                                            &strBleEnableParams))
+    {
+        /* Enable BLE Softdevice */
+        if(NRF_SUCCESS == softdevice_enable(&strBleEnableParams))
+        {
+            /* Register a BLE stack event dispatcher function to be invoked upon receiving
+               a BLE stack event */
+            if(NRF_SUCCESS == softdevice_ble_evt_handler_set(vidBleEvtDispatch))
             {
-                /* Register a handler to process BLE events received from Softdevice */
-                NRF_SDH_BLE_OBSERVER(BleObserver,
-                                     BLE_OBSERVER_PRIO,
-                                     vidBleEventHandler,
-                                     NULL);
+                /* Register a system event dispatcher to be invoked upon receiving a system event */
+                enuRetVal = (NRF_SUCCESS == softdevice_sys_evt_handler_set(vidSystemEvtDispatch))
+                                ? Middleware_Success
+                                : Middleware_Failure;
             }
         }
     }
@@ -497,8 +482,8 @@ static Mid_tenuStatus enuBleGapInit(void)
 
     /* Set device's GAP advertised name */
     if(NRF_SUCCESS == sd_ble_gap_device_name_set(&strGapSecurityMode,
-                                                 (const uint8_t *)BLE_ADV_DEVICE_NAME,
-                                                 strlen(BLE_ADV_DEVICE_NAME)))
+                                                  (const uint8_t *)BLE_ADV_DEVICE_NAME,
+                                                  strlen(BLE_ADV_DEVICE_NAME)))
     {
         /* Apply GAP connection settings */
         memset(&strGapConnParams, 0, sizeof(strGapConnParams));
@@ -509,140 +494,72 @@ static Mid_tenuStatus enuBleGapInit(void)
 
         /* Set GAP's connection parameters */
         enuRetVal = (NRF_SUCCESS == sd_ble_gap_ppcp_set(&strGapConnParams))
-                                                        ?Middleware_Success
-                                                        :Middleware_Failure;
+                        ? Middleware_Success
+                        : Middleware_Failure;
     }
 
     return enuRetVal;
 }
-
-static Mid_tenuStatus enuBleGattInit(void)
-{
-    /* Initialize Gatt module */
-    return (NRF_SUCCESS == nrf_ble_gatt_init(&BleGattInstance, NULL))
-                                             ?Middleware_Success
-                                             :Middleware_Failure;
-}
-
-static Mid_tenuStatus enuBleDataBaseDiscoveryInit(void)
-{
-    ble_db_discovery_init_t strDbInit;
-
-    /* Apply Database discovery collector module's settings */
-    memset(&strDbInit, 0, sizeof(ble_db_discovery_init_t));
-    strDbInit.evt_handler = vidDataBaseDiscHandler;
-    strDbInit.p_gatt_queue = &BleGqInstance;
-
-    /* Initialize Database discovery collector module */
-    return (NRF_SUCCESS == ble_db_discovery_init(&strDbInit))
-                                                 ?Middleware_Success
-                                                 :Middleware_Failure;
-}
-
 static Mid_tenuStatus enuBleServicesInit(void)
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
     BleReg_tstrInit strUseRegInit = {0};
-    BleAtt_tstrInit strKeyAttInit = {0};
-    BleAdm_tstrInit strAdmInit = {0};
-    ble_cts_c_init_t strCtsInit = {0};
-    nrf_ble_qwr_init_t strQwrInit = {0};
+    BleAtt_tstrInit strKetAttInit = {0};
+    BleAdm_tstrInit strAdmUseInit = {0};
+    // ble_cts_c_init_t strCtsInit = {0};
 
-    /* Initialize Queued Write Module */
-    strQwrInit.error_handler = vidQwrErrorHandler;
-    if(NRF_SUCCESS == nrf_ble_qwr_init(&BleQwrInstance, &strQwrInit))
+    /* Initialize User Registration service */
+    strUseRegInit.pfUseRegEvtHandler = vidUseRegEventHandler;
+    if(Middleware_Success == enuBleUseRegInit(&strBleUseRegInstance, &strUseRegInit))
     {
-        /* Initialize User Registration service */
-        strUseRegInit.pfUseRegEvtHandler = vidUseRegEventHandler;
-        if(Middleware_Success == enuBleUseRegInit(&BleUseRegInstance, &strUseRegInit))
+        /* Initialize Key Attribution service */
+        strKetAttInit.pfKeyAttEvtHandler = vidKeyAttEventHandler;
+        if(Middleware_Success == enuBleKeyAttInit(&strBleKeyAttInstance, &strKetAttInit))
         {
-            /* Initialize Key Attribution service */
-            strKeyAttInit.pfKeyAttEvtHandler = vidKeyAttEventHandler;
-            if(Middleware_Success == enuBleKeyAttInit(&BleKeyAttInstance, &strKeyAttInit))
+            strAdmUseInit.pfAdmUseEvtHandler = vidKeyAdmEventHandler;
+            if(Middleware_Success == enuBleAdmUseInit(&strAdmUseInstance, &strAdmUseInit))
             {
-                /* Initialize Admin User service */
-                strAdmInit.pfAdmEvtHandler = vidAdminEventHandler;
-                if(Middleware_Success == enuBleAdmInit(&BleAdminInstance, &strAdmInit))
-                {
-                    /* Initialize Current Time service */
-                    strCtsInit.evt_handler = vidCtsEventHandler;
-                    strCtsInit.error_handler = vidCtsErrorHandler;
-                    strCtsInit.p_gatt_queue = &BleGqInstance;
-                    enuRetVal = (NRF_SUCCESS == ble_cts_c_init(&BleCtsInstance, &strCtsInit))
-                                                               ?Middleware_Success
-                                                               :Middleware_Failure;
-                }
+                /* Initialize Current Time service */
+                //  strCtsInit.evt_handler = vidCtsEventHandler;
+                //  strCtsInit.error_handler = vidCtsErrorHandler;
+                // enuRetVal = (NRF_SUCCESS == ble_cts_c_init(&BleCtsInstance, &strCtsInit))
+                //                   ? Middleware_Success
+                //                 : Middleware_Failure;
             }
         }
     }
 
-    return enuRetVal;
+    // return enuRetVal;
+    return Middleware_Success;
 }
 
 static Mid_tenuStatus enuAdvertisingInit(void)
 {
-    Mid_tenuStatus enuRetVal = Middleware_Failure;
-    ble_advertising_init_t strAdvertisingInit;
+    ble_advdata_t strAdvData;
+    ble_adv_modes_config_t strAdvConfig;
 
     /* Apply advertising module's settings */
-    memset(&strAdvertisingInit, 0, sizeof(strAdvertisingInit));
-    strAdvertisingInit.advdata.name_type = BLE_ADVDATA_FULL_NAME;
-    strAdvertisingInit.advdata.include_appearance = false;
-    strAdvertisingInit.advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
-    strAdvertisingInit.srdata.uuids_complete.uuid_cnt = sizeof(strAdvUuids) / sizeof(strAdvUuids[0]);
-    strAdvertisingInit.srdata.uuids_complete.p_uuids = strAdvUuids;
-    strAdvertisingInit.config.ble_adv_fast_enabled  = true;
-    strAdvertisingInit.config.ble_adv_fast_interval = BLE_ADVERTISING_INTERVAL;
-    strAdvertisingInit.config.ble_adv_fast_timeout  = BLE_ADVERTISING_DURATION;
-    strAdvertisingInit.evt_handler = vidAdvEventHandler;
+    memset(&strAdvData, 0, sizeof(strAdvData));
+    strAdvData.name_type = BLE_ADVDATA_FULL_NAME;
+    strAdvData.include_appearance = false;
+    strAdvData.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
+    strAdvData.uuids_complete.uuid_cnt = sizeof(strAdvUuids) / sizeof(strAdvUuids[0]);
+    strAdvData.uuids_complete.p_uuids = strAdvUuids;
+
+    /* Apply advertising module's configuration */
+    memset(&strAdvConfig, 0, sizeof(strAdvConfig));
+    strAdvConfig.ble_adv_fast_enabled = true;
+    strAdvConfig.ble_adv_fast_interval = BLE_ADVERTISING_INTERVAL;
+    strAdvConfig.ble_adv_fast_timeout = BLE_ADVERTISING_DURATION_IN_SECONDS;
 
     /* Initialize advertising module */
-    enuRetVal = (NRF_SUCCESS == ble_advertising_init(&BleAdvInstance,
-                                                     &strAdvertisingInit))
-                                                     ?Middleware_Success
-                                                     :Middleware_Failure;
-
-    if(Middleware_Success == enuRetVal)
-    {
-        /* Set connection settings tag */
-        ble_advertising_conn_cfg_tag_set(&BleAdvInstance, BLE_CONN_CFG_TAG);
-    }
-
-    return enuRetVal;
-}
-
-static Mid_tenuStatus enuBlePeerManagerInit(void)
-{
-    Mid_tenuStatus enuRetVal = Middleware_Failure;
-    ble_gap_sec_params_t strGapSecParams;
-
-    /* Initialize Peer Manager */
-    if(NRF_SUCCESS == pm_init())
-    {
-        /* Apply security parameters */
-        memset(&strGapSecParams, 0, sizeof(ble_gap_sec_params_t));
-        strGapSecParams.bond = BLE_PERFORM_BONDING;
-        strGapSecParams.mitm = BLE_MITM_PROTECTION_NOT_REQUIRED;
-        strGapSecParams.lesc = BLE_LE_SECURE_CONNECTIONS_DISABLED;
-        strGapSecParams.keypress = BLE_KEYPRESS_NOTIFS_DISABLED;
-        strGapSecParams.io_caps = BLE_GAP_IO_CAPS_NONE;
-        strGapSecParams.oob = BLE_OOB_NOT_AVAILABLE;
-        strGapSecParams.min_key_size = BLE_MIN_ENCRYPTION_KEY_SIZE;
-        strGapSecParams.max_key_size = BLE_MAX_ENCRYPTION_KEY_SIZE;
-        strGapSecParams.kdist_own.enc = BLE_LOCAL_LTK_MASTER_ID_DISTRIBUTE;
-        strGapSecParams.kdist_own.id = BLE_LOCAL_IRK_ID_ADDRESS_DISTRIBUTE;
-        strGapSecParams.kdist_peer.enc = BLE_REMOTE_LTK_MASTER_ID_DISTRIBUTE;
-        strGapSecParams.kdist_peer.id  = BLE_REMOTE_IRK_ID_ADDRESS_DISTRIBUTE;
-        if(NRF_SUCCESS == pm_sec_params_set(&strGapSecParams))
-        {
-            /* Register event handler for Peer Manager */
-            enuRetVal = (NRF_SUCCESS == pm_register(vidPeerMgrEventHandler))
-                                                    ?Middleware_Success
-                                                    :Middleware_Failure;
-        }
-    }
-
-    return enuRetVal;
+    return (NRF_SUCCESS == ble_advertising_init(&strAdvData,
+                                                NULL,
+                                                &strAdvConfig,
+                                                vidAdvEventHandler,
+                                                NULL))
+               ? Middleware_Success
+               : Middleware_Failure;
 }
 
 static Mid_tenuStatus enuBleConnParamsInit(void)
@@ -657,27 +574,47 @@ static Mid_tenuStatus enuBleConnParamsInit(void)
     strConnParams.max_conn_params_update_count = BLE_MAX_NBR_CONN_PARAM_UPDATE_ATTEMPTS;
     strConnParams.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
     strConnParams.disconnect_on_fail = false;
-    strConnParams.evt_handler = NULL;
+    strConnParams.evt_handler = vidConnParamEventHandler;
     strConnParams.error_handler = vidConnParamErrorHandler;
 
     /* Initialize Connection parameters negotiation module */
     return (NRF_SUCCESS == ble_conn_params_init(&strConnParams))
-                                                ?Middleware_Success
-                                                :Middleware_Failure;
+               ? Middleware_Success
+               : Middleware_Failure;
 }
 
 static void vidBleTaskFunction(void *pvArg)
 {
-    /* Start advertising */
-    vidBleStartAdvertising();
+    uint32_t u32Event;
+    BaseType_t lSemaphoreAvailable;
 
-    /* Ble task's main polling loop */
+    /* TODO: Just for testing! Remove later */
+    // enuBle_GetNotified(BLE_ADVERTISING_STARTED, NULL);
+
+    /* Ble task's main loop */
     while(1)
     {
-        /* Process events originating from Ble Stack */
-        nrf_sdh_evts_poll();
-        /* Clear notifications after they've been processed and put task in blocked state */
-        (void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        /* Wait for event from SoftDevice */
+        lSemaphoreAvailable = xSemaphoreTake(pvBleSemaphoreHandle, portMAX_DELAY);
+
+        if(pdTRUE == lSemaphoreAvailable)
+        {
+            /* Process Ble stack incoming events by invoking the BLE stack event dispatcher
+               registered by the enuBleStackInit function */
+            intern_softdevice_events_execute();
+
+            /* Retrieve event if any from event group */
+            u32Event = xEventGroupWaitBits(pvBleEventGroupHandle,
+                                           BLE_EVENT_MASK,
+                                           pdTRUE,
+                                           pdFALSE,
+                                           BLE_EVENT_NO_WAIT);
+            if(u32Event)
+            {
+                /* Process received event */
+                vidBleEvent_Process(u32Event);
+            }
+        }
     }
 }
 
@@ -686,25 +623,29 @@ Mid_tenuStatus enuBle_Init(void)
 {
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
-    /* Create task for BLE service */
-    if(pdTRUE == xTaskCreate(vidBleTaskFunction,
-                             "BLE_Task",
-                             MID_BLE_TASK_STACK_SIZE,
-                             NULL,
-                             MID_BLE_TASK_PRIORITY,
-                             &pvBLETaskHandle))
+    /* Create task for Ble stack */
+    if(pdPASS == xTaskCreate(vidBleTaskFunction,
+                              "Ble_Task",
+                              MID_BLE_TASK_STACK_SIZE,
+                              NULL,
+                              MID_BLE_TASK_PRIORITY,
+                              &pvBleTaskHandle))
     {
-        /* Initialize BLE stack */
-        if(Middleware_Success == enuBleStackInit())
+        /* Create synchronization semaphore for Ble task */
+        pvBleSemaphoreHandle = xSemaphoreCreateBinary();
+
+        if(pvBleSemaphoreHandle)
         {
-            /* Initialize GAP */
-            if(Middleware_Success == enuBleGapInit())
+            /* Create event group for Ble middleware service */
+            pvBleEventGroupHandle = xEventGroupCreate();
+
+            if(pvBleEventGroupHandle)
             {
-                /* Initialize GATT */
-                if(Middleware_Success == enuBleGattInit())
+                /* Initialize BLE stack */
+                if(Middleware_Success == enuBleStackInit())
                 {
-                    /* Initialize Database discovery module */
-                    if(Middleware_Success == enuBleDataBaseDiscoveryInit())
+                    /* Initialize GAP */
+                    if(Middleware_Success == enuBleGapInit())
                     {
                         /* Initialize BLE services */
                         if(Middleware_Success == enuBleServicesInit())
@@ -712,12 +653,8 @@ Mid_tenuStatus enuBle_Init(void)
                             /* Initialize advertising module */
                             if(Middleware_Success == enuAdvertisingInit())
                             {
-                                /* Initialize Peer Manager module */
-                                if(Middleware_Success == enuBlePeerManagerInit())
-                                {
-                                    /* Initialize Connection Parameters module */
-                                    enuRetVal = enuBleConnParamsInit();
-                                }
+                                /* Initialize Connection Parameters module */
+                                enuRetVal = enuBleConnParamsInit();
                             }
                         }
                     }
@@ -725,7 +662,6 @@ Mid_tenuStatus enuBle_Init(void)
             }
         }
     }
-
     return enuRetVal;
 }
 
@@ -753,21 +689,21 @@ Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8
         case Ble_Registration:
         {
             /* Send notification to ble_reg's Status characteristic */
-            enuRetVal = enuBleUseRegTransferData(&BleUseRegInstance, pu8Data, pu16Length, u16ConnHandle);
+            enuRetVal = enuBleUseRegTransferData(&strBleUseRegInstance, pu8Data, pu16Length);
         }
         break;
 
         case Ble_Attribution:
         {
             /* Send notification to ble_att's Status characteristic */
-            enuRetVal = enuBleKeyAttTransferData(&BleKeyAttInstance, pu8Data, pu16Length, u16ConnHandle);
+            enuRetVal = enuBleKeyAttTransferData(&strBleKeyAttInstance, pu8Data, pu16Length);
         }
         break;
 
         case Ble_Admin:
         {
             /* Send notification to ble_adm's Status characteristic */
-            enuRetVal = enuBleAdmTransferData(&BleAdminInstance, pu8Data, pu16Length, u16ConnHandle);
+            enuRetVal = enuBleAdmUseTransferData(&strAdmUseInstance, pu8Data, pu16Length);
         }
         break;
 
@@ -776,7 +712,6 @@ Mid_tenuStatus enuTransferNotification(Ble_tenuServices enuService, uint8_t *pu8
             break;
         }
     }
-
     return enuRetVal;
 }
 

@@ -1,6 +1,6 @@
-/* ----------------------------   Application types for nRF52832   ----------------------------- */
+/* ----------------------------   Application types for nRF51422   ----------------------------- */
 /*  File      -  Application type definition header file                                         */
-/*  target    -  nRF52832                                                                        */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -14,17 +14,17 @@
 
 /******************************************   TYPES   ********************************************/
 /**
- * App_tenuStatus Enumeration of the different possible application operation outcomes.
-*/
+ * App_tenuStatus Enumeration of the different possible application operation outcomes
+ */
 typedef enum
 {
     Application_Success = 0, /* Operation performed successfully */
     Application_Failure      /* Operation failed                 */
-}App_tenuStatus;
+} App_tenuStatus;
 
 /**
  * App_tenuKeyTypes Enumeration of the different available key types.
-*/
+ */
 typedef enum
 {
     App_KeyLowerBound = 0,
@@ -34,6 +34,6 @@ typedef enum
     App_TimeRestrictedKey,  /* Time-restricted key, valid for a limited time span       */
     App_AdminKey,           /* Admin key, granted to authenticated Admin users only     */
     App_KeyUpperBound
-}App_tenuKeyTypes;
+} App_tenuKeyTypes;
 
 #endif /* _APP_TYPES_H_ */

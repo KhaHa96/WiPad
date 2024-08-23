@@ -1,30 +1,30 @@
 /**
- * Copyright (c) 2012 - 2021, Nordic Semiconductor ASA
- *
+ * Copyright (c) 2012 - 2017, Nordic Semiconductor ASA
+ * 
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form, except as embedded into a Nordic
  *    Semiconductor ASA integrated circuit in a product or a software update for
  *    such product, must reproduce the above copyright notice, this list of
  *    conditions and the following disclaimer in the documentation and/or other
  *    materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- *
+ * 
  * 4. This software, with or without modification, must only be used with a
  *    Nordic Semiconductor ASA integrated circuit.
- *
+ * 
  * 5. Any software provided in binary form under this license must not be reverse
  *    engineered, decompiled, modified and/or disassembled.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,204 +35,79 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
-#include "sdk_common.h"
-#if NRF_MODULE_ENABLED(NRF_BLE_CONN_PARAMS)
-#include <stdlib.h>
-#include "nrf.h"
-#include "sdk_errors.h"
-#include "ble_hci.h"
-#include "ble_err.h"
+
 #include "ble_conn_params.h"
-#include "ble_srv_common.h"
-#include "ble_conn_state.h"
-#include "nrf_sdh_ble.h"
+#include <stdlib.h>
+#include "nordic_common.h"
+#include "ble_hci.h"
 #include "app_timer.h"
+#include "ble_srv_common.h"
 #include "app_util.h"
 
 
-#define NRF_BLE_CONN_PARAMS_INSTANCE_COUNT  NRF_SDH_BLE_PERIPHERAL_LINK_COUNT   //!< The number of @ref ble_conn_params_instance_t instances kept by the conn_params module.
+static ble_conn_params_init_t m_conn_params_config;     /**< Configuration as specified by the application. */
+static ble_gap_conn_params_t  m_preferred_conn_params;  /**< Connection parameters preferred by the application. */
+static uint8_t                m_update_count;           /**< Number of Connection Parameter Update messages that has currently been sent. */
+static uint16_t               m_conn_handle;            /**< Current connection handle. */
+static ble_gap_conn_params_t  m_current_conn_params;    /**< Connection parameters received in the most recent Connect event. */
+APP_TIMER_DEF(m_conn_params_timer_id);                  /**< Connection parameters timer. */
 
-#if (NRF_BLE_CONN_PARAMS_INSTANCE_COUNT < 1)
-#error Invalid NRF_SDH_BLE_PERIPHERAL_LINK_COUNT value. Set it in SDK config (nrf_sdh_ble).
-#endif
+static bool m_change_param = false;
 
-/** @brief Each peripheral link has such an instance associated with it.
- */
-typedef struct
+static bool is_conn_params_ok(ble_gap_conn_params_t * p_conn_params)
 {
-    uint16_t              conn_handle;           //!< The connection handle of this link. If this is @ref BLE_CONN_HANDLE_INVALID, the instance is free.
-    app_timer_id_t        timer_id;              //!< The ID of the timer associated with this link.
-    uint8_t               update_count;          //!< The number of times the connection parameters have been attempted negotiated on this link.
-    uint8_t               params_ok;             //!< Whether the current connection parameters on this link are acceptable according to the @p preferred_conn_params, and configured maximum deviations.
-    ble_gap_conn_params_t preferred_conn_params; //!< The desired connection parameters for this link.
-} ble_conn_params_instance_t;
-
-static app_timer_t                m_timer_data[NRF_BLE_CONN_PARAMS_INSTANCE_COUNT] = {{{0}}};          //!< Data needed for timers.
-static ble_conn_params_instance_t m_conn_params_instances[NRF_BLE_CONN_PARAMS_INSTANCE_COUNT] = {{0}}; //!< Configuration data for each connection.
-static ble_conn_params_init_t     m_conn_params_config;                                                //!< Configuration as provided by the application during intialization.
-static ble_gap_conn_params_t      m_preferred_conn_params;                                             //!< The preferred connection parameters as specified during initialization.
-//lint -esym(551, m_preferred_conn_params) "Not accessed"
-
-
-/**@brief Function for retrieving the conn_params instance belonging to a conn_handle
- *
- * @params[in]  conn_handle  The connection handle to retrieve the instance of.
- *
- * @return  A pointer to the instance, or NULL if no instance was found with that conn_handle.
- */
-static ble_conn_params_instance_t * instance_get(uint16_t conn_handle)
-{
-    //lint -save -e681 "Loop not entered" when NRF_BLE_CONN_PARAMS_INSTANCE_COUNT is 0
-    for (uint32_t i = 0; i < NRF_BLE_CONN_PARAMS_INSTANCE_COUNT; i++)
-    {
-        if (m_conn_params_instances[i].conn_handle == conn_handle)
-        {
-            return &m_conn_params_instances[i];
-        }
-    }
-    //lint -restore
-    return NULL;
-}
-
-
-/**@brief Function for initializing an instance, and associating it with a conn_handle.
- *
- * @params[in]  p_instance   The instance to initialize and associate.
- * @params[in]  conn_handle  The connection handle to associate with.
- */
-static __INLINE void instance_claim(ble_conn_params_instance_t * p_instance, uint16_t conn_handle)
-{
-    p_instance->conn_handle           = conn_handle;
-    p_instance->update_count          = 0;
-    p_instance->preferred_conn_params = m_preferred_conn_params;
-}
-
-
-/**@brief Function for freeing an instance.
- *
- * @params[in]  p_instance   The instance to free.
- */
-static __INLINE void instance_free(ble_conn_params_instance_t * p_instance)
-{
-    p_instance->conn_handle = BLE_CONN_HANDLE_INVALID;
-}
-
-
-/**@brief Function for validating a set of connection parameters against the preferred parameters.
- *
- * @param[in]  p_preferred_conn_params  The desired parameters.
- * @param[in]  p_actual_conn_params     The parameters to validate.
- * @param[in]  max_slave_latency_err    The amount of discrepancy in slave latency, in number of
- *                                      connection intervals, that will be accepted.
- * @param[in]  max_sup_timeout_err      The amount of discrepancy in supervision timeout, in tens of
- *                                      milliseconds, that will be accepted.
- *
- * @return  Whether the params in @p p_actual_conn_params are acceptable given the other parameters.
- */
-static bool is_conn_params_ok(ble_gap_conn_params_t const * p_preferred_conn_params,
-                              ble_gap_conn_params_t const * p_actual_conn_params,
-                              uint16_t                      max_slave_latency_err,
-                              uint16_t                      max_sup_timeout_err)
-{
-    uint32_t max_allowed_sl = p_preferred_conn_params->slave_latency + max_slave_latency_err;
-    uint32_t min_allowed_sl = p_preferred_conn_params->slave_latency
-                              - MIN(max_slave_latency_err, p_preferred_conn_params->slave_latency);
-    uint32_t max_allowed_to = p_preferred_conn_params->conn_sup_timeout + max_sup_timeout_err;
-    uint32_t min_allowed_to = p_preferred_conn_params->conn_sup_timeout
-                              - MIN(max_sup_timeout_err, p_preferred_conn_params->conn_sup_timeout);
-
     // Check if interval is within the acceptable range.
     // NOTE: Using max_conn_interval in the received event data because this contains
     //       the client's connection interval.
-    if   ((p_actual_conn_params->max_conn_interval < p_preferred_conn_params->min_conn_interval)
-       || (p_actual_conn_params->max_conn_interval > p_preferred_conn_params->max_conn_interval))
+    if (
+        (p_conn_params->max_conn_interval >= m_preferred_conn_params.min_conn_interval)
+        &&
+        (p_conn_params->max_conn_interval <= m_preferred_conn_params.max_conn_interval)
+       )
+    {
+        return true;
+    }
+    else
     {
         return false;
-    }
-
-    // Check if slave latency is within the acceptable deviation.
-    if   ((p_actual_conn_params->slave_latency < min_allowed_sl)
-       || (p_actual_conn_params->slave_latency > max_allowed_sl))
-    {
-        return false;
-    }
-
-    // Check if supervision timeout is within the acceptable deviation.
-    if   ((p_actual_conn_params->conn_sup_timeout < min_allowed_to)
-       || (p_actual_conn_params->conn_sup_timeout > max_allowed_to))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-
-static void send_error_evt(ret_code_t err_code)
-{
-    if (m_conn_params_config.error_handler != NULL)
-    {
-        m_conn_params_config.error_handler(err_code);
     }
 }
 
 
-/**@brief Function for sending a conn_param_update request on-air, and handling errors.
- *
- * @param[in]  conn_handle        Connection to send request on.
- * @param[in]  p_new_conn_params  Connection parameters to request.
- *
- * @return  Whether the request was successfully sent.
- */
-static bool send_update_request(uint16_t conn_handle, ble_gap_conn_params_t * p_new_conn_params)
-{
-    ret_code_t err_code;
-
-    err_code = sd_ble_gap_conn_param_update(conn_handle, p_new_conn_params);
-    if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY)) // NRF_ERROR_BUSY means another conn_param_update request is pending.
-    {
-        send_error_evt(err_code);
-    }
-
-    return (err_code == NRF_SUCCESS);
-}
-
-
-/**@brief Function called after conn_params_update_delay has happened. This is triggered by app_timer.
- *
- * @param[in]  p_context  Context identifying which connection this is for.
- */
 static void update_timeout_handler(void * p_context)
 {
-    uint32_t                     conn_handle = (uint32_t)p_context;
-    ble_conn_params_instance_t * p_instance  = instance_get(conn_handle);
+    UNUSED_PARAMETER(p_context);
 
-    if (p_instance != NULL)
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
     {
         // Check if we have reached the maximum number of attempts
-        if (p_instance->update_count < m_conn_params_config.max_conn_params_update_count)
+        m_update_count++;
+        if (m_update_count <= m_conn_params_config.max_conn_params_update_count)
         {
-            bool update_sent = send_update_request(conn_handle, &p_instance->preferred_conn_params);
-            if (update_sent)
+            uint32_t err_code;
+
+            // Parameters are not ok, send connection parameters update request.
+            err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
+            if ((err_code != NRF_SUCCESS) && (m_conn_params_config.error_handler != NULL))
             {
-                p_instance->update_count++;
+                m_conn_params_config.error_handler(err_code);
             }
         }
         else
         {
-            p_instance->update_count = 0;
+            m_update_count = 0;
 
             // Negotiation failed, disconnect automatically if this has been configured
             if (m_conn_params_config.disconnect_on_fail)
             {
-                ret_code_t err_code;
+                uint32_t err_code;
 
-                err_code = sd_ble_gap_disconnect(conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-                if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_INVALID_STATE)) // NRF_ERROR_INVALID_STATE means disconnect is already in progress.
+                err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
+                if ((err_code != NRF_SUCCESS) && (m_conn_params_config.error_handler != NULL))
                 {
-                    send_error_evt(err_code);
+                    m_conn_params_config.error_handler(err_code);
                 }
             }
 
@@ -242,7 +117,6 @@ static void update_timeout_handler(void * p_context)
                 ble_conn_params_evt_t evt;
 
                 evt.evt_type = BLE_CONN_PARAMS_EVT_FAILED;
-                evt.conn_handle = conn_handle;
                 m_conn_params_config.evt_handler(&evt);
             }
         }
@@ -250,28 +124,26 @@ static void update_timeout_handler(void * p_context)
 }
 
 
-ret_code_t ble_conn_params_init(const ble_conn_params_init_t * p_init)
+uint32_t ble_conn_params_init(const ble_conn_params_init_t * p_init)
 {
-    ret_code_t err_code;
-
-    VERIFY_PARAM_NOT_NULL(p_init);
+    uint32_t err_code;
 
     m_conn_params_config = *p_init;
-    m_conn_params_config.p_conn_params = &m_preferred_conn_params;
-
+    m_change_param = false;
     if (p_init->p_conn_params != NULL)
     {
-        // Set the connection params in stack.
-        err_code = sd_ble_gap_ppcp_set(p_init->p_conn_params);
+        m_preferred_conn_params = *p_init->p_conn_params;
+
+        // Set the connection params in stack
+        err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
         if (err_code != NRF_SUCCESS)
         {
             return err_code;
         }
-        m_preferred_conn_params = *p_init->p_conn_params;
     }
     else
     {
-        // Get the (default) connection params from stack.
+        // Fetch the connection params from stack
         err_code = sd_ble_gap_ppcp_get(&m_preferred_conn_params);
         if (err_code != NRF_SUCCESS)
         {
@@ -279,75 +151,44 @@ ret_code_t ble_conn_params_init(const ble_conn_params_init_t * p_init)
         }
     }
 
-    //lint -save -e681 "Loop not entered" when NRF_BLE_CONN_PARAMS_INSTANCE_COUNT is 0
-    for (uint32_t i = 0; i < NRF_BLE_CONN_PARAMS_INSTANCE_COUNT; i++)
-    {
-        ble_conn_params_instance_t * p_instance = &m_conn_params_instances[i];
+    m_conn_handle  = BLE_CONN_HANDLE_INVALID;
+    m_update_count = 0;
 
-        instance_free(p_instance);
-        p_instance->timer_id = &m_timer_data[i];
-
-        err_code = app_timer_create(&p_instance->timer_id,
+    return app_timer_create(&m_conn_params_timer_id,
                             APP_TIMER_MODE_SINGLE_SHOT,
                             update_timeout_handler);
-        if (err_code != NRF_SUCCESS)
-        {
-            return NRF_ERROR_INTERNAL;
-        }
-    }
-    //lint -restore
-
-    return NRF_SUCCESS;
 }
 
 
-ret_code_t ble_conn_params_stop(void)
+uint32_t ble_conn_params_stop(void)
 {
-    ret_code_t err_code;
+    return app_timer_stop(m_conn_params_timer_id);
+}
 
-    //lint -save -e681 "Loop not entered" when NRF_BLE_CONN_PARAMS_INSTANCE_COUNT is 0
-    for (uint32_t i = 0; i < NRF_BLE_CONN_PARAMS_INSTANCE_COUNT; i++)
+
+static void conn_params_negotiation(void)
+{
+    // Start negotiation if the received connection parameters are not acceptable
+    if (!is_conn_params_ok(&m_current_conn_params))
+    {
+        uint32_t err_code;
+        uint32_t timeout_ticks;
+
+        if (m_change_param)
         {
-        err_code = app_timer_stop(m_conn_params_instances[i].timer_id);
-        switch (err_code)
+            // Notify the application that the procedure has failed
+            if (m_conn_params_config.evt_handler != NULL)
             {
-            case NRF_SUCCESS:
-                /* do nothing */
-                break;
+                ble_conn_params_evt_t evt;
 
-            case NRF_ERROR_INVALID_STATE:
-                /* do nothing */
-                break;
-
-            case NRF_ERROR_NO_MEM:
-                return NRF_ERROR_BUSY;
-
-            case NRF_ERROR_INVALID_PARAM:
-                /* fallthrough */
-            default:
-                return NRF_ERROR_INTERNAL;
+                evt.evt_type = BLE_CONN_PARAMS_EVT_FAILED;
+                m_conn_params_config.evt_handler(&evt);
             }
         }
-    //lint -restore
-    return NRF_SUCCESS;
-}
-
-
-/**@brief Function for taking appropriate action based on the current state of connection parameters.
- *
- * @param[in]  conn_handle  Connection to handle.
- * @param[in]  p_instance   Configuration for the connection.
- */
-static void conn_params_negotiation(uint16_t conn_handle, ble_conn_params_instance_t * p_instance)
+        else
         {
-    // Start negotiation if the received connection parameters are not acceptable
-    if (!p_instance->params_ok)
+            if (m_update_count == 0)
             {
-        ret_code_t err_code;
-        uint32_t   timeout_ticks;
-
-        if (p_instance->update_count == 0)
-        {
                 // First connection parameter update
                 timeout_ticks = m_conn_params_config.first_conn_params_update_delay;
             }
@@ -356,165 +197,102 @@ static void conn_params_negotiation(uint16_t conn_handle, ble_conn_params_instan
                 timeout_ticks = m_conn_params_config.next_conn_params_update_delay;
             }
 
-        err_code = app_timer_start(p_instance->timer_id, timeout_ticks, (void *)(uint32_t)conn_handle);
-        if (err_code != NRF_SUCCESS)
+            err_code = app_timer_start(m_conn_params_timer_id, timeout_ticks, NULL);
+            if ((err_code != NRF_SUCCESS) && (m_conn_params_config.error_handler != NULL))
             {
-            send_error_evt(err_code);
+                m_conn_params_config.error_handler(err_code);
             }
         }
+    }
     else
     {
-        p_instance->update_count = 0;
-
-        // Notify the application that the procedure has succeeded
+        // Notify the application that the procedure has succeded
         if (m_conn_params_config.evt_handler != NULL)
         {
             ble_conn_params_evt_t evt;
 
             evt.evt_type = BLE_CONN_PARAMS_EVT_SUCCEEDED;
-            evt.conn_handle = conn_handle;
             m_conn_params_config.evt_handler(&evt);
         }
     }
+    m_change_param = false;
 }
 
 
-/**@brief Function for handling a connection event from the SoftDevice.
- *
- * @param[in]  p_ble_evt  Event from the SoftDevice.
- */
-static void on_connect(ble_evt_t const * p_ble_evt)
+static void on_connect(ble_evt_t * p_ble_evt)
 {
-    uint8_t  role        = p_ble_evt->evt.gap_evt.params.connected.role;
-    uint16_t conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-
-    if (role != BLE_GAP_ROLE_PERIPH)
-    {
-        return;
-    }
-
-    ble_conn_params_instance_t * p_instance  = instance_get(BLE_CONN_HANDLE_INVALID);
-
-    if (p_instance == NULL)
-    {
-        send_error_evt(NRF_ERROR_NO_MEM);
-        return;
-    }
-
-    instance_claim(p_instance, conn_handle);
-    p_instance->params_ok = is_conn_params_ok(&p_instance->preferred_conn_params,
-                                              &p_ble_evt->evt.gap_evt.params.connected.conn_params,
-                                              NRF_BLE_CONN_PARAMS_MAX_SLAVE_LATENCY_DEVIATION,
-                                              NRF_BLE_CONN_PARAMS_MAX_SUPERVISION_TIMEOUT_DEVIATION);
+    // Save connection parameters
+    m_conn_handle         = p_ble_evt->evt.gap_evt.conn_handle;
+    m_current_conn_params = p_ble_evt->evt.gap_evt.params.connected.conn_params;
+    m_update_count        = 0;  // Connection parameter negotiation should re-start every connection
 
     // Check if we shall handle negotiation on connect
     if (m_conn_params_config.start_on_notify_cccd_handle == BLE_GATT_HANDLE_INVALID)
     {
-        conn_params_negotiation(conn_handle, p_instance);
+        conn_params_negotiation();
     }
 }
 
 
-/**@brief Function for handling a disconnection event from the SoftDevice.
- *
- * @param[in]  p_ble_evt  Event from the SoftDevice.
- */
-static void on_disconnect(ble_evt_t const * p_ble_evt)
+static void on_disconnect(ble_evt_t * p_ble_evt)
 {
-    ret_code_t                   err_code;
-    uint16_t                     conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-    ble_conn_params_instance_t * p_instance  = instance_get(conn_handle);
+    uint32_t err_code;
 
-    if (p_instance != NULL)
-    {
+    m_conn_handle = BLE_CONN_HANDLE_INVALID;
+
     // Stop timer if running
-        err_code = app_timer_stop(p_instance->timer_id);
-        if (err_code != NRF_SUCCESS)
-        {
-            send_error_evt(err_code);
-        }
+    m_update_count = 0; // Connection parameters updates should happen during every connection
 
-        instance_free(p_instance);
+    err_code = app_timer_stop(m_conn_params_timer_id);
+    if ((err_code != NRF_SUCCESS) && (m_conn_params_config.error_handler != NULL))
+    {
+        m_conn_params_config.error_handler(err_code);
     }
 }
 
 
-/**@brief Function for handling a GATT write event from the SoftDevice.
- *
- * @details To provide the start_on_notify_cccd_handle functionality.
- *
- * @param[in]  p_ble_evt  Event from the SoftDevice.
- */
-static void on_write(ble_evt_t const * p_ble_evt)
+static void on_write(ble_evt_t * p_ble_evt)
 {
-    ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
+    ble_gatts_evt_write_t * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
-    // Check if this is the correct CCCD
+    // Check if this the correct CCCD
     if (
         (p_evt_write->handle == m_conn_params_config.start_on_notify_cccd_handle)
         &&
         (p_evt_write->len == 2)
        )
     {
-        uint16_t                     conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-        ble_conn_params_instance_t * p_instance  = instance_get(conn_handle);
-
-        if (p_instance != NULL)
+        // Check if this is a 'start notification'
+        if (ble_srv_is_notification_enabled(p_evt_write->data))
         {
-            // Check if this is a 'start notification'
-            if (ble_srv_is_notification_enabled(p_evt_write->data))
-            {
-                // Do connection parameter negotiation if necessary
-                    conn_params_negotiation(conn_handle, p_instance);
-            }
-            else
-            {
-                ret_code_t err_code;
+            // Do connection parameter negotiation if necessary
+            conn_params_negotiation();
+        }
+        else
+        {
+            uint32_t err_code;
 
-                // Stop timer if running
-                err_code = app_timer_stop(p_instance->timer_id);
-                if (err_code != NRF_SUCCESS)
-                {
-                    send_error_evt(err_code);
-                }
+            // Stop timer if running
+            err_code = app_timer_stop(m_conn_params_timer_id);
+            if ((err_code != NRF_SUCCESS) && (m_conn_params_config.error_handler != NULL))
+            {
+                m_conn_params_config.error_handler(err_code);
             }
         }
     }
 }
 
 
-/**@brief Function for handling a connection parameter update event from the SoftDevice.
- *
- * @details This event means the peer central has changed the connection parameters or declined our
- *          request.
- *
- * @param[in]  p_ble_evt  Event from the SoftDevice.
- */
-static void on_conn_params_update(ble_evt_t const * p_ble_evt)
+static void on_conn_params_update(ble_evt_t * p_ble_evt)
 {
-    uint16_t                     conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-    ble_conn_params_instance_t * p_instance  = instance_get(conn_handle);
+    // Copy the parameters
+    m_current_conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
 
-    if (p_instance != NULL)
-    {
-        p_instance->params_ok = is_conn_params_ok(
-                                     &p_instance->preferred_conn_params,
-                                     &p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params,
-                                     NRF_BLE_CONN_PARAMS_MAX_SLAVE_LATENCY_DEVIATION,
-                                     NRF_BLE_CONN_PARAMS_MAX_SUPERVISION_TIMEOUT_DEVIATION);
-
-        conn_params_negotiation(conn_handle, p_instance);
-    }
+    conn_params_negotiation();
 }
 
 
-/**
- * @brief Function for handling BLE events.
- *
- * @param[in]   p_ble_evt       Event received from the BLE stack.
- * @param[in]   p_context       Context.
- */
-static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
+void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt)
 {
     switch (p_ble_evt->header.evt_id)
     {
@@ -541,32 +319,33 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 }
 
 
-ret_code_t ble_conn_params_change_conn_params(uint16_t                conn_handle,
-                                              ble_gap_conn_params_t * p_new_params)
+uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
 {
-    ret_code_t                   err_code   = BLE_ERROR_INVALID_CONN_HANDLE;
-    ble_conn_params_instance_t * p_instance = instance_get(conn_handle);
+    uint32_t err_code;
 
-    if (p_new_params == NULL)
+    m_preferred_conn_params = *new_params;
+    // Set the connection params in stack
+    err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
+    if (err_code == NRF_SUCCESS)
     {
-        p_new_params = &m_preferred_conn_params;
-    }
-
-    if (p_instance != NULL)
-    {
-        // Send request to central.
-        err_code = sd_ble_gap_conn_param_update(conn_handle, p_new_params);
-        if (err_code == NRF_SUCCESS)
+        if (!is_conn_params_ok(&m_current_conn_params))
         {
-            p_instance->params_ok             = false;
-            p_instance->update_count          = 1;
-            p_instance->preferred_conn_params = *p_new_params;
+            m_change_param = true;
+            err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
+            m_update_count = 1;
+        }
+        else
+        {
+            // Notify the application that the procedure has succeded
+            if (m_conn_params_config.evt_handler != NULL)
+            {
+                ble_conn_params_evt_t evt;
+
+                evt.evt_type = BLE_CONN_PARAMS_EVT_SUCCEEDED;
+                m_conn_params_config.evt_handler(&evt);
+            }
+            err_code = NRF_SUCCESS;
         }
     }
-
     return err_code;
 }
-
-NRF_SDH_BLE_OBSERVER(m_ble_observer, BLE_CONN_PARAMS_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
-
-#endif //ENABLED

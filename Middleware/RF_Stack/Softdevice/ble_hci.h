@@ -1,49 +1,47 @@
-/*
- * Copyright (c) 2012 - 2017, Nordic Semiconductor ASA
+/* 
+ * Copyright (c) Nordic Semiconductor ASA
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form, except as embedded into a Nordic
- *    Semiconductor ASA integrated circuit in a product or a software update for
- *    such product, must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * 4. This software, with or without modification, must only be used with a
- *    Nordic Semiconductor ASA integrated circuit.
- *
- * 5. Any software provided in binary form under this license must not be reverse
- *    engineered, decompiled, modified and/or disassembled.
- *
- * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ *   1. Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ *   2. Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ * 
+ *   3. Neither the name of Nordic Semiconductor ASA nor the names of other
+ *   contributors to this software may be used to endorse or promote products
+ *   derived from this software without specific prior written permission.
+ * 
+ *   4. This software must only be used in a processor manufactured by Nordic
+ *   Semiconductor ASA, or in a processor manufactured by a third party that
+ *   is used in combination with a processor manufactured by Nordic Semiconductor.
+ * 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
  */
 
 /**
-  @addtogroup BLE_COMMON
+  @addtogroup BLE_COMMON 
   @{
 */
 
 
 #ifndef BLE_HCI_H__
-#define BLE_HCI_H__
+#define BLE_HCI_H__ 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,9 +88,9 @@ extern "C" {
 /*0x20 Unsupported LMP Parameter Value
 0x21 Role Change Not Allowed
 */
-#define BLE_HCI_STATUS_CODE_LMP_RESPONSE_TIMEOUT            0x22       /**< LMP Response Timeout. */
-#define BLE_HCI_STATUS_CODE_LMP_ERROR_TRANSACTION_COLLISION 0x23  /**< LMP Error Transaction Collision/LL Procedure Collision. */
-#define BLE_HCI_STATUS_CODE_LMP_PDU_NOT_ALLOWED             0x24       /**< LMP PDU Not Allowed. */
+#define BLE_HCI_STATUS_CODE_LMP_RESPONSE_TIMEOUT       0x22       /**< LMP Response Timeout. */
+/*0x23 LMP Error Transaction Collision*/
+#define BLE_HCI_STATUS_CODE_LMP_PDU_NOT_ALLOWED        0x24       /**< LMP PDU Not Allowed. */
 /*0x25 Encryption Mode Not Acceptable
 0x26 Link Key Can Not be Changed
 0x27 Requested QoS Not Supported
@@ -106,9 +104,7 @@ extern "C" {
 0x2D QoS Rejected
 0x2E Channel Classification Not Supported
 0x2F Insufficient Security
-*/
-#define BLE_HCI_PARAMETER_OUT_OF_MANDATORY_RANGE       0x30            /**< Parameter Out Of Mandatory Range. */
-/*
+0x30 Parameter Out Of Mandatory Range
 0x31 Reserved
 0x32 Role Switch Pending
 0x33 Reserved
@@ -120,7 +116,7 @@ extern "C" {
 0x39 Connection Rejected due to No Suitable Channel Found*/
 #define BLE_HCI_CONTROLLER_BUSY                        0x3A       /**< Controller Busy. */
 #define BLE_HCI_CONN_INTERVAL_UNACCEPTABLE             0x3B       /**< Connection Interval Unacceptable. */
-#define BLE_HCI_DIRECTED_ADVERTISER_TIMEOUT            0x3C       /**< Directed Advertisement Timeout. */
+#define BLE_HCI_DIRECTED_ADVERTISER_TIMEOUT            0x3C       /**< Directed Adverisement Timeout. */
 #define BLE_HCI_CONN_TERMINATED_DUE_TO_MIC_FAILURE     0x3D       /**< Connection Terminated due to MIC Failure. */
 #define BLE_HCI_CONN_FAILED_TO_BE_ESTABLISHED          0x3E       /**< Connection Failed to be Established. */
 

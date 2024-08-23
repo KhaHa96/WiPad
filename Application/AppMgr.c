@@ -1,6 +1,6 @@
-/* ---------------------------   Application Manager for nRF52832   ---------------------------- */
+/* ---------------------------   Application Manager for nRF51422   ---------------------------- */
 /*  File      -  Application Manager definition source file                                      */
-/*  target    -  nRF52832                                                                        */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -22,7 +22,7 @@
 /* Applications' public interface list */
 static const AppMgr_tstrInterface strApplicationList[] =
 {
-    {enuAttribution_Init , enuAttribution_GetNotified },
+    {enuAttribution_Init, enuAttribution_GetNotified  },
     {enuRegistration_Init, enuRegistration_GetNotified},
     {enuDisplay_Init     , enuDisplay_GetNotified     }
 };
@@ -63,9 +63,9 @@ App_tenuStatus AppMgr_enuInit(void)
 {
     App_tenuStatus enuRetVal = Application_Success;
 
-    /* Initialize all applications */
     for(uint8_t u8Index = 0; u8Index < APPLICATION_COUNT; u8Index++)
     {
+        /* Initialize all applications */
         if(Application_Failure == strApplicationList[u8Index].pfInit())
         {
             enuRetVal = Application_Failure;
@@ -97,9 +97,7 @@ extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData)
                 {
                     if(strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif)
                     {
-                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif((uint32_t)s32Power(APP_MANAGER_POWER_BASE,
-                                                                                                             u32Event-1),
-                                                                                                             pvData);
+                        strApplicationList[pstrEvent->enuSubscribedApps[u8Index]].pfNotif(u32Event, pvData);
                     }
                 }
 

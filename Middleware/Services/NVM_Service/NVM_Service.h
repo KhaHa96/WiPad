@@ -1,8 +1,8 @@
-/* -----------------------------   NVM Service for nRF52832   ---------------------------------- */
-/*  File      -  NVM Service header file                                                         */
-/*  target    -  nRF52832                                                                        */
+/* -----------------------------   NVM Service for nRF51422   ---------------------------------- */
+/*  File      -  NVM Service source file                                                         */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
-/*  created   -  May, 2024                                                                       */
+/*  created   -  July, 2024                                                                       */
 /* --------------------------------------------------------------------------------------------- */
 
 #ifndef _MID_NVM_H_
@@ -16,69 +16,70 @@
 #include "fds.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define NVM_ID_SIZE  8U
+#define NVM_ID_SIZE 8U
 #define NVM_PWD_SIZE 12U
 
 /* Dispatchable events */
-#define NVM_ENTRY_ADDED         17U
+#define NVM_ENTRY_ADDED 17U
 #define NVM_PASSWORD_REGISTERED 18U
-
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
  * Nvm_tenuFiles Enumeration of the different FDS files used.
-*/
+ */
 typedef enum
 {
     Nvm_PersistentKeys = 0, /* File used for user entries with persistent keys */
     Nvm_ExpirableKeys,      /* File used for user entries with expirable keys  */
     Nvm_MaxFiles            /* Max number of files used                        */
-}Nvm_tenuFiles;
+} Nvm_tenuFiles;
 
 /**
- * Nvm_tstrTimeResKey Time-restricted key storage structure definition.
-*/
+ * Nvm_tstrTimeResKey Time-restricted key storage structure fedinition
+ */
 typedef struct
 {
-    bool bIsKeyActive;          /* Has key been activated                   */
-    uint16_t u16Timeout;        /* Key life span in minutes                 */
+    bool bIsKeyActive;          /* Has key been activated  */
+    uint16_t u16Timeout;        /* Key life span in minutes */
     uint32_t u32ActivationTime; /* Timestamp of when this key was activated */
-}Nvm_tstrTimeResKey;
+} Nvm_tstrTimeResKey;
 
 /**
- * Nvm_tstrCountResKey Count-restricted key storage structure definition.
-*/
+ * Nvm_tstrCountResKey Count-restricted key storage structure definition
+ */
 typedef struct
 {
-    uint16_t u16CountLimit; /* Maximum number of times key can be used */
-    uint16_t u16UsedCount;  /* Number of times key has been used       */
-}Nvm_tstrCountResKey;
+    uint16_t u16CountLimit; /* Max number of times key can be used */
+    uint16_t u16UsedCount;  /* Number of times key has been used */
+} Nvm_tstrCountResKey;
 
 /**
- * Nvm_tstrRecord FDS record-defining structure.
-*/
+ * Nvm_tstrRecord FDS record-defining structure
+ */
 typedef struct
 {
-    uint8_t u8Id[NVM_ID_SIZE];           /* User Id                         */
-    uint8_t u8Password[NVM_PWD_SIZE];    /* User password                   */
-    exact_time_256_t strLastKnownUse;    /* Last time this key was used     */
-    App_tenuKeyTypes enuKeyType;         /* User's key type                 */
-    union{
-        Nvm_tstrCountResKey strCountRes; /* Count-restricted key quantifier */
-        Nvm_tstrTimeResKey strTimeRes;   /* Time-restricted key quantifier  */
-        bool bOneTimeExpired;            /* One-time key used               */
-    }uKeyQuantifier;
-}Nvm_tstrRecord;
+    uint8_t u8Id[NVM_ID_SIZE];        /*User Id*/
+    uint8_t u8Password[NVM_PWD_SIZE]; /* User password */
+    exact_time_256_t strLastKnownUse; /* Last time this key was used */
+    App_tenuKeyTypes enuKeyType;      /* User's key type */
+    union
+    {
+        Nvm_tstrCountResKey strCountRes; /* Count-Restricted key quantifier */
+        Nvm_tstrTimeResKey strTimeRes;   /* Time-restricted key quantifier */
+        bool bOneTimeExpired;            /* One-time key used */
+    } uKeyQuantifier;
+} Nvm_tstrRecord;
 
 /**
  * Nvm_tstrRecordDispatch Dispatchable record defining structure.
-*/
+ */
 typedef struct
 {
     fds_record_desc_t *pstrRecordDesc; /* Record descriptor                 */
     Nvm_tstrRecord *pstrRecord;        /* Record as seen by the application */
-}Nvm_tstrRecordDispatch;
+} Nvm_tstrRecordDispatch;
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
+
 /**
  * @brief enuNvm_Init Initializes the NVM middleware service responsible for manipulating FDS.
  *
@@ -153,7 +154,7 @@ Mid_tenuStatus enuNVM_ReadRecord(fds_record_desc_t *pstrRecordDesc, fds_flash_re
 /**
  * @brief enuNVM_UpdateRecord Updates an already existing record in the NVM file system.
  *
- * @note NVM_Service relies on FDS to abstract away the lowel-level complexity of manipulating
+ * @note NVM_Service relies on FDS to abstract away the lower-level complexity of manipulating
  *       flash storage and is therefore unable to physically alter the content of a record
  *       stored in the file system. What it does instead is it duplicates the record, includes
  *       the update in the new copy and invalidates the original record, essentially allowing

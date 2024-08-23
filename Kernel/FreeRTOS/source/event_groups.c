@@ -1,30 +1,71 @@
 /*
- * FreeRTOS Kernel V10.0.0
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
- */
+    FreeRTOS V8.2.1 - Copyright (C) 2015 Real Time Engineers Ltd.
+    All rights reserved
+
+    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
+
+    This file is part of the FreeRTOS distribution.
+
+    FreeRTOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License (version 2) as published by the
+    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
+
+    ***************************************************************************
+    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
+    >>!   distribute a combined work that includes FreeRTOS without being   !<<
+    >>!   obliged to provide the source code for proprietary components     !<<
+    >>!   outside of the FreeRTOS kernel.                                   !<<
+    ***************************************************************************
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  Full license text is available on the following
+    link: http://www.freertos.org/a00114.html
+
+    ***************************************************************************
+     *                                                                       *
+     *    FreeRTOS provides completely free yet professionally developed,    *
+     *    robust, strictly quality controlled, supported, and cross          *
+     *    platform software that is more than just the market leader, it     *
+     *    is the industry's de facto standard.                               *
+     *                                                                       *
+     *    Help yourself get started quickly while simultaneously helping     *
+     *    to support the FreeRTOS project by purchasing a FreeRTOS           *
+     *    tutorial book, reference manual, or both:                          *
+     *    http://www.FreeRTOS.org/Documentation                              *
+     *                                                                       *
+    ***************************************************************************
+
+    http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
+    the FAQ page "My application does not run, what could be wrong?".  Have you
+    defined configASSERT()?
+
+    http://www.FreeRTOS.org/support - In return for receiving this top quality
+    embedded software for free we request you assist our global community by
+    participating in the support forum.
+
+    http://www.FreeRTOS.org/training - Investing in training allows your team to
+    be as productive as possible as early as possible.  Now you can receive
+    FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
+    Ltd, and the world's leading authority on the world's leading RTOS.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
+    compatible FAT file system, and our tiny thread aware UDP/IP stack.
+
+    http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
+    Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
+    Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
+    licenses offer ticketed support, indemnification and commercial middleware.
+
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
+    engineered and independently SIL3 certified version for use in safety and
+    mission critical applications that require provable dependability.
+
+    1 tab == 4 spaces!
+*/
 
 /* Standard includes. */
 #include <stdlib.h>
@@ -46,6 +87,14 @@ header files above, but not in this file, in order to generate the correct
 privileged Vs unprivileged linkage and placement. */
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE /*lint !e961 !e750. */
 
+#if ( INCLUDE_xEventGroupSetBitFromISR == 1 ) && ( configUSE_TIMERS == 0 )
+	#error configUSE_TIMERS must be set to 1 to make the xEventGroupSetBitFromISR() function available.
+#endif
+
+#if ( INCLUDE_xEventGroupSetBitFromISR == 1 ) && ( INCLUDE_xTimerPendFunctionCall == 0 )
+	#error INCLUDE_xTimerPendFunctionCall must also be set to one to make the xEventGroupSetBitFromISR() function available.
+#endif
+
 /* The following bit fields convey control information in a task's event list
 item value.  It is important they don't clash with the
 taskEVENT_LIST_ITEM_VALUE_IN_USE definition. */
@@ -66,13 +115,10 @@ typedef struct xEventGroupDefinition
 	EventBits_t uxEventBits;
 	List_t xTasksWaitingForBits;		/*< List of tasks waiting for a bit to be set. */
 
-	#if( configUSE_TRACE_FACILITY == 1 )
+	#if ( configUSE_TRACE_FACILITY == 1 )
 		UBaseType_t uxEventGroupNumber;
 	#endif
 
-	#if( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-		uint8_t ucStaticallyAllocated; /*< Set to pdTRUE if the event group is statically allocated to ensure no attempt is made to free the memory. */
-	#endif
 } EventGroup_t;
 
 /*-----------------------------------------------------------*/
@@ -85,93 +131,28 @@ typedef struct xEventGroupDefinition
  * wait condition is met if any of the bits set in uxBitsToWait for are also set
  * in uxCurrentEventBits.
  */
-static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits, const EventBits_t uxBitsToWaitFor, const BaseType_t xWaitForAllBits ) PRIVILEGED_FUNCTION;
+static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits, const EventBits_t uxBitsToWaitFor, const BaseType_t xWaitForAllBits );
 
 /*-----------------------------------------------------------*/
 
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+EventGroupHandle_t xEventGroupCreate( void )
+{
+EventGroup_t *pxEventBits;
 
-	EventGroupHandle_t xEventGroupCreateStatic( StaticEventGroup_t *pxEventGroupBuffer )
+	pxEventBits = ( EventGroup_t * ) pvPortMalloc( sizeof( EventGroup_t ) );
+	if ( pxEventBits != NULL )
 	{
-	EventGroup_t *pxEventBits;
-
-		/* A StaticEventGroup_t object must be provided. */
-		configASSERT( pxEventGroupBuffer );
-
-		#if( configASSERT_DEFINED == 1 )
-		{
-			/* Sanity check that the size of the structure used to declare a
-			variable of type StaticEventGroup_t equals the size of the real
-			event group structure. */
-			volatile size_t xSize = sizeof( StaticEventGroup_t );
-			configASSERT( xSize == sizeof( EventGroup_t ) );
-		}
-		#endif /* configASSERT_DEFINED */
-
-		/* The user has provided a statically allocated event group - use it. */
-		pxEventBits = ( EventGroup_t * ) pxEventGroupBuffer; /*lint !e740 EventGroup_t and StaticEventGroup_t are guaranteed to have the same size and alignment requirement - checked by configASSERT(). */
-
-		if( pxEventBits != NULL )
-		{
-			pxEventBits->uxEventBits = 0;
-			vListInitialise( &( pxEventBits->xTasksWaitingForBits ) );
-
-			#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-			{
-				/* Both static and dynamic allocation can be used, so note that
-				this event group was created statically in case the event group
-				is later deleted. */
-				pxEventBits->ucStaticallyAllocated = pdTRUE;
-			}
-			#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
-
-			traceEVENT_GROUP_CREATE( pxEventBits );
-		}
-		else
-		{
-			traceEVENT_GROUP_CREATE_FAILED();
-		}
-
-		return ( EventGroupHandle_t ) pxEventBits;
+		pxEventBits->uxEventBits = 0;
+		vListInitialise( &( pxEventBits->xTasksWaitingForBits ) );
+		traceEVENT_GROUP_CREATE( pxEventBits );
+	}
+	else
+	{
+		traceEVENT_GROUP_CREATE_FAILED();
 	}
 
-#endif /* configSUPPORT_STATIC_ALLOCATION */
-/*-----------------------------------------------------------*/
-
-#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-
-	EventGroupHandle_t xEventGroupCreate( void )
-	{
-	EventGroup_t *pxEventBits;
-
-		/* Allocate the event group. */
-		pxEventBits = ( EventGroup_t * ) pvPortMalloc( sizeof( EventGroup_t ) );
-
-		if( pxEventBits != NULL )
-		{
-			pxEventBits->uxEventBits = 0;
-			vListInitialise( &( pxEventBits->xTasksWaitingForBits ) );
-
-			#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-			{
-				/* Both static and dynamic allocation can be used, so note this
-				event group was allocated statically in case the event group is
-				later deleted. */
-				pxEventBits->ucStaticallyAllocated = pdFALSE;
-			}
-			#endif /* configSUPPORT_STATIC_ALLOCATION */
-
-			traceEVENT_GROUP_CREATE( pxEventBits );
-		}
-		else
-		{
-			traceEVENT_GROUP_CREATE_FAILED();
-		}
-
-		return ( EventGroupHandle_t ) pxEventBits;
-	}
-
-#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
+	return ( EventGroupHandle_t ) pxEventBits;
+}
 /*-----------------------------------------------------------*/
 
 EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet, const EventBits_t uxBitsToWaitFor, TickType_t xTicksToWait )
@@ -195,7 +176,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 
 		( void ) xEventGroupSetBits( xEventGroup, uxBitsToSet );
 
-		if( ( ( uxOriginalBitValue | uxBitsToSet ) & uxBitsToWaitFor ) == uxBitsToWaitFor )
+		if ( ( ( uxOriginalBitValue | uxBitsToSet ) & uxBitsToWaitFor ) == uxBitsToWaitFor )
 		{
 			/* All the rendezvous bits are now set - no need to block. */
 			uxReturn = ( uxOriginalBitValue | uxBitsToSet );
@@ -208,7 +189,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		}
 		else
 		{
-			if( xTicksToWait != ( TickType_t ) 0 )
+			if ( xTicksToWait != ( TickType_t ) 0 )
 			{
 				traceEVENT_GROUP_SYNC_BLOCK( xEventGroup, uxBitsToSet, uxBitsToWaitFor );
 
@@ -228,15 +209,14 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 				/* The rendezvous bits were not set, but no block time was
 				specified - just return the current event bit value. */
 				uxReturn = pxEventBits->uxEventBits;
-				xTimeoutOccurred = pdTRUE;
 			}
 		}
 	}
 	xAlreadyYielded = xTaskResumeAll();
 
-	if( xTicksToWait != ( TickType_t ) 0 )
+	if ( xTicksToWait != ( TickType_t ) 0 )
 	{
-		if( xAlreadyYielded == pdFALSE )
+		if ( xAlreadyYielded == pdFALSE )
 		{
 			portYIELD_WITHIN_API();
 		}
@@ -251,7 +231,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		event list item, and they should now be retrieved then cleared. */
 		uxReturn = uxTaskResetEventItemValue();
 
-		if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
+		if ( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
 		{
 			/* The task timed out, just return the current event bit value. */
 			taskENTER_CRITICAL();
@@ -262,7 +242,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 				bits it was waiting for were set, it is possible that since it
 				unblocked another task has set the bits.  If this is the case
 				then it needs to clear the bits before exiting. */
-				if( ( uxReturn & uxBitsToWaitFor ) == uxBitsToWaitFor )
+				if ( ( uxReturn & uxBitsToWaitFor ) == uxBitsToWaitFor )
 				{
 					pxEventBits->uxEventBits &= ~uxBitsToWaitFor;
 				}
@@ -286,9 +266,6 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 	}
 
 	traceEVENT_GROUP_SYNC_END( xEventGroup, uxBitsToSet, uxBitsToWaitFor, xTimeoutOccurred );
-
-	/* Prevent compiler warnings when trace macros are not used. */
-	( void ) xTimeoutOccurred;
 
 	return uxReturn;
 }
@@ -319,7 +296,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		/* Check to see if the wait condition is already met or not. */
 		xWaitConditionMet = prvTestWaitCondition( uxCurrentEventBits, uxBitsToWaitFor, xWaitForAllBits );
 
-		if( xWaitConditionMet != pdFALSE )
+		if ( xWaitConditionMet != pdFALSE )
 		{
 			/* The wait condition has already been met so there is no need to
 			block. */
@@ -327,7 +304,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 			xTicksToWait = ( TickType_t ) 0;
 
 			/* Clear the wait bits if requested to do so. */
-			if( xClearOnExit != pdFALSE )
+			if ( xClearOnExit != pdFALSE )
 			{
 				pxEventBits->uxEventBits &= ~uxBitsToWaitFor;
 			}
@@ -336,12 +313,11 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		else if( xTicksToWait == ( TickType_t ) 0 )
+		else if ( xTicksToWait == ( TickType_t ) 0 )
 		{
 			/* The wait condition has not been met, but no block time was
 			specified, so just return the current value. */
 			uxReturn = uxCurrentEventBits;
-			xTimeoutOccurred = pdTRUE;
 		}
 		else
 		{
@@ -349,7 +325,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 			set.  uxControlBits are used to remember the specified behaviour of
 			this call to xEventGroupWaitBits() - for use when the event bits
 			unblock the task. */
-			if( xClearOnExit != pdFALSE )
+			if ( xClearOnExit != pdFALSE )
 			{
 				uxControlBits |= eventCLEAR_EVENTS_ON_EXIT_BIT;
 			}
@@ -358,7 +334,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 				mtCOVERAGE_TEST_MARKER();
 			}
 
-			if( xWaitForAllBits != pdFALSE )
+			if ( xWaitForAllBits != pdFALSE )
 			{
 				uxControlBits |= eventWAIT_FOR_ALL_BITS;
 			}
@@ -382,9 +358,9 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 	}
 	xAlreadyYielded = xTaskResumeAll();
 
-	if( xTicksToWait != ( TickType_t ) 0 )
+	if ( xTicksToWait != ( TickType_t ) 0 )
 	{
-		if( xAlreadyYielded == pdFALSE )
+		if ( xAlreadyYielded == pdFALSE )
 		{
 			portYIELD_WITHIN_API();
 		}
@@ -399,7 +375,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		event list item, and they should now be retrieved then cleared. */
 		uxReturn = uxTaskResetEventItemValue();
 
-		if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
+		if ( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
 		{
 			taskENTER_CRITICAL();
 			{
@@ -408,9 +384,9 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 
 				/* It is possible that the event bits were updated between this
 				task leaving the Blocked state and running again. */
-				if( prvTestWaitCondition( uxReturn, uxBitsToWaitFor, xWaitForAllBits ) != pdFALSE )
+				if ( prvTestWaitCondition( uxReturn, uxBitsToWaitFor, xWaitForAllBits ) != pdFALSE )
 				{
-					if( xClearOnExit != pdFALSE )
+					if ( xClearOnExit != pdFALSE )
 					{
 						pxEventBits->uxEventBits &= ~uxBitsToWaitFor;
 					}
@@ -423,9 +399,11 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 				{
 					mtCOVERAGE_TEST_MARKER();
 				}
-				xTimeoutOccurred = pdTRUE;
 			}
 			taskEXIT_CRITICAL();
+
+			/* Prevent compiler warnings when trace macros are not used. */
+			xTimeoutOccurred = pdFALSE;
 		}
 		else
 		{
@@ -436,9 +414,6 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		uxReturn &= ~eventEVENT_BITS_CONTROL_BYTES;
 	}
 	traceEVENT_GROUP_WAIT_BITS_END( xEventGroup, uxBitsToWaitFor, xTimeoutOccurred );
-
-	/* Prevent compiler warnings when trace macros are not used. */
-	( void ) xTimeoutOccurred;
 
 	return uxReturn;
 }
@@ -528,7 +503,7 @@ BaseType_t xMatchFound = pdFALSE;
 		pxEventBits->uxEventBits |= uxBitsToSet;
 
 		/* See if the new bit value should unblock any tasks. */
-		while( pxListItem != pxListEnd )
+		while ( pxListItem != pxListEnd )
 		{
 			pxNext = listGET_NEXT( pxListItem );
 			uxBitsWaitedFor = listGET_LIST_ITEM_VALUE( pxListItem );
@@ -538,10 +513,10 @@ BaseType_t xMatchFound = pdFALSE;
 			uxControlBits = uxBitsWaitedFor & eventEVENT_BITS_CONTROL_BYTES;
 			uxBitsWaitedFor &= ~eventEVENT_BITS_CONTROL_BYTES;
 
-			if( ( uxControlBits & eventWAIT_FOR_ALL_BITS ) == ( EventBits_t ) 0 )
+			if ( ( uxControlBits & eventWAIT_FOR_ALL_BITS ) == ( EventBits_t ) 0 )
 			{
 				/* Just looking for single bit being set. */
-				if( ( uxBitsWaitedFor & pxEventBits->uxEventBits ) != ( EventBits_t ) 0 )
+				if ( ( uxBitsWaitedFor & pxEventBits->uxEventBits ) != ( EventBits_t ) 0 )
 				{
 					xMatchFound = pdTRUE;
 				}
@@ -550,7 +525,7 @@ BaseType_t xMatchFound = pdFALSE;
 					mtCOVERAGE_TEST_MARKER();
 				}
 			}
-			else if( ( uxBitsWaitedFor & pxEventBits->uxEventBits ) == uxBitsWaitedFor )
+			else if ( ( uxBitsWaitedFor & pxEventBits->uxEventBits ) == uxBitsWaitedFor )
 			{
 				/* All bits are set. */
 				xMatchFound = pdTRUE;
@@ -560,10 +535,10 @@ BaseType_t xMatchFound = pdFALSE;
 				/* Need all bits to be set, but not all the bits were set. */
 			}
 
-			if( xMatchFound != pdFALSE )
+			if ( xMatchFound != pdFALSE )
 			{
 				/* The bits match.  Should the bits be cleared on exit? */
-				if( ( uxControlBits & eventCLEAR_EVENTS_ON_EXIT_BIT ) != ( EventBits_t ) 0 )
+				if ( ( uxControlBits & eventCLEAR_EVENTS_ON_EXIT_BIT ) != ( EventBits_t ) 0 )
 				{
 					uxBitsToClear |= uxBitsWaitedFor;
 				}
@@ -577,7 +552,7 @@ BaseType_t xMatchFound = pdFALSE;
 				eventUNBLOCKED_DUE_TO_BIT_SET bit is set so the task knows
 				that is was unblocked due to its required bits matching, rather
 				than because it timed out. */
-				vTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
+				( void ) xTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
 			}
 
 			/* Move onto the next list item.  Note pxListItem->pxNext is not
@@ -605,34 +580,15 @@ const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 	{
 		traceEVENT_GROUP_DELETE( xEventGroup );
 
-		while( listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0 )
+		while ( listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0 )
 		{
 			/* Unblock the task, returning 0 as the event list is being deleted
-			and cannot therefore have any bits set. */
-			configASSERT( pxTasksWaitingForBits->xListEnd.pxNext != ( const ListItem_t * ) &( pxTasksWaitingForBits->xListEnd ) );
-			vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
+			and	cannot therefore have any bits set. */
+			configASSERT( pxTasksWaitingForBits->xListEnd.pxNext != ( ListItem_t * ) &( pxTasksWaitingForBits->xListEnd ) );
+			( void ) xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
 		}
 
-		#if( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
-		{
-			/* The event group can only have been allocated dynamically - free
-			it again. */
-			vPortFree( pxEventBits );
-		}
-		#elif( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
-		{
-			/* The event group could have been allocated statically or
-			dynamically, so check before attempting to free the memory. */
-			if( pxEventBits->ucStaticallyAllocated == ( uint8_t ) pdFALSE )
-			{
-				vPortFree( pxEventBits );
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-		#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
+		vPortFree( pxEventBits );
 	}
 	( void ) xTaskResumeAll();
 }
@@ -658,11 +614,11 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits, co
 {
 BaseType_t xWaitConditionMet = pdFALSE;
 
-	if( xWaitForAllBits == pdFALSE )
+	if ( xWaitForAllBits == pdFALSE )
 	{
 		/* Task only has to wait for one bit within uxBitsToWaitFor to be
 		set.  Is one already set? */
-		if( ( uxCurrentEventBits & uxBitsToWaitFor ) != ( EventBits_t ) 0 )
+		if ( ( uxCurrentEventBits & uxBitsToWaitFor ) != ( EventBits_t ) 0 )
 		{
 			xWaitConditionMet = pdTRUE;
 		}
@@ -675,7 +631,7 @@ BaseType_t xWaitConditionMet = pdFALSE;
 	{
 		/* Task has to wait for all the bits in uxBitsToWaitFor to be set.
 		Are they set already? */
-		if( ( uxCurrentEventBits & uxBitsToWaitFor ) == uxBitsToWaitFor )
+		if ( ( uxCurrentEventBits & uxBitsToWaitFor ) == uxBitsToWaitFor )
 		{
 			xWaitConditionMet = pdTRUE;
 		}
@@ -711,7 +667,7 @@ BaseType_t xWaitConditionMet = pdFALSE;
 	UBaseType_t xReturn;
 	EventGroup_t *pxEventBits = ( EventGroup_t * ) xEventGroup;
 
-		if( xEventGroup == NULL )
+		if ( xEventGroup == NULL )
 		{
 			xReturn = 0;
 		}
@@ -723,17 +679,5 @@ BaseType_t xWaitConditionMet = pdFALSE;
 		return xReturn;
 	}
 
-#endif /* configUSE_TRACE_FACILITY */
-/*-----------------------------------------------------------*/
-
-#if ( configUSE_TRACE_FACILITY == 1 )
-
-	void vEventGroupSetNumber( void * xEventGroup, UBaseType_t uxEventGroupNumber )
-	{
-		( ( EventGroup_t * ) xEventGroup )->uxEventGroupNumber = uxEventGroupNumber;
-	}
-
-#endif /* configUSE_TRACE_FACILITY */
-/*-----------------------------------------------------------*/
-
+#endif
 

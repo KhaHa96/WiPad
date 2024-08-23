@@ -1,30 +1,30 @@
 /**
- * Copyright (c) 2015 - 2021, Nordic Semiconductor ASA
- *
+ * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * 
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form, except as embedded into a Nordic
  *    Semiconductor ASA integrated circuit in a product or a software update for
  *    such product, must reproduce the above copyright notice, this list of
  *    conditions and the following disclaimer in the documentation and/or other
  *    materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- *
+ * 
  * 4. This software, with or without modification, must only be used with a
  *    Nordic Semiconductor ASA integrated circuit.
- *
+ * 
  * 5. Any software provided in binary form under this license must not be reverse
  *    engineered, decompiled, modified and/or disassembled.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,20 +35,17 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
+
 /** @file
  * @brief Definition file for resource usage by SoftDevice, ESB and Gazell.
  */
 
-#ifndef SDK_RESOURCES_H__
-#define SDK_RESOURCES_H__
+#ifndef APP_RESOURCES_H__
+#define APP_RESOURCES_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if defined(SOFTDEVICE_PRESENT) || defined (BLE_STACK_SUPPORT_REQD) || defined (ANT_STACK_SUPPORT_REQD)
+#ifdef SOFTDEVICE_PRESENT
     #include "nrf_sd_def.h"
 #else
     #define SD_PPI_RESTRICTED         0uL /**< 1 if PPI peripheral is restricted, 0 otherwise. */
@@ -68,6 +65,10 @@ extern "C" {
 
 #ifdef ESB_PRESENT
     #include "nrf_esb_resources.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #else
     #define ESB_PPI_CHANNELS_USED    0uL /**< PPI channels utilized by ESB (not available to th spplication). */
     #define ESB_TIMERS_USED          0uL /**< Timers used by ESB. */
@@ -79,8 +80,9 @@ extern "C" {
 #define NRF_SWI_USED          (SD_SWI_USED | GZLL_SWI_USED | ESB_SWI_USED)
 #define NRF_TIMERS_USED       (SD_TIMERS_USED | GZLL_TIMERS_USED | ESB_TIMERS_USED)
 
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif // SDK_RESOURCES_H__
+#endif // APP_RESOURCES_H__

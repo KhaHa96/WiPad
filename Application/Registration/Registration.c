@@ -1,6 +1,6 @@
-/* -------------------------   User Registration app for nRF52832   ---------------------------- */
-/*  File      -  User Registration application source file                                       */
-/*  target    -  nRF52832                                                                        */
+/* -------------------------   User registration app for nRF51422   ---------------------------- */
+/*  File      -  User registration application source file                                       */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  March, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -13,44 +13,41 @@
 #include "Registration.h"
 #include "BLE_Service.h"
 #include "NVM_Service.h"
-
 /************************************   PRIVATE DEFINES   ****************************************/
-#define APP_USEREG_PUSH_IMMEDIATELY     0U
-#define APP_USEREG_POP_IMMEDIATELY      0U
+#define APP_USEREG_PUSH_IMMEDIATELY 0U
+#define APP_USE_REG_POP_IMMEDIATELY 0U
 #define APP_USEREG_KEY_PARAMETER_LENGTH 4U
-#define APP_USEREG_ID_LENGTH            8U
-#define APP_USEREG_MIN_PASSWORD_LENGTH  8U
-#define APP_USEREG_MAX_PASSWORD_LENGTH  12U
-#define APP_USEREG_MAX_COMMAND_LENGTH   20U
-#define APP_USEREG_EVENT_MASK           (APP_USEREG_PEER_DISCONNECTION | \
-                                         APP_USEREG_NOTIF_ENABLED      | \
-                                         APP_USEREG_NOTIF_DISABLED     | \
-                                         APP_USEREG_USR_INPUT_RX       | \
-                                         APP_USEADM_NOTIF_ENABLED      | \
-                                         APP_USEADM_NOTIF_DISABLED     | \
-                                         APP_USEADM_USR_INPUT_RX       | \
-                                         APP_USEADM_USR_ADDED_TO_NVM   | \
-                                         APP_USEADM_PASSWORD_UPDATED     )
+#define APP_USEREG_ID_LENGTH 8U
+#define APP_USEREG_MIN_PASSWORD_LENGTH 8U
+#define APP_USEREG_MAX_PASSWORD_LENGTH 12U
+#define APP_USEREG_MAX_COMMAND_LENGTH 20U
+#define APP_USEREG_EVENT_MASK (APP_USEREG_PEER_DISCONNECTION | \
+                               APP_USEREG_NOTIF_ENABLED |      \
+                               APP_USEREG_NOTIF_DISABLED |     \
+                               APP_USEREG_USR_INPUT_RX |       \
+                               APP_USEADM_NOTIF_ENABLED |      \
+                               APP_USEADM_NOTIF_DISABLED |     \
+                               APP_USEADM_USR_INPUT_RX |       \
+                               APP_USEADM_USR_ADDED_TO_NVM |   \
+                               APP_USEADM_PASSWORD_UPDATED)
 
 /************************************   PRIVATE MACROS   *****************************************/
-/* Compute state machine trigger count */
-#define APP_USEREG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
+#define APP_USE_REG_TRIGGER_COUNT(list) (sizeof(list) / sizeof(Registration_tstrState))
 
 /* NVM record finder assert macro */
-#define APP_RECORD_ASSERT(RCD)    \
-(                                 \
-    (RCD->pu8Id)               && \
-    (RCD->pstrRecordDesc)      && \
-    (RCD->pstrPersistentToken) && \
-    (RCD->pstrExpirableToken)  && \
-    (RCD->pstrFdsRecord)       && \
-    (RCD->pstrAppRecord)          \
-)
+#define APP_RECORD_ASSERT(RCD)        \
+    (                                 \
+        (RCD->pu8Id) &&               \
+        (RCD->pstrRecordDesc) &&      \
+        (RCD->pstrPersistentToken) && \
+        (RCD->pstrExpirableToken) &&  \
+        (RCD->pstrFdsRecord) &&       \
+        (RCD->pstrAppRecord))
 
 /*************************************   PRIVATE TYPES    ****************************************/
 /**
  * App_tstrRecordSearch Structure type used to look for application record in the NVM file system.
-*/
+ */
 typedef struct
 {
     uint8_t const *pu8Id;                  /* Provided user Id                           */
@@ -60,27 +57,27 @@ typedef struct
     fds_find_token_t *pstrExpirableToken;  /* Record find token for expirable keys file  */
     fds_flash_record_t *pstrFdsRecord;     /* Record as seen by FDS                      */
     Nvm_tstrRecord *pstrAppRecord;         /* Record as seen by the application          */
-}App_tstrRecordSearch;
+} App_tstrRecordSearch;
 
 /************************************   GLOBAL VARIABLES   ***************************************/
 /* Global function used to propagate dispatchable events to other tasks */
 extern App_tenuStatus AppMgr_enuDispatchEvent(uint32_t u32Event, void *pvData);
 
 /************************************   PRIVATE VARIABLES   **************************************/
-static TaskHandle_t pvUseRegTaskHandle;             /* Registration task handle                  */
-static QueueHandle_t pvUseRegQueueHandle;           /* Registration queue handle                 */
-static EventGroupHandle_t pvUseRegEventGroupHandle; /* Registration event group handle           */
-static volatile bool bRegNotifEnabled = false;      /* Notifications enabled/disabled on ble_reg */
-static volatile bool bAdmNotifEnabled = false;      /* Notifications enabled/disabled on ble_adm */
-static volatile bool bExpectingPwd = false;         /* Next input should be Id/Pwd on ble_reg    */
-static volatile bool bUseSignedIn = false;          /* Active user has/hasn't already signed in  */
-static volatile bool bAdmSignedIn = false;          /* Admin user is/isn't currently signed in   */
-static void vidUseRegDisconnected(void *pvArg);     /* Disconnection function prototype          */
-static void vidUseRegNotifEnabled(void *pvArg);     /* Notifs enabled on ble_reg func prototype  */
-static void vidUseRegNotifDisabled(void *pvArg);    /* Notifs disabled on ble_reg func prototype */
+static TaskHandle_t pvUseRegTaskHandle;
+static QueueHandle_t pvUseRegQueueHandle;
+static EventGroupHandle_t pvUseRegEventGroupHandle;
+static volatile bool bRegNotifEnabled = false;      /* Notifications enabled/disabled  pn ble_reg */
+static volatile bool bAdmNotifEnabled = false;      /* Notifications enabled/disabled  pn ble_adm */
+static volatile bool bExpectingPwd = false;         /* Next input should be Id/Pwd on ble_reg */
+static volatile bool bUseSignedIn = false;          /* Active user had/hasn't already signed in */
+static volatile bool bAdmSignedIn = false;          /* Admin user is/isn't currently signed in */
+static void vidUseRegDisconnected(void *pvArg);     /* Disconnection function prototype */
+static void vidUseRegNotifEnabled(void *pvArg);     /* Notifs enabled on ble_reg fucntion prototype */
+static void vidUseRegNotifDisabled(void *pvArg);    /* Notifs disabled on ble_reg function prototype */
 static void vidUseRegInputReceived(void *pvArg);    /* Input received on ble_reg func prototype  */
 static void vidUseAdmNotifEnabled(void *pvArg);     /* Notifs enabled on ble_adm func prototype  */
-static void vidUseAdmNotifDisabled(void *pvArg);    /* Notifs disabled on ble_adm func prototype */
+static void vidUseAdmNotifDisabled(void *pvArg);    /* Notifs disabled on ble_adm func prototype  */
 static void vidUseAdmInputReceived(void *pvArg);    /* Input received on ble_adm func prototype  */
 static void vidUseAdmAddedToNvm(void *pvArg);       /* New entry added to NVM func prototype     */
 static void vidUserPasswordUpdated(void *pvArg);    /* User password updated func prototype      */
@@ -93,16 +90,16 @@ static Nvm_tstrRecord strActiveRecord = {0};        /* Active NVM record data co
 
 /* Registration state machine's entry list */
 static const Registration_tstrState strUseRegStateMachine[] =
-{
-    {APP_USEREG_PEER_DISCONNECTION, vidUseRegDisconnected }, /* Disconnected from peer            */
-    {APP_USEREG_NOTIF_ENABLED     , vidUseRegNotifEnabled }, /* Notifications enabled on ble_reg  */
-    {APP_USEREG_NOTIF_DISABLED    , vidUseRegNotifDisabled}, /* Notifications disabled on ble_reg */
-    {APP_USEREG_USR_INPUT_RX      , vidUseRegInputReceived}, /* Input received on ble_reg         */
-    {APP_USEADM_NOTIF_ENABLED     , vidUseAdmNotifEnabled }, /* Notifications enabled on ble_adm  */
-    {APP_USEADM_NOTIF_DISABLED    , vidUseAdmNotifDisabled}, /* Notifications disabled on ble_adm */
-    {APP_USEADM_USR_INPUT_RX      , vidUseAdmInputReceived}, /* Input received on ble_adm         */
-    {APP_USEADM_USR_ADDED_TO_NVM  , vidUseAdmAddedToNvm   }, /* New user added to NVM             */
-    {APP_USEADM_PASSWORD_UPDATED  , vidUserPasswordUpdated}  /* User password updated             */
+    {
+        {APP_USEREG_PEER_DISCONNECTION, vidUseRegDisconnected}, /* Disconnected from peer            */
+        {APP_USEREG_NOTIF_ENABLED, vidUseRegNotifEnabled},      /* Notifications enabled on ble_reg  */
+        {APP_USEREG_NOTIF_DISABLED, vidUseRegNotifDisabled},    /* Notifications disabled on ble_reg */
+        {APP_USEREG_USR_INPUT_RX, vidUseRegInputReceived},      /* Input received on ble_reg         */
+        {APP_USEADM_NOTIF_ENABLED, vidUseAdmNotifEnabled},      /* Notifications enabled on ble_adm  */
+        {APP_USEADM_NOTIF_DISABLED, vidUseAdmNotifDisabled},    /* Notifications disabled on ble_adm */
+        {APP_USEADM_USR_INPUT_RX, vidUseAdmInputReceived},      /* Input received on ble_adm         */
+        {APP_USEADM_USR_ADDED_TO_NVM, vidUseAdmAddedToNvm},     /* New user added to NVM             */
+        {APP_USEADM_PASSWORD_UPDATED, vidUserPasswordUpdated}   /* User password updated             */
 };
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
@@ -122,14 +119,14 @@ static bool bUserRecordFound(App_tstrRecordSearch *pstrRecordFind)
                their Ids to have the same record key. If they also happen to have similar keys (as
                in both expirable or both persistent), they will be indiscernible. */
             if(Middleware_Success == enuNVM_FindRecord(pstrRecordFind->u16RecordKey,
-                                                       pstrRecordFind->pstrRecordDesc,
-                                                       pstrRecordFind->pstrPersistentToken,
-                                                       pstrRecordFind->pstrExpirableToken))
+                                                        pstrRecordFind->pstrRecordDesc,
+                                                        pstrRecordFind->pstrPersistentToken,
+                                                        pstrRecordFind->pstrExpirableToken))
             {
                 /* Read record content */
                 if(Middleware_Success == enuNVM_ReadRecord(pstrRecordFind->pstrRecordDesc,
-                                                           pstrRecordFind->pstrFdsRecord,
-                                                           pstrRecordFind->pstrAppRecord))
+                                                            pstrRecordFind->pstrFdsRecord,
+                                                            pstrRecordFind->pstrAppRecord))
                 {
                     /* Once we locate the user record using the first 4 numbers of their Id, we
                        compare that record's Id against the record we're actively looking for
@@ -168,25 +165,24 @@ static void vidUseRegDisconnected(void *pvArg)
 
 static void vidUseRegNotifEnabled(void *pvArg)
 {
-    /* User Registration service's notifications enabled. Toggle its notifications enabled flag */
+    /* User Registration service's notification enbaled. Toggle its notifications enabled flag */
     bRegNotifEnabled = true;
 
-    /* Prompt user to input their Id */
+    /* Promp user to input their Id */
     uint8_t u8NotificationBuffer[] = "Please input your Id";
-    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
     (void)enuTransferNotification(Ble_Registration, u8NotificationBuffer, &u16NotificationSize);
 }
 
 static void vidUseRegNotifDisabled(void *pvArg)
 {
-    /* User Registration service's notifications disabled. Toggle its notifications enabled flag */
+    /* User Registration service's notification disabled. Toogle its notifications enabled flag */
     bRegNotifEnabled = false;
 }
 
 static void vidUseRegInputReceived(void *pvArg)
 {
-    /* If notifications on User Registration's Status characteristic are disabled, we don't even
-       process user's input */
+    /*If notifications on User Registration's status characteristic are disabled, we don't even process user's input */
     if(bRegNotifEnabled)
     {
         /* Make sure valid parameters are passed */
@@ -203,42 +199,39 @@ static void vidUseRegInputReceived(void *pvArg)
                 {
                     /* Make sure user input a valid password */
                     if(bContainsSpecialChar(pstrInput->pu8Data, pstrInput->u16Length) &&
-                       bContainsNumeral(pstrInput->pu8Data, pstrInput->u16Length) &&
-                       (pstrInput->u16Length <= APP_USEREG_MAX_PASSWORD_LENGTH) &&
-                       (pstrInput->u16Length >= APP_USEREG_MIN_PASSWORD_LENGTH))
+                        bContainsNumeral(pstrInput->pu8Data, pstrInput->u16Length) &&
+                        (pstrInput->u16Length <= APP_USEREG_MAX_PASSWORD_LENGTH) &&
+                        (pstrInput->u16Length >= APP_USEREG_MIN_PASSWORD_LENGTH))
                     {
                         if(0 == s8StringCompare(&strActiveRecord.u8Password[0],
-                                                &u8InvalidPasswordBase[0],
-                                                APP_USEREG_MIN_PASSWORD_LENGTH))
+                                                 &u8InvalidPasswordBase[0],
+                                                 APP_USEREG_MIN_PASSWORD_LENGTH))
                         {
-                            /* No prior password registered for this user. Register a new one by
-                               updating invalid password stored in NVM record */
+                            /* No prior password registered for this user. Register a new one by updating invalid password stored in NVM record */
                             memcpy(&strActiveRecord.u8Password[0], &pstrInput->pu8Data[0], pstrInput->u16Length);
                             Nvm_tenuFiles enuFile = ((App_CountRestrictedKey == strActiveRecord.enuKeyType) ||
                                                      (App_TimeRestrictedKey == strActiveRecord.enuKeyType) ||
                                                      (App_OneTimeKey == strActiveRecord.enuKeyType))
-                                                    ?Nvm_ExpirableKeys
-                                                    :Nvm_PersistentKeys;
+                                                        ? Nvm_ExpirableKeys
+                                                        : Nvm_PersistentKeys;
                             /* Update NVM record */
                             (void)enuNVM_UpdateRecord(&strActiveRecordDesc, &strActiveRecord, enuFile, true);
                         }
                         else if(0 == s8StringCompare(&pstrInput->pu8Data[0],
-                                                     &strActiveRecord.u8Password[0],
-                                                     pstrInput->u16Length))
+                                                      &strActiveRecord.u8Password[0],
+                                                      pstrInput->u16Length))
                         {
                             if(App_AdminKey == strActiveRecord.enuKeyType)
                             {
-                                /* Admin successfully logged in. Toggle admin signed-in flag */
+                                /*Admin successfully logged in. Toggle admin signed-in flag */
                                 bAdmSignedIn = true;
 
-                                /* Toggle user signed-in flag to ensure Admin doesn't try to log
-                                   in again */
+                                /* Toggle user signed-in flag to ensure Admin doesn't try to log in again */
                                 bUseSignedIn = true;
 
-                                /* Notify Admin that they've managed to log in and prompt them to check
-                                   the Admin User service */
+                                /* Notify Admin that they've managed to log in and prompt them to check the Admin user service */
                                 uint8_t u8NotificationBuffer[] = "Hi Admin! See BleAdm";
-                                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                                 (void)enuTransferNotification(Ble_Registration,
                                                               u8NotificationBuffer,
                                                               &u16NotificationSize);
@@ -251,15 +244,14 @@ static void vidUseRegInputReceived(void *pvArg)
                                 /* Notify user that they've managed to log in and prompt them to check
                                    the Key Attribution service */
                                 uint8_t u8NotificationBuffer[] = "Hi again! See BleAtt";
-                                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                                 (void)enuTransferNotification(Ble_Registration,
                                                               u8NotificationBuffer,
                                                               &u16NotificationSize);
                             }
-
                             /* Notify attribution application
-                               Note: Data must be preserved until the Attribution application
-                               receives and processes it. */
+                              Note: Data must be preserved until the Attribution application
+                              receives and processes it. */
                             Nvm_tstrRecordDispatch *pstrRecordDispatch = (Nvm_tstrRecordDispatch *)malloc(sizeof(Nvm_tstrRecordDispatch));
 
                             /* Successfully allocated memory for data pointer */
@@ -283,8 +275,8 @@ static void vidUseRegInputReceived(void *pvArg)
 
                                 /* Copy data into dispatchable structure */
                                 memcpy((void *)pstrRecordDispatch->pstrRecordDesc,
-                                        (void *)&strActiveRecordDesc,
-                                        sizeof(strActiveRecordDesc));
+                                       (void *)&strActiveRecordDesc,
+                                       sizeof(strActiveRecordDesc));
                                 memcpy((void *)pstrRecordDispatch->pstrRecord,
                                        (void *)&strActiveRecord,
                                        sizeof(strActiveRecord));
@@ -298,7 +290,7 @@ static void vidUseRegInputReceived(void *pvArg)
                         {
                             /* Notify user of wrong password */
                             uint8_t u8NotificationBuffer[] = "Wrong password!";
-                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                             (void)enuTransferNotification(Ble_Registration,
                                                           u8NotificationBuffer,
                                                           &u16NotificationSize);
@@ -310,7 +302,7 @@ static void vidUseRegInputReceived(void *pvArg)
                     {
                         /* Notify user of invalid password format */
                         uint8_t u8NotificationBuffer[] = "Invalid! Try again";
-                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                         (void)enuTransferNotification(Ble_Registration,
                                                       u8NotificationBuffer,
                                                       &u16NotificationSize);
@@ -318,19 +310,19 @@ static void vidUseRegInputReceived(void *pvArg)
                         (void)AppMgr_enuDispatchEvent(BLE_USEREG_INVALID_INPUT, NULL);
                     }
                 }
-                else
+                else /* IF DATA ENTERED = ID */
                 {
                     /* Make sure user input is a valid Id */
                     if(bIsAllNumerals(pstrInput->pu8Data, APP_USEREG_ID_LENGTH) &&
-                       (APP_USEREG_ID_LENGTH == pstrInput->u16Length))
+                        (APP_USEREG_ID_LENGTH == pstrInput->u16Length))
                     {
                         /* Extract record key from Id */
                         fds_record_desc_t strRecordDesc = {0};
                         fds_find_token_t strPersistentToken = {0};
                         fds_find_token_t strExpirableToken = {0};
-                        char *pchRecordKey = (char *)malloc((APP_USEREG_ID_LENGTH/2)+1);
-                        memcpy(pchRecordKey, &pstrInput->pu8Data[4], (APP_USEREG_ID_LENGTH/2));
-                        pchRecordKey[(APP_USEREG_ID_LENGTH/2)] = '\0';
+                        char *pchRecordKey = (char *)malloc((APP_USEREG_ID_LENGTH / 2) + 1);
+                        memcpy(pchRecordKey, &pstrInput->pu8Data[4], (APP_USEREG_ID_LENGTH / 2));
+                        pchRecordKey[(APP_USEREG_ID_LENGTH / 2)] = '\0';
                         free(pchRecordKey);
 
                         /* Find record in NVM */
@@ -356,7 +348,7 @@ static void vidUseRegInputReceived(void *pvArg)
 
                             /* Ask user to input their password */
                             uint8_t u8NotificationBuffer[] = "Please type password";
-                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                             (void)enuTransferNotification(Ble_Registration,
                                                           u8NotificationBuffer,
                                                           &u16NotificationSize);
@@ -367,7 +359,7 @@ static void vidUseRegInputReceived(void *pvArg)
                         {
                             /* Notify user that they haven't been found in WiPad's database */
                             uint8_t u8NotificationBuffer[] = "Unregistered Id";
-                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                             (void)enuTransferNotification(Ble_Registration,
                                                           u8NotificationBuffer,
                                                           &u16NotificationSize);
@@ -379,7 +371,7 @@ static void vidUseRegInputReceived(void *pvArg)
                     {
                         /* Notify user of invalid Id format */
                         uint8_t u8NotificationBuffer[] = "Invalid! Try again";
-                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                         (void)enuTransferNotification(Ble_Registration,
                                                       u8NotificationBuffer,
                                                       &u16NotificationSize);
@@ -392,7 +384,7 @@ static void vidUseRegInputReceived(void *pvArg)
             {
                 /* Notify user that they're already signed in */
                 uint8_t u8NotificationBuffer[] = "Already signed in";
-                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                 (void)enuTransferNotification(Ble_Registration,
                                               u8NotificationBuffer,
                                               &u16NotificationSize);
@@ -412,11 +404,10 @@ static void vidUseRegInputReceived(void *pvArg)
 
 static void vidUseAdmNotifEnabled(void *pvArg)
 {
-    /* Admin User service's notifications enabled. Toggle its notifications enabled flag */
+    /* Admin User service's notifications enabled. Toggle its notification enabled flag */
     bAdmNotifEnabled = true;
-
     /* Prompt Admin user to sign in if they haven't already, otherwise display a simple greeting */
-    const char *pchNotification = bAdmSignedIn?"Hi there Admin":"Please input your Id";
+    const char *pchNotification = bAdmSignedIn ? "Hi there Admin" : "Please input your Id";
     uint16_t u16NotificationSize = strlen(pchNotification);
     (void)enuTransferNotification(Ble_Admin, (uint8_t *)pchNotification, &u16NotificationSize);
 }
@@ -446,10 +437,10 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
                 if(bIsAllNumerals(&pu8Data[5], APP_USEREG_ID_LENGTH))
                 {
                     /* Check for specific key type specifiers in the received input */
-                    if(((0 == s8StringCompare(&pu8Data[13], "k1", 2))  ||
-                        (0 == s8StringCompare(&pu8Data[13], "k3", 2))  ||
-                        (0 == s8StringCompare(&pu8Data[13], "k5", 2))) &&
-                       (15 == u8Length))
+                    if(((0 == s8StringCompare(&pu8Data[13], "k1", 2)) ||
+                         (0 == s8StringCompare(&pu8Data[13], "k3", 2)) ||
+                         (0 == s8StringCompare(&pu8Data[13], "k5", 2))) &&
+                        (15 == u8Length))
                     {
                         enuRetVal = Adm_AddUser;
                     }
@@ -479,7 +470,7 @@ static Registration_tenuAdmCmdType enuExtractCommandType(const uint8_t *pu8Data,
         else if(16 == u8Length)
         {
             /* Compare received input against the User data command base */
-            if(0 == s8StringCompare(pu8Data, u8UsrDataCmd, 8))
+            if (0 == s8StringCompare(pu8Data, u8UsrDataCmd, 8))
             {
                 /* User data command received. Check whether input contains a valid user Id */
                 if(bIsAllNumerals(&pu8Data[8], APP_USEREG_ID_LENGTH))
@@ -500,10 +491,10 @@ static App_tenuKeyTypes enuDecodeAddCommand(const uint8_t *pu8Data, uint16_t u16
     /* Make sure valid parameters are passed */
     if(pu8Data && pu16Arg)
     {
-        if((20 == u16Length) && ('c' == pu8Data[15]))
+        if ((20 == u16Length) && ('c' == pu8Data[15]))
         {
             /* The atoi function expects a C-style string with a NULL-terminated character array */
-            char *pchKeyCountStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH+1);
+            char *pchKeyCountStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH + 1);
             memcpy(pchKeyCountStr, &pu8Data[16], APP_USEREG_KEY_PARAMETER_LENGTH);
             pchKeyCountStr[APP_USEREG_KEY_PARAMETER_LENGTH] = '\0';
             *pu16Arg = (uint16_t)atoi(pchKeyCountStr);
@@ -513,7 +504,7 @@ static App_tenuKeyTypes enuDecodeAddCommand(const uint8_t *pu8Data, uint16_t u16
         else if((20 == u16Length) && ('t' == pu8Data[15]))
         {
             /* The atoi function expects a C-style string with a NULL-terminated character array */
-            char *pchKeyTimeoutStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH+1);
+            char *pchKeyTimeoutStr = (char *)malloc(APP_USEREG_KEY_PARAMETER_LENGTH + 1);
             memcpy(pchKeyTimeoutStr, &pu8Data[16], APP_USEREG_KEY_PARAMETER_LENGTH);
             pchKeyTimeoutStr[APP_USEREG_KEY_PARAMETER_LENGTH] = '\0';
             *pu16Arg = (uint16_t)atoi(pchKeyTimeoutStr);
@@ -548,7 +539,7 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             {
                 /* One-time expirable key has been used */
                 uint8_t u8NotificationBuffer[] = "One-time: Used";
-                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                 /* Transfer notification to peer */
                 (void)enuTransferNotification(Ble_Admin,
                                               u8NotificationBuffer,
@@ -558,7 +549,7 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             {
                 /* One-time expirable key still available */
                 uint8_t u8NotificationBuffer[] = "One-time expirable";
-                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                 /* Transfer notification to peer */
                 (void)enuTransferNotification(Ble_Admin,
                                               u8NotificationBuffer,
@@ -576,9 +567,9 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             char chTimeoutStr[5];
             snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d",
                      pstrRecord->uKeyQuantifier.strCountRes.u16CountLimit -
-                     pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
-            strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt+1);
-            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8LimitDigitCnt;
+                         pstrRecord->uKeyQuantifier.strCountRes.u16UsedCount);
+            strncpy((char *)&u8NotificationBuffer[15], chTimeoutStr, u8LimitDigitCnt + 1);
+            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) + u8LimitDigitCnt;
 
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
@@ -589,7 +580,7 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
         {
             /* Unlimited persistent key */
             uint8_t u8NotificationBuffer[] = "Unlimited persistent";
-            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
         }
@@ -603,8 +594,8 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
             uint8_t u8TimeoutDigitCnt = u8DigitCount(pstrRecord->uKeyQuantifier.strTimeRes.u16Timeout);
             char chTimeoutStr[5];
             snprintf(chTimeoutStr, sizeof(chTimeoutStr), "%d", pstrRecord->uKeyQuantifier.strTimeRes.u16Timeout);
-            strncpy((char *)&u8NotificationBuffer[14], chTimeoutStr, u8TimeoutDigitCnt+1);
-            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)+u8TimeoutDigitCnt;
+            strncpy((char *)&u8NotificationBuffer[14], chTimeoutStr, u8TimeoutDigitCnt + 1);
+            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) + u8TimeoutDigitCnt;
 
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
@@ -615,7 +606,7 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
         {
             /* Admin persistent key */
             uint8_t u8NotificationBuffer[] = "Admin persistent";
-            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+            uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
             /* Transfer notification to peer */
             (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
         }
@@ -630,14 +621,13 @@ static void vidUserDataNotify(Nvm_tstrRecord *pstrRecord)
 
 static void vidUseAdmInputReceived(void *pvArg)
 {
-    /* If notifications on Admin User's Status characteristic are disabled, we don't even
-       process user's input */
-    if(bAdmNotifEnabled)
+    /* If notifications on Admin user's status characteristic are disabled, we don't even process user input */
+    if (bAdmNotifEnabled)
     {
         /* Make sure valid parameters are passed */
         if(pvArg)
         {
-            /* Check whether user has already been through the Admin authentication process */
+            /* Check whether user has already signed in */
             if(bAdmSignedIn)
             {
                 /* Extract command from received data */
@@ -651,8 +641,8 @@ static void vidUseAdmInputReceived(void *pvArg)
                 case Adm_AddUser:
                 {
                     /* Decode Add user command to extract key type.
-                       Note: enuDecodeAddCommand shouldn't be called unless we have determined for sure
-                       that user input is a valid add user command by calling enuExtractCommandType. */
+                    Note:  enuDecodeAddCommand shouldn't be called unless we have determined for sure
+                   that user input is a valid add user command by calling enuExtractCommandType. */
                     uint16_t u16Argument;
                     App_tenuKeyTypes enuKeyType = enuDecodeAddCommand(pstrCommand->pu8Data,
                                                                       pstrCommand->u16Length,
@@ -667,7 +657,7 @@ static void vidUseAdmInputReceived(void *pvArg)
                     memset(strRecord.u8Password, 0xFF, APP_USEREG_MAX_PASSWORD_LENGTH);
                     memset(&strRecord.strLastKnownUse, 0, sizeof(exact_time_256_t));
                     strRecord.enuKeyType = enuKeyType;
-                    if(App_CountRestrictedKey == enuKeyType)
+                    if (App_CountRestrictedKey == enuKeyType)
                     {
                         /* Set count-restricted key's count-limit */
                         strRecord.uKeyQuantifier.strCountRes.u16CountLimit = u16Argument;
@@ -702,9 +692,9 @@ static void vidUseAdmInputReceived(void *pvArg)
                     fds_record_desc_t strRecordDesc = {0};
                     fds_find_token_t strPersistentToken = {0};
                     fds_find_token_t strExpirableToken = {0};
-                    char *pchRecordKey = (char *)malloc((APP_USEREG_ID_LENGTH/2)+1);
-                    memcpy(pchRecordKey, &pstrCommand->pu8Data[12], (APP_USEREG_ID_LENGTH/2));
-                    pchRecordKey[(APP_USEREG_ID_LENGTH/2)] = '\0';
+                    char *pchRecordKey = (char *)malloc((APP_USEREG_ID_LENGTH / 2) + 1);
+                    memcpy(pchRecordKey, &pstrCommand->pu8Data[12], (APP_USEREG_ID_LENGTH / 2));
+                    pchRecordKey[(APP_USEREG_ID_LENGTH / 2)] = '\0';
                     free(pchRecordKey);
 
                     /* Find record in NVM */
@@ -730,7 +720,7 @@ static void vidUseAdmInputReceived(void *pvArg)
                     {
                         /* Notify user that record couldn't be found */
                         uint8_t u8NotificationBuffer[] = "Could not find Id";
-                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                        uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                         (void)enuTransferNotification(Ble_Admin,
                                                       u8NotificationBuffer,
                                                       &u16NotificationSize);
@@ -742,7 +732,7 @@ static void vidUseAdmInputReceived(void *pvArg)
                 {
                     /* Notify user of invalid input */
                     uint8_t u8NotificationBuffer[] = "Invalid! Try again";
-                    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                     (void)enuTransferNotification(Ble_Admin,
                                                   u8NotificationBuffer,
                                                   &u16NotificationSize);
@@ -760,7 +750,7 @@ static void vidUseAdmInputReceived(void *pvArg)
             {
                 /* User hasn't signed in as Admin yet. Prompt them to do so */
                 uint8_t u8NotificationBuffer[] = "Please sign in first";
-                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+                uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
                 (void)enuTransferNotification(Ble_Admin,
                                               u8NotificationBuffer,
                                               &u16NotificationSize);
@@ -782,7 +772,7 @@ static void vidUseAdmAddedToNvm(void *pvArg)
 {
     /* Send notification to peer */
     uint8_t u8NotificationBuffer[] = "User added";
-    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
     (void)enuTransferNotification(Ble_Admin, u8NotificationBuffer, &u16NotificationSize);
 
     /* New user successfully added to NVM */
@@ -793,7 +783,7 @@ static void vidUserPasswordUpdated(void *pvArg)
 {
     /* Send notification to peer */
     uint8_t u8NotificationBuffer[] = "Registered Password";
-    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer)-1;
+    uint16_t u16NotificationSize = sizeof(u8NotificationBuffer) - 1;
     (void)enuTransferNotification(Ble_Registration,
                                   u8NotificationBuffer,
                                   &u16NotificationSize);
@@ -830,7 +820,7 @@ static void vidUserPasswordUpdated(void *pvArg)
                sizeof(strActiveRecordDesc));
         memcpy((void *)pstrRecordDispatch->pstrRecord,
                (void *)&strActiveRecord,
-        sizeof(strActiveRecord));
+               sizeof(strActiveRecord));
 
         /* Dispatch structure to the Attribution application */
         (void)AppMgr_enuDispatchEvent(BLE_USEREG_USER_SIGNED_IN,
@@ -843,15 +833,14 @@ static void vidRegistrationEvent_Process(uint32_t u32Trigger, void *pvData)
     /* Go through trigger list to find trigger.
        Note: We use a while loop as we require that no two distinct actions have the
        same trigger in a State trigger listing */
-    uint8_t u8TriggerCount = APP_USEREG_TRIGGER_COUNT(strUseRegStateMachine);
+    uint8_t u8TriggerCount = APP_USE_REG_TRIGGER_COUNT(strUseRegStateMachine);
     uint8_t u8Index = 0;
     while(u8Index < u8TriggerCount)
     {
         if(u32Trigger == (strUseRegStateMachine + u8Index)->u32Trigger)
         {
-            /* Invoke associated action and exit loop */
+            /* Invoke associated action */
             (strUseRegStateMachine + u8Index)->pfAction(pvData);
-            break;
         }
         u8Index++;
     }
@@ -863,13 +852,13 @@ static void vidUseRegTaskFunction(void *pvArg)
     void *pvData;
 
     /* Initialize invalid and active user password arrays.
-       Note: Passwords are handled as strings and should therefore only contain characters with
-       ASCII values in the ASCII range (0 - 0x7F). We use 0xFF to initialize these arrays as this
-       value cannot be mistaken for a printable character since it's not an ASCII value. */
+   Note: Passwords are handled as strings and should therefore only contain characters with
+   ASCII values in the ASCII range (0 - 0x7F). We use 0xFF to initialize these arrays as this
+   value cannot be mistaken for a printable character since it's not an ASCII value. */
     memset(u8InvalidPasswordBase, 0xFF, APP_USEREG_MIN_PASSWORD_LENGTH);
     memset(u8CurrentUserPwd, 0xFF, APP_USEREG_MAX_PASSWORD_LENGTH);
 
-    /* User Registration task's main polling loop */
+    /* User registration task's main polling loop */
     while(1)
     {
         /* Task will remain blocked until an event is set in event group */
@@ -883,9 +872,7 @@ static void vidUseRegTaskFunction(void *pvArg)
             /* Check whether queue holds any data */
             if(uxQueueMessagesWaiting(pvUseRegQueueHandle))
             {
-                /* We have no tasks of higher priority so we're guaranteed that no other
-                   message will be received in the queue until this message is processed */
-                xQueueReceive(pvUseRegQueueHandle, &pvData, APP_USEREG_POP_IMMEDIATELY);
+                xQueueReceive(pvUseRegQueueHandle, pvData, APP_USE_REG_POP_IMMEDIATELY);
             }
 
             /* Process received event */
@@ -899,22 +886,22 @@ App_tenuStatus enuRegistration_Init(void)
 {
     App_tenuStatus enuRetVal = Application_Failure;
 
-    /* Create task for User Registration application */
+    /* Create task for User registration application */
     if(pdPASS == xTaskCreate(vidUseRegTaskFunction,
-                             "APP_UseReg_Task",
-                             APP_USEREG_TASK_STACK_SIZE,
-                             NULL,
-                             APP_USEREG_TASK_PRIORITY,
-                             &pvUseRegTaskHandle))
+                              "APP_UseReg_Task",
+                              APP_USEREG_TASK_STACK_SIZE,
+                              NULL,
+                              APP_USEREG_TASK_PRIORITY,
+                              &pvUseRegTaskHandle))
     {
-        /* Create message queue for User Registration application */
-        pvUseRegQueueHandle = xQueueCreate(APP_USEREG_QUEUE_LENGTH, sizeof(void *));
+        /* Create message queue for User registration application */
+        pvUseRegQueueHandle = xQueueCreate(APP_USEREG_QUEUE_LENGTH, sizeof(uint32_t));
 
         if(pvUseRegQueueHandle)
         {
-            /* Create event group for User Registration application */
+            /* Create event group for User registration application */
             pvUseRegEventGroupHandle = xEventGroupCreate();
-            enuRetVal = (NULL != pvUseRegEventGroupHandle)?Application_Success:Application_Failure;
+            enuRetVal = (NULL != pvUseRegEventGroupHandle) ? Application_Success : Application_Failure;
         }
     }
 
@@ -929,10 +916,11 @@ App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event, void *pvData)
     {
         /* Push event-related data to local message queue */
         enuRetVal = (pdTRUE == xQueueSend(pvUseRegQueueHandle,
-                                          &pvData,
+                                          pvData,
                                           APP_USEREG_PUSH_IMMEDIATELY))
-                                          ?Application_Success
-                                          :Application_Failure;
+                        ? Application_Success
+                        : Application_Failure;
+
         if(Application_Failure == enuRetVal)
         {
             /* Free allocated memory */
@@ -940,13 +928,12 @@ App_tenuStatus enuRegistration_GetNotified(uint32_t u32Event, void *pvData)
             free((void *)(Ble_tstrRxData *)pvData);
         }
     }
-
     if(Application_Success == enuRetVal)
     {
         /* Unblock Registration task by setting event in local event group */
         enuRetVal = xEventGroupSetBits(pvUseRegEventGroupHandle, u32Event)
-                                       ?Application_Success
-                                       :Application_Failure;
+                        ? Application_Success
+                        : Application_Failure;
     }
 
     return enuRetVal;

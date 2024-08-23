@@ -1,6 +1,6 @@
-/* -------------------   WiPad User Registration BLE Service for nRF52832   -------------------- */
+/* -------------------   WiPad User Registration BLE Service for nRF51422   -------------------- */
 /*  File      -  WiPad User Registration BLE Service header file                                 */
-/*  target    -  nRF52832                                                                        */
+/*  target    -  nRF51422                                                                        */
 /*  toolchain -  IAR                                                                             */
 /*  created   -  April, 2024                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -10,29 +10,15 @@
 
 /****************************************   INCLUDES   *******************************************/
 #include "middleware_utils.h"
+#include "ble.h"
 #include "ble_gatts.h"
-#include "nrf_sdh_ble.h"
-#include "ble_link_ctx_manager.h"
 
 /*************************************   PUBLIC DEFINES   ****************************************/
-#define BLE_USEREG_BASE_UUID       {0xE6, 0xF8, 0xFC, 0x18, 0x9B, 0x41, 0x4C, 0xDF, \
-                                    0xB9, 0x21, 0xD9, 0x00, 0x00, 0x00, 0x59, 0x5F}
-#define BLE_USEREG_UUID_SERVICE     0x2345
-#define BLE_USEREG_ID_PWD_CHAR_UUID 0x2346
-#define BLE_USEREG_STATUS_CHAR_UUID 0x2347
-
-/**************************************   PUBLIC MACROS   ****************************************/
-#define BLE_USEREG_DEF(name, max_clients)                       \
-BLE_LINK_CTX_MANAGER_DEF(CONCAT_2(name, _link_ctx_storage),     \
-                  (max_clients), sizeof(BleReg_tstrClientCtx)); \
-static ble_use_reg_t name =                                     \
-{                                                               \
-    .pstrLinkCtx = &CONCAT_2(name, _link_ctx_storage)           \
-};                                                              \
-static ble_use_reg_t name;                                      \
-NRF_SDH_BLE_OBSERVER(name ## _obs,                              \
-                     BLE_USE_REG_BLE_OBSERVER_PRIO,             \
-                     vidBleUseRegEventHandler, &name)
+#define BLE_USE_REG_BASE_UUID       {0xE6, 0xF8, 0xFC, 0x18, 0x9B, 0x41, 0x4C, 0xDF, \
+                                     0xB9, 0x21, 0xD9, 0x00, 0x00, 0x00, 0x59, 0x5F}
+#define BLE_USE_REG_UUID_SERVICE     0x2345
+#define BLE_USE_REG_ID_PWD_CHAR_UUID 0x2346
+#define BLE_USE_REG_STATUS_CHAR_UUID 0x2347
 
 /**************************************   PUBLIC TYPES   *****************************************/
 /**
@@ -41,23 +27,16 @@ NRF_SDH_BLE_OBSERVER(name ## _obs,                              \
 typedef struct ble_use_reg_s ble_use_reg_t;
 
 /**
- * User Registration events dispatched back to application-registered callback.
+ * User Registration event types dispatched back to application-registered callback.
 */
 typedef enum
 {
-    BLE_REG_NOTIF_ENABLED = 0, /* Peer enabled notifications on Status characteristic  */
-    BLE_REG_NOTIF_DISABLED,    /* Peer disabled notifications on Status characteristic */
-    BLE_REG_STATUS_TX,         /* Peer notified of service status                      */
-    BLE_REG_ID_PWD_RX          /* Received data from peer on the Id/Pwd characteristic */
+    BLE_REG_CONNECTED = 0, /* Connection session with peer established             */
+    BLE_REG_DISCONNECTED,  /* Disconnected from an established connection session  */
+    BLE_REG_ID_PWD_RX,     /* Received data from peer on the Id/Pwd characteristic */
+    BLE_REG_NOTIF_ENABLED, /* Peer enabled notifications on Status characteristic  */
+    BLE_REG_NOTIF_DISABLED /* Peer disabled notifications on Status characteristic */
 }BleReg_tenuEventType;
-
-/**
- * User Registration service client context structure.
-*/
-typedef struct
-{
-    bool bNotificationEnabled; /* Indicates whether peer has enabled notification on Status characteristic */
-}BleReg_tstrClientCtx;
 
 /**
  * Rx data structure upon being on the receiving end of a GATT client write event.
@@ -73,11 +52,9 @@ typedef struct
 */
 typedef struct
 {
-    BleReg_tenuEventType enuEventType; /* Event type                                    */
-    ble_use_reg_t *pstrUseRegInstance; /* Pointer to User Registration service instance */
-    uint16_t u16ConnHandle;            /* Connection Handle                             */
-    BleReg_tstrClientCtx *pstrLinkCtx; /* Pointer to link context                       */
-    BleReg_tstrRxData strRxData;       /* Received data upon a GATT client write event  */
+    BleReg_tenuEventType enuEventType;      /* Event type                                        */
+    ble_use_reg_t *pstrUseRegInstance;      /* Pointer to the User Registration service instance */
+    BleReg_tstrRxData strRxData;            /* Received data upon a GATT client write event      */
 }BleReg_tstrEvent;
 
 /**
@@ -95,10 +72,10 @@ typedef void (*BleUseRegEventHandler)(BleReg_tstrEvent *pstrEvent);
 */
 typedef struct
 {
-    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when peer enables/disables
-                                                 notifications on the Status characteristic,
-                                                 notification is sent on the Status characteristic or
-                                                 data is received on the Id/Password characteristic */
+    BleUseRegEventHandler pfUseRegEvtHandler; /* Event handler to be called when connection with peer
+                                                 is established, notification is sent on the Status
+                                                 characteristic or data is received on the Id/Password
+                                                 characteristic */
 }BleReg_tstrInit;
 
 /**
@@ -106,12 +83,13 @@ typedef struct
 */
 struct ble_use_reg_s
 {
-    uint8_t u8UuidType;        /* User Registration service's UUID type                           */
-    uint16_t u16ServiceHandle; /* User Registration service's handle as provided by the BLE stack */
-    ble_gatts_char_handles_t strIdPwdChar;      /* Id/Password characteristic handles             */
-    ble_gatts_char_handles_t strStatusChar;     /* Status characteristic handles                  */
-    blcm_link_ctx_storage_t *const pstrLinkCtx; /* Pointer to link context storage                */
-    BleUseRegEventHandler pfUseRegEvtHandler;   /* User Registration service's event handler      */
+    uint8_t u8UuidType;        /* User Registration service's UUID type                              */
+    uint16_t u16ServiceHandle; /* User Registration service's handle as provided by the BLE stack    */
+    ble_gatts_char_handles_t strIdPwdChar;      /* Id/Password characteristic handles                */
+    ble_gatts_char_handles_t strStatusChar;     /* Status characteristic handles                     */
+    uint16_t u16ConnHandle;    /* Handle of the active connection session provided by Softdevice     */
+    bool bNotificationEnabled; /* Indicates whether peer has enabled notification of the Status char */
+    BleUseRegEventHandler pfUseRegEvtHandler;   /* User Registration service's event handler         */
 };
 
 /************************************   PUBLIC FUNCTIONS   ***************************************/
@@ -122,12 +100,12 @@ struct ble_use_reg_s
  * @note The User Registration service's event handler declared in the definition structure is invoked
  *       from within the context of this handler.
  *
+ * @param pstrUseRegInstance Pointer to WiPad's User Registration service instance structure.
  * @param pstrEvent Pointer to received event structure.
- * @param pvArg Pointer to User Registration definition structure.
  *
  * @return nothing.
 */
-void vidBleUseRegEventHandler(ble_evt_t const *pstrEvent, void *pvArg);
+void vidBleUseRegEventHandler(ble_use_reg_t *pstrUseRegInstance, ble_evt_t const *pstrEvent);
 
 /**
  * @brief enuBleUseRegTransferData Initiates data transfer to peer over BLE.
@@ -138,12 +116,11 @@ void vidBleUseRegEventHandler(ble_evt_t const *pstrEvent, void *pvArg);
  * @param pstrUseRegInstance Pointer to the User Registration instance structure.
  * @param pu8Data Pointer to data buffer.
  * @param pu16DataLength Pointer to data length in bytes.
- * @param u16ConnHandle Connection Handle of the destination client.
  *
  * @return Mid_tenuStatus Middleware_Success if transfer was performed successfully,
  *         Middleware_Failure otherwise.
  */
-Mid_tenuStatus enuBleUseRegTransferData(ble_use_reg_t *pstrUseRegInstance, uint8_t *pu8Data, uint16_t *pu16DataLength, uint16_t u16ConnHandle);
+Mid_tenuStatus enuBleUseRegTransferData(ble_use_reg_t *pstrUseRegInstance, uint8_t *pu8Data, uint16_t *pu16DataLength);
 
 /**
  * @brief enuBleUseRegInit Initializes WiPad's User Registration BLE service.

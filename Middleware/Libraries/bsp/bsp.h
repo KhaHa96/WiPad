@@ -1,30 +1,30 @@
 /**
- * Copyright (c) 2014 - 2021, Nordic Semiconductor ASA
- *
+ * Copyright (c) 2014 - 2017, Nordic Semiconductor ASA
+ * 
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form, except as embedded into a Nordic
  *    Semiconductor ASA integrated circuit in a product or a software update for
  *    such product, must reproduce the above copyright notice, this list of
  *    conditions and the following disclaimer in the documentation and/or other
  *    materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- *
+ * 
  * 4. This software, with or without modification, must only be used with a
  *    Nordic Semiconductor ASA integrated circuit.
- *
+ * 
  * 5. Any software provided in binary form under this license must not be reverse
  *    engineered, decompiled, modified and/or disassembled.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,8 +35,9 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
+
 /**@file
  *
  * @defgroup bsp Board Support Package
@@ -46,8 +47,10 @@
  * @brief BSP module.
  * @details This module provides a layer of abstraction from the board.
  *          It allows the user to indicate certain states on LEDs in a simple way.
- *          Module functionality can be modified by defining BSP_SIMPLE to reduce
- *          functionality of this module to enable and read state of the buttons.
+ *          Module functionality can be modified by additional defines:
+ *          - BSP_SIMPLE reduces functionality of this module to enable
+ *            and read state of the buttons
+ *          - BSP_UART_SUPPORT enables support for UART
  */
 
 #ifndef BSP_H__
@@ -56,6 +59,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "boards.h"
+
+#define BSP_INIT_NONE    0        /**< This define specifies the type of initialization without support for LEDs and buttons (@ref bsp_init).*/
+#define BSP_INIT_LED     (1 << 0) /**< This bit enables LEDs during initialization (@ref bsp_init).*/
+#define BSP_INIT_BUTTONS (1 << 1) /**< This bit enables buttons during initialization (@ref bsp_init).*/
 
 #if !defined(BSP_DEFINES_ONLY) && !defined(BSP_SIMPLE)
 #include "app_button.h"
@@ -194,8 +201,10 @@ typedef void (* bsp_event_callback_t)(bsp_event_t);
  * @note        Before calling this function, you must initiate the following required modules:
  *              - @ref app_timer for LED support
  *              - @ref app_gpiote for button support
+ *              - @ref app_uart for UART support
  *
  * @param[in]   type               Type of peripherals used.
+ * @param[in]   ticks_per_100ms    Number of RTC ticks for 100 ms.
  * @param[in]   callback           Function to be called when button press/event is detected.
  *
  * @retval      NRF_SUCCESS               If the BSP module was successfully initialized.
@@ -204,7 +213,7 @@ typedef void (* bsp_event_callback_t)(bsp_event_t);
  * @retval      NRF_ERROR_INVALID_PARAM   If GPIOTE has too many users.
  * @retval      NRF_ERROR_INVALID_STATE   If button or GPIOTE has not been initialized.
  */
-uint32_t bsp_init(uint32_t type, bsp_event_callback_t callback);
+uint32_t bsp_init(uint32_t type, uint32_t ticks_per_100ms, bsp_event_callback_t callback);
 
 
 /**@brief       Function for checking button states.

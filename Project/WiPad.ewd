@@ -44,7 +44,7 @@
                 </option>
                 <option>
                     <name>MemFile</name>
-                    <state>$PROJ_DIR$\nRF52832_xxAA.ddf</state>
+                    <state>$PROJ_DIR$\nRF51422_xxAC.ddf</state>
                 </option>
                 <option>
                     <name>RunToEnable</name>
@@ -112,7 +112,7 @@
                 </option>
                 <option>
                     <name>FlashLoadersV3</name>
-                    <state>$TOOLKIT_DIR$\config\flashloader\NordicSemi\nrf52832_xxaa.board</state>
+                    <state>$TOOLKIT_DIR$\config\flashloader\NordicSemi\nrf51xxx_xxac.board</state>
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck1</name>
@@ -1201,7 +1201,7 @@
                 <debug>1</debug>
                 <option>
                     <name>CThirdPartyDriverDll</name>
-                    <state>Browse to your third-party driver</state>
+                    <state>###Uninitialized###</state>
                 </option>
                 <option>
                     <name>CThirdPartyLogFileCheck</name>
@@ -1247,7 +1247,7 @@
                 </option>
                 <option>
                     <name>CCMSPFetTargetVoltage</name>
-                    <state>3.0</state>
+                    <state>###Uninitialized###</state>
                 </option>
                 <option>
                     <name>CCMSPFetVCCDefault</name>
@@ -1305,11 +1305,11 @@
                 </option>
                 <option>
                     <name>TIPackage</name>
-                    <state>C:\ti\iar\ccs_base</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>BoardFile</name>
-                    <state>$TOOLKIT_DIR$\config\debugger\TexasInstruments\xds\UNKNOWN_XDS110_CJTAG.dat</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>DoLogfile</name>
@@ -1460,7 +1460,7 @@
                 </option>
                 <option>
                     <name>CCXDSTargetVoltage</name>
-                    <state>3.3</state>
+                    <state>###Uninitialized###</state>
                 </option>
                 <option>
                     <name>OCXDSDigitalStatesConfigFile</name>
@@ -1532,7 +1532,7 @@
         <toolchain>
             <name>ARM</name>
         </toolchain>
-        <debug>1</debug>
+        <debug>0</debug>
         <settings>
             <name>C-SPY</name>
             <archiveVersion>2</archiveVersion>
@@ -1566,11 +1566,11 @@
                 </option>
                 <option>
                     <name>MemOverride</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>MemFile</name>
-                    <state>$PROJ_DIR$\nRF52832_xxAA.ddf</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>RunToEnable</name>
@@ -1582,11 +1582,11 @@
                 </option>
                 <option>
                     <name>CExtraOptionsCheck</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CExtraOptions</name>
-                    <state>--drv_vector_table_base=0x0</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>CFpuProcessor</name>
@@ -1610,15 +1610,15 @@
                 </option>
                 <option>
                     <name>OCDynDriverList</name>
-                    <state>JLINK_ID</state>
+                    <state>ARMSIM_ID</state>
                 </option>
                 <option>
                     <name>OCLastSavedByProductVersion</name>
-                    <state>9.10.2.39304</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>UseFlashLoader</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CLowLevel</name>
@@ -1638,7 +1638,7 @@
                 </option>
                 <option>
                     <name>FlashLoadersV3</name>
-                    <state>$TOOLKIT_DIR$\config\flashloader\NordicSemi\nrf52832_xxaa.board</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck1</name>
@@ -1706,7 +1706,7 @@
                 </option>
                 <option>
                     <name>OCMulticoreNrOfCores</name>
-                    <state>1</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>OCMulticoreWorkspace</name>
@@ -2413,7 +2413,7 @@
                 <option>
                     <name>CCJLinkResetList</name>
                     <version>6</version>
-                    <state>7</state>
+                    <state>5</state>
                 </option>
                 <option>
                     <name>CCJLinkInterfaceCmdLine</name>
@@ -2478,7 +2478,7 @@
                 </option>
                 <option>
                     <name>CCCpuClockEdit</name>
-                    <state>72.0</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>CCSwoClockAuto</name>

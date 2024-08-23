@@ -1,30 +1,71 @@
 /*
- * FreeRTOS Kernel V10.0.0
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
- */
+    FreeRTOS V8.2.1 - Copyright (C) 2015 Real Time Engineers Ltd.
+    All rights reserved
+
+    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
+
+    This file is part of the FreeRTOS distribution.
+
+    FreeRTOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License (version 2) as published by the
+    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
+
+    ***************************************************************************
+    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
+    >>!   distribute a combined work that includes FreeRTOS without being   !<<
+    >>!   obliged to provide the source code for proprietary components     !<<
+    >>!   outside of the FreeRTOS kernel.                                   !<<
+    ***************************************************************************
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  Full license text is available on the following
+    link: http://www.freertos.org/a00114.html
+
+    ***************************************************************************
+     *                                                                       *
+     *    FreeRTOS provides completely free yet professionally developed,    *
+     *    robust, strictly quality controlled, supported, and cross          *
+     *    platform software that is more than just the market leader, it     *
+     *    is the industry's de facto standard.                               *
+     *                                                                       *
+     *    Help yourself get started quickly while simultaneously helping     *
+     *    to support the FreeRTOS project by purchasing a FreeRTOS           *
+     *    tutorial book, reference manual, or both:                          *
+     *    http://www.FreeRTOS.org/Documentation                              *
+     *                                                                       *
+    ***************************************************************************
+
+    http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
+    the FAQ page "My application does not run, what could be wrong?".  Have you
+    defined configASSERT()?
+
+    http://www.FreeRTOS.org/support - In return for receiving this top quality
+    embedded software for free we request you assist our global community by
+    participating in the support forum.
+
+    http://www.FreeRTOS.org/training - Investing in training allows your team to
+    be as productive as possible as early as possible.  Now you can receive
+    FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
+    Ltd, and the world's leading authority on the world's leading RTOS.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
+    compatible FAT file system, and our tiny thread aware UDP/IP stack.
+
+    http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
+    Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
+    Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
+    licenses offer ticketed support, indemnification and commercial middleware.
+
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
+    engineered and independently SIL3 certified version for use in safety and
+    mission critical applications that require provable dependability.
+
+    1 tab == 4 spaces!
+*/
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
@@ -33,7 +74,7 @@
 
 #ifdef SOFTDEVICE_PRESENT
 #include "nrf_soc.h"
-#include "nrf_sdh.h"
+#include "softdevice_handler.h"
 #include "app_error.h"
 #include "app_util_platform.h"
 #endif
@@ -109,52 +150,30 @@ void vPortSetupTimerInterrupt( void )
 #include "nrf_rtc.h"
 #include "nrf_drv_clock.h"
 
+
 /*-----------------------------------------------------------*/
 
 void xPortSysTickHandler( void )
 {
+    nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_TICK);
 #if configUSE_TICKLESS_IDLE == 1
     nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 #endif
 
-    BaseType_t switch_req = pdFALSE;
-    uint32_t isrstate = portSET_INTERRUPT_MASK_FROM_ISR();
-
-    uint32_t systick_counter = nrf_rtc_counter_get(portNRF_RTC_REG);
-    nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_TICK);
-
-    if (configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG == 0)
-    {
-        /* check FreeRTOSConfig.h file for more details on configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG */
-        TickType_t diff;
-        diff = (systick_counter - xTaskGetTickCount()) & portNRF_RTC_MAXTICKS;
-
-        /* At most 1 step if scheduler is suspended - the xTaskIncrementTick
-         * would return the tick state from the moment when suspend function was called. */
-        if ((diff > 1) && (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING))
-        {
-            diff = 1;
-        }
-        while ((diff--) > 0)
-        {
-            switch_req |= xTaskIncrementTick();
-        }
-    }
-    else
-    {
-        switch_req = xTaskIncrementTick();
-    }
-
-    /* Increment the RTOS tick as usual which checks if there is a need for rescheduling */
-    if ( switch_req != pdFALSE )
+    /* The SysTick runs at the lowest interrupt priority, so when this interrupt
+    executes all interrupts must be unmasked.  There is therefore no need to
+    save and then restore the interrupt mask value as its value is already
+    known. */
+    ( void ) portSET_INTERRUPT_MASK_FROM_ISR();
+    /* Increment the RTOS tick. */
+    if ( xTaskIncrementTick() != pdFALSE )
     {
         /* A context switch is required.  Context switching is performed in
         the PendSV interrupt.  Pend the PendSV interrupt. */
         SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
         __SEV();
     }
-
-    portCLEAR_INTERRUPT_MASK_FROM_ISR( isrstate );
+    portCLEAR_INTERRUPT_MASK_FROM_ISR( 0 );
 }
 
 /*
@@ -171,7 +190,6 @@ void vPortSetupTimerInterrupt( void )
     nrf_rtc_int_enable   (portNRF_RTC_REG, RTC_INTENSET_TICK_Msk);
     nrf_rtc_task_trigger (portNRF_RTC_REG, NRF_RTC_TASK_CLEAR);
     nrf_rtc_task_trigger (portNRF_RTC_REG, NRF_RTC_TASK_START);
-    nrf_rtc_event_enable(portNRF_RTC_REG, RTC_EVTEN_OVRFLW_Msk);
 
     NVIC_SetPriority(portNRF_RTC_IRQn, configKERNEL_INTERRUPT_PRIORITY);
     NVIC_EnableIRQ(portNRF_RTC_IRQn);
@@ -204,7 +222,7 @@ void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
         uint8_t dummy = 0;
         uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
         APP_ERROR_CHECK(err_code);
-    }while (0);
+    }while(0);
 #else
     __disable_irq();
 #endif
@@ -235,43 +253,28 @@ void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
         configPRE_SLEEP_PROCESSING( xModifiableIdleTime );
         if ( xModifiableIdleTime > 0 )
         {
-#ifdef SOFTDEVICE_PRESENT
-            if (nrf_sdh_is_enabled())
-            {
-                uint32_t err_code = sd_app_evt_wait();
-                APP_ERROR_CHECK(err_code);
-            }
-            else
-#endif
-            {
-                /* No SD -  we would just block interrupts globally.
-                * BASEPRI cannot be used for that because it would prevent WFE from wake up.
-                */
-                do{
-                    __WFE();
-                } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
-            }
+            do{
+                __WFE();
+            } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
         }
         configPOST_SLEEP_PROCESSING( xExpectedIdleTime );
-
         nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
-        nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 
         /* Correct the system ticks */
         {
             TickType_t diff;
-            TickType_t exitTime;
+            TickType_t hwTicks     = nrf_rtc_counter_get(portNRF_RTC_REG);
 
             nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_TICK);
             nrf_rtc_int_enable (portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
 
-            exitTime = nrf_rtc_counter_get(portNRF_RTC_REG);
-            diff =  (exitTime - enterTime) & portNRF_RTC_MAXTICKS;
+            if(enterTime > hwTicks)
+            {
+                hwTicks += portNRF_RTC_MAXTICKS + 1U;
+            }
 
-            /* It is important that we clear pending here so that our corrections are latest and in sync with tick_interrupt handler */
-            NVIC_ClearPendingIRQ(portNRF_RTC_IRQn);
-
-            if ((configUSE_TICKLESS_IDLE_SIMPLE_DEBUG) && (diff > xExpectedIdleTime))
+            diff = (hwTicks - enterTime);
+            if((configUSE_TICKLESS_IDLE_SIMPLE_DEBUG) && (diff > xExpectedIdleTime))
             {
                 diff = xExpectedIdleTime;
             }

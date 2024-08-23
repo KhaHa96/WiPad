@@ -1,30 +1,67 @@
 /*
- * FreeRTOS Kernel V10.0.0
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
- */
+    FreeRTOS V8.0.1 - Copyright (C) 2014 Real Time Engineers Ltd.
+    All rights reserved
+
+    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
+
+    ***************************************************************************
+     *                                                                       *
+     *    FreeRTOS provides completely free yet professionally developed,    *
+     *    robust, strictly quality controlled, supported, and cross          *
+     *    platform software that has become a de facto standard.             *
+     *                                                                       *
+     *    Help yourself get started quickly and support the FreeRTOS         *
+     *    project by purchasing a FreeRTOS tutorial book, reference          *
+     *    manual, or both from: http://www.FreeRTOS.org/Documentation        *
+     *                                                                       *
+     *    Thank you!                                                         *
+     *                                                                       *
+    ***************************************************************************
+
+    This file is part of the FreeRTOS distribution.
+
+    FreeRTOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License (version 2) as published by the
+    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
+
+    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
+    >>!   distribute a combined work that includes FreeRTOS without being   !<<
+    >>!   obliged to provide the source code for proprietary components     !<<
+    >>!   outside of the FreeRTOS kernel.                                   !<<
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  Full license text is available from the following
+    link: http://www.freertos.org/a00114.html
+
+    1 tab == 4 spaces!
+
+    ***************************************************************************
+     *                                                                       *
+     *    Having a problem?  Start by reading the FAQ "My application does   *
+     *    not run, what could be wrong?"                                     *
+     *                                                                       *
+     *    http://www.FreeRTOS.org/FAQHelp.html                               *
+     *                                                                       *
+    ***************************************************************************
+
+    http://www.FreeRTOS.org - Documentation, books, training, latest versions,
+    license and Real Time Engineers Ltd. contact details.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
+    compatible FAT file system, and our tiny thread aware UDP/IP stack.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd license FreeRTOS to High
+    Integrity Systems to sell under the OpenRTOS brand.  Low cost OpenRTOS
+    licenses offer ticketed support, indemnification and middleware.
+
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
+    engineered and independently SIL3 certified version for use in safety and
+    mission critical applications that require provable dependability.
+
+    1 tab == 4 spaces!
+*/
 
 
 #ifndef FREERTOS_CONFIG_H
@@ -33,7 +70,6 @@
 #ifdef SOFTDEVICE_PRESENT
 #include "nrf_soc.h"
 #endif
-#include "app_util_platform.h"
 
 /*-----------------------------------------------------------
  * Possible configurations for system timer
@@ -56,7 +92,7 @@
 #define configTICK_SOURCE FREERTOS_USE_RTC
 
 #define configUSE_PREEMPTION 1
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION                                   0
 #define configUSE_TICKLESS_IDLE 1
 #define configUSE_TICKLESS_IDLE_SIMPLE_DEBUG                                      1 /* See into vPortSuppressTicksAndSleep source code for explanation */
 #define configCPU_CLOCK_HZ                                                        ( SystemCoreClock )
@@ -78,7 +114,7 @@
 #define configENABLE_BACKWARD_COMPATIBILITY                                       1
 
 /* Hook function related definitions. */
-#define configUSE_IDLE_HOOK 0
+#define configUSE_IDLE_HOOK 1
 #define configUSE_TICK_HOOK                                                       0
 #define configCHECK_FOR_STACK_OVERFLOW                                            0
 #define configUSE_MALLOC_FAILED_HOOK                                              0
@@ -138,8 +174,7 @@ function. */
 routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
 INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
 PRIORITY THAN THIS! (higher priorities are lower numeric values. */
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY _PRIO_APP_HIGH
-
+#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 1
 
 /* Interrupt priorities used by the kernel port layer itself.  These are generic
 to all Cortex-M ports, and do not rely on any particular library functions. */
@@ -190,18 +225,5 @@ standard names - or at least those used in the unmodified vector table. */
         extern uint32_t SystemCoreClock;
     #endif
 #endif /* !assembler */
-
-/** Implementation note:  Use this with caution and set this to 1 ONLY for debugging
- * ----------------------------------------------------------
-     * Set the value of configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG to below for enabling or disabling RTOS tick auto correction:
-     * 0. This is default. If the RTC tick interrupt is masked for more than 1 tick by higher priority interrupts, then most likely
-     *    one or more RTC ticks are lost. The tick interrupt inside RTOS will detect this and make a correction needed. This is needed
-     *    for the RTOS internal timers to be more accurate.
-     * 1. The auto correction for RTOS tick is disabled even though few RTC tick interrupts were lost. This feature is desirable when debugging
-     *    the RTOS application and stepping though the code. After stepping when the application is continued in debug mode, the auto-corrections of
-     *    RTOS tick might cause asserts. Setting configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG to 1 will make RTC and RTOS go out of sync but could be
-     *    convenient for debugging.
-     */
-#define configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG     0
 
 #endif /* FREERTOS_CONFIG_H */

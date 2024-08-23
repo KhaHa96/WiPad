@@ -1,37 +1,78 @@
 /*
- * FreeRTOS Kernel V10.0.0
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
- */
+    FreeRTOS V8.2.1 - Copyright (C) 2015 Real Time Engineers Ltd.
+    All rights reserved
+
+    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
+
+    This file is part of the FreeRTOS distribution.
+
+    FreeRTOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License (version 2) as published by the
+    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
+
+    ***************************************************************************
+    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
+    >>!   distribute a combined work that includes FreeRTOS without being   !<<
+    >>!   obliged to provide the source code for proprietary components     !<<
+    >>!   outside of the FreeRTOS kernel.                                   !<<
+    ***************************************************************************
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  Full license text is available on the following
+    link: http://www.freertos.org/a00114.html
+
+    ***************************************************************************
+     *                                                                       *
+     *    FreeRTOS provides completely free yet professionally developed,    *
+     *    robust, strictly quality controlled, supported, and cross          *
+     *    platform software that is more than just the market leader, it     *
+     *    is the industry's de facto standard.                               *
+     *                                                                       *
+     *    Help yourself get started quickly while simultaneously helping     *
+     *    to support the FreeRTOS project by purchasing a FreeRTOS           *
+     *    tutorial book, reference manual, or both:                          *
+     *    http://www.FreeRTOS.org/Documentation                              *
+     *                                                                       *
+    ***************************************************************************
+
+    http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
+    the FAQ page "My application does not run, what could be wrong?".  Have you
+    defined configASSERT()?
+
+    http://www.FreeRTOS.org/support - In return for receiving this top quality
+    embedded software for free we request you assist our global community by
+    participating in the support forum.
+
+    http://www.FreeRTOS.org/training - Investing in training allows your team to
+    be as productive as possible as early as possible.  Now you can receive
+    FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
+    Ltd, and the world's leading authority on the world's leading RTOS.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
+    compatible FAT file system, and our tiny thread aware UDP/IP stack.
+
+    http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
+    Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
+    Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
+    licenses offer ticketed support, indemnification and commercial middleware.
+
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
+    engineered and independently SIL3 certified version for use in safety and
+    mission critical applications that require provable dependability.
+
+    1 tab == 4 spaces!
+*/
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "croutine.h"
 
 /* Remove the whole file is co-routines are not being used. */
-#if( configUSE_CO_ROUTINES != 0 )
+#if ( configUSE_CO_ROUTINES != 0 )
 
 /*
  * Some kernel aware debuggers require data to be viewed to be global, rather
@@ -67,7 +108,7 @@ static TickType_t xCoRoutineTickCount = 0, xLastTickCount = 0, xPassedTicks = 0;
  */
 #define prvAddCoRoutineToReadyQueue( pxCRCB )																		\
 {																													\
-	if( pxCRCB->uxPriority > uxTopCoRoutineReadyPriority )															\
+	if ( pxCRCB->uxPriority > uxTopCoRoutineReadyPriority )															\
 	{																												\
 		uxTopCoRoutineReadyPriority = pxCRCB->uxPriority;															\
 	}																												\
@@ -107,18 +148,18 @@ CRCB_t *pxCoRoutine;
 
 	/* Allocate the memory that will store the co-routine control block. */
 	pxCoRoutine = ( CRCB_t * ) pvPortMalloc( sizeof( CRCB_t ) );
-	if( pxCoRoutine )
+	if ( pxCoRoutine )
 	{
 		/* If pxCurrentCoRoutine is NULL then this is the first co-routine to
 		be created and the co-routine data structures need initialising. */
-		if( pxCurrentCoRoutine == NULL )
+		if ( pxCurrentCoRoutine == NULL )
 		{
 			pxCurrentCoRoutine = pxCoRoutine;
 			prvInitialiseCoRoutineLists();
 		}
 
 		/* Check the priority is within limits. */
-		if( uxPriority >= configMAX_CO_ROUTINE_PRIORITIES )
+		if ( uxPriority >= configMAX_CO_ROUTINE_PRIORITIES )
 		{
 			uxPriority = configMAX_CO_ROUTINE_PRIORITIES - 1;
 		}
@@ -173,7 +214,7 @@ TickType_t xTimeToWake;
 	/* The list item will be inserted in wake time order. */
 	listSET_LIST_ITEM_VALUE( &( pxCurrentCoRoutine->xGenericListItem ), xTimeToWake );
 
-	if( xTimeToWake < xCoRoutineTickCount )
+	if ( xTimeToWake < xCoRoutineTickCount )
 	{
 		/* Wake time has overflowed.  Place this item in the
 		overflow list. */
@@ -186,7 +227,7 @@ TickType_t xTimeToWake;
 		vListInsert( ( List_t * ) pxDelayedCoRoutineList, ( ListItem_t * ) &( pxCurrentCoRoutine->xGenericListItem ) );
 	}
 
-	if( pxEventList )
+	if ( pxEventList )
 	{
 		/* Also add the co-routine to an event list.  If this is done then the
 		function must be called with interrupts disabled. */
@@ -200,7 +241,7 @@ static void prvCheckPendingReadyList( void )
 	/* Are there any co-routines waiting to get moved to the ready list?  These
 	are co-routines that have been readied by an ISR.  The ISR cannot access
 	the	ready lists itself. */
-	while( listLIST_IS_EMPTY( &xPendingReadyCoRoutineList ) == pdFALSE )
+	while ( listLIST_IS_EMPTY( &xPendingReadyCoRoutineList ) == pdFALSE )
 	{
 		CRCB_t *pxUnblockedCRCB;
 
@@ -223,13 +264,13 @@ static void prvCheckDelayedList( void )
 CRCB_t *pxCRCB;
 
 	xPassedTicks = xTaskGetTickCount() - xLastTickCount;
-	while( xPassedTicks )
+	while ( xPassedTicks )
 	{
 		xCoRoutineTickCount++;
 		xPassedTicks--;
 
 		/* If the tick count has overflowed we need to swap the ready lists. */
-		if( xCoRoutineTickCount == 0 )
+		if ( xCoRoutineTickCount == 0 )
 		{
 			List_t * pxTemp;
 
@@ -241,11 +282,11 @@ CRCB_t *pxCRCB;
 		}
 
 		/* See if this tick has made a timeout expire. */
-		while( listLIST_IS_EMPTY( pxDelayedCoRoutineList ) == pdFALSE )
+		while ( listLIST_IS_EMPTY( pxDelayedCoRoutineList ) == pdFALSE )
 		{
 			pxCRCB = ( CRCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxDelayedCoRoutineList );
 
-			if( xCoRoutineTickCount < listGET_LIST_ITEM_VALUE( &( pxCRCB->xGenericListItem ) ) )
+			if ( xCoRoutineTickCount < listGET_LIST_ITEM_VALUE( &( pxCRCB->xGenericListItem ) ) )
 			{
 				/* Timeout not yet expired. */
 				break;
@@ -261,7 +302,7 @@ CRCB_t *pxCRCB;
 				( void ) uxListRemove( &( pxCRCB->xGenericListItem ) );
 
 				/* Is the co-routine waiting on an event also? */
-				if( pxCRCB->xEventListItem.pvContainer )
+				if ( pxCRCB->xEventListItem.pvContainer )
 				{
 					( void ) uxListRemove( &( pxCRCB->xEventListItem ) );
 				}
@@ -285,9 +326,9 @@ void vCoRoutineSchedule( void )
 	prvCheckDelayedList();
 
 	/* Find the highest priority queue that contains ready co-routines. */
-	while( listLIST_IS_EMPTY( &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) ) )
+	while ( listLIST_IS_EMPTY( &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) ) )
 	{
-		if( uxTopCoRoutineReadyPriority == 0 )
+		if ( uxTopCoRoutineReadyPriority == 0 )
 		{
 			/* No more co-routines to check. */
 			return;
@@ -310,7 +351,7 @@ static void prvInitialiseCoRoutineLists( void )
 {
 UBaseType_t uxPriority;
 
-	for( uxPriority = 0; uxPriority < configMAX_CO_ROUTINE_PRIORITIES; uxPriority++ )
+	for ( uxPriority = 0; uxPriority < configMAX_CO_ROUTINE_PRIORITIES; uxPriority++ )
 	{
 		vListInitialise( ( List_t * ) &( pxReadyCoRoutineLists[ uxPriority ] ) );
 	}
@@ -338,7 +379,7 @@ BaseType_t xReturn;
 	( void ) uxListRemove( &( pxUnblockedCRCB->xEventListItem ) );
 	vListInsertEnd( ( List_t * ) &( xPendingReadyCoRoutineList ), &( pxUnblockedCRCB->xEventListItem ) );
 
-	if( pxUnblockedCRCB->uxPriority >= pxCurrentCoRoutine->uxPriority )
+	if ( pxUnblockedCRCB->uxPriority >= pxCurrentCoRoutine->uxPriority )
 	{
 		xReturn = pdTRUE;
 	}
