@@ -108,7 +108,7 @@ static void vidCharWrittenCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_t 
         {
             /* Decode CCCD value to check whether Peer has enabled notifications on the
                Status characteristic */
-            if(ble_srv_is_notification_enabled(pstrWriteEvent->data))
+            if (ble_srv_is_notification_enabled(pstrWriteEvent->data))
             {
                 pstrUseRegInstance->bNotificationEnabled = true;
                 strEvent.enuEventType = BLE_REG_NOTIF_ENABLED;
@@ -120,7 +120,7 @@ static void vidCharWrittenCallback(ble_use_reg_t *pstrUseRegInstance, ble_evt_t 
             }
 
             /* Invoke User Registration service's application-registered event handler */
-            if(pstrUseRegInstance->pfUseRegEvtHandler)
+            if (pstrUseRegInstance->pfUseRegEvtHandler)
             {
                 pstrUseRegInstance->pfUseRegEvtHandler(&strEvent);
             }
@@ -292,7 +292,7 @@ Mid_tenuStatus enuBleUseRegInit(ble_use_reg_t *pstrUseRegInstance, BleReg_tstrIn
                     strAttMetaData.vlen = BLE_USE_REG_STATUS_ATT_VALUE_LENGTH;
 
                     /* Apply Status attribute settings */
-                    ble_gatts_attr_t strAttCharValue;
+                    ble_gatts_attr_t strAttCharValue;    
                     memset(&strAttCharValue, 0, sizeof(strAttCharValue));
                     strAttCharValue.p_uuid = &strCharUuid;
                     strAttCharValue.p_attr_md = &strAttMetaData;

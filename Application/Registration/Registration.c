@@ -13,6 +13,8 @@
 #include "Registration.h"
 #include "BLE_Service.h"
 #include "NVM_Service.h"
+// #include "Strings.h"
+
 /************************************   PRIVATE DEFINES   ****************************************/
 #define APP_USEREG_PUSH_IMMEDIATELY 0U
 #define APP_USE_REG_POP_IMMEDIATELY 0U

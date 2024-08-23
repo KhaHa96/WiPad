@@ -23,7 +23,6 @@
 #include "peer_manager.h"
 #include "AppMgr.h"
 #include "App_Types.h"
-#include "nrf_ble_gatt.h"
 /*****************************************   DEFINES   *******************************************/
 #define BLE_CENTRAL_LINK_COUNT 0
 #define BLE_PERIPHERAL_LINK_COUNT 1
@@ -73,10 +72,6 @@ static ble_uuid_t strAdvUuids[] =
 static const Ble_tstrState strBleStateMachine[] =
     {
         {BLE_ADVERTISING_STARTED, vidBleStartAdvertising}};
-
-NRF_BLE_GQ_DEF(BleGqInstance,                                    /* Gatt queue instance          */
-               NRF_SDH_BLE_PERIPHERAL_LINK_COUNT,
-               NRF_BLE_GQ_QUEUE_SIZE);
 
 /************************************   PRIVATE FUNCTIONS   **************************************/
 static void vidTaskNotify(void)
@@ -132,13 +127,6 @@ static void vidBleEvtDispatch(ble_evt_t *pstrEvent)
     vidBleKeyAttEventHandler(&strBleKeyAttInstance, pstrEvent);
     vidBleUseRegEventHandler(&strBleUseRegInstance, pstrEvent);
 }
-
-// hereeeee
-
-/*
-uint8_t Buffer1[] = "User Registration ";
-uint16_t u16SizeBuffer1 = sizeof(Buffer1) - 1;  */
-
 static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
 {
     /* Make sure valid arguments are passed */
@@ -192,10 +180,6 @@ static void vidUseRegEventHandler(BleReg_tstrEvent *pstrEvent)
         }
     }
 }
-/*
-uint8_t Buffer2[] = "Key Attribution ser";
-uint16_t u16SizeBuffer2 = sizeof(Buffer2) - 1;*/
-
 static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
 {
     /* Make sure valid arguments are passed */
@@ -249,6 +233,8 @@ static void vidKeyAttEventHandler(BleAtt_tstrEvent *pstrEvent)
         }
     }
 }
+
+
 static void vidKeyAdmEventHandler(BleAdm_tstrEvent *pstrEvent)
 {
     /* Make sure valid arguments are passed */
@@ -431,7 +417,7 @@ static void vidBleEventHandler(ble_evt_t const *pstrEvent, void *pvData)
 static void vidSystemEvtDispatch(uint32_t u32SystemEvent)
 {
     ble_evt_t ble_evt;
-    // Populate the ble_evt structure with the system event data
+    // populate the ble_evt structure with the system event data
     vidBleEventHandler((ble_evt_t const *)&ble_evt, ((void *)0));
 }
 static Mid_tenuStatus enuBleStackInit(void)

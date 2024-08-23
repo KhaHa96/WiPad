@@ -119,7 +119,7 @@ static void vidCharWrittenCallback(ble_key_att_t *pstrKeyAttInstance, ble_evt_t 
             }
 
             /* Invoke Key Attribution service's application-registered event handler */
-            if(pstrKeyAttInstance->pfKeyAttEvtHandler)
+            if (pstrKeyAttInstance->pfKeyAttEvtHandler)
             {
                 pstrKeyAttInstance->pfKeyAttEvtHandler(&strEvent);
             }

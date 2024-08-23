@@ -60,7 +60,7 @@
 static void vidPeerConnectedCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t const *pstrEvent)
 {
     /* Make sure valid arguments are passed */
-    if(pstrAdmUseInstance && pstrEvent)
+    if (pstrAdmUseInstance && pstrEvent)
     {
         /* Invoke Admin User service's application-registered event handler */
         pstrAdmUseInstance->u16ConnHandle = pstrEvent->evt.gap_evt.conn_handle;
@@ -75,7 +75,7 @@ static void vidPeerConnectedCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_
 static void vidPeerDisconnectedCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t const *pstrEvent)
 {
     /* Make sure valid arguments are passed */
-    if(pstrAdmUseInstance && pstrEvent)
+    if (pstrAdmUseInstance && pstrEvent)
     {
         /* Invoke Admin User service's application-registered event handler */
         pstrAdmUseInstance->u16ConnHandle = BLE_CONN_HANDLE_INVALID;
@@ -90,7 +90,7 @@ static void vidPeerDisconnectedCallback(ble_adm_use_t *pstrAdmUseInstance, ble_e
 static void vidCharWrittenCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t const *pstrEvent)
 {
     /* Make sure valid arguments are passed */
-    if(pstrAdmUseInstance && pstrEvent)
+    if (pstrAdmUseInstance && pstrEvent)
     {
         BleAdm_tstrEvent strEvent;
 
@@ -99,12 +99,12 @@ static void vidCharWrittenCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t 
         strEvent.pstrAdmUseInstance = pstrAdmUseInstance;
 
         ble_gatts_evt_write_t const *pstrWriteEvent = &pstrEvent->evt.gatts_evt.params.write;
-        if((pstrWriteEvent->handle == pstrAdmUseInstance->strStatusChar.cccd_handle) &&
+        if ((pstrWriteEvent->handle == pstrAdmUseInstance->strStatusChar.cccd_handle) &&
             (pstrWriteEvent->len == BLE_ADM_USE_NOTIF_EVT_LENGTH))
         {
             /* Decode CCCD value to check whether Peer has enabled notifications on the
                Status characteristic */
-            if(ble_srv_is_notification_enabled(pstrWriteEvent->data))
+            if (ble_srv_is_notification_enabled(pstrWriteEvent->data))
             {
                 pstrAdmUseInstance->bNotificationEnabled = true;
                 strEvent.enuEventType = BLE_ADM_NOTIF_ENABLED;
@@ -116,12 +116,12 @@ static void vidCharWrittenCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t 
             }
 
             /* Invoke Admin User service's application-registered event handler */
-            if(pstrAdmUseInstance->pfAdmUseEvtHandler)
+            if (pstrAdmUseInstance->pfAdmUseEvtHandler)
             {
                 pstrAdmUseInstance->pfAdmUseEvtHandler(&strEvent);
             }
         }
-        else if((pstrWriteEvent->handle == pstrAdmUseInstance->strIdPwdChar.value_handle) &&
+        else if ((pstrWriteEvent->handle == pstrAdmUseInstance->strIdPwdChar.value_handle) &&
                  (pstrAdmUseInstance->pfAdmUseEvtHandler))
         {
             /* Invoke Admin User service's application-registered event handler */
@@ -137,9 +137,9 @@ static void vidCharWrittenCallback(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t 
 void vidBleAdmUseEventHandler(ble_adm_use_t *pstrAdmUseInstance, ble_evt_t const *pstrEvent)
 {
     /* Make sure valid arguments are passed */
-    if(pstrAdmUseInstance && pstrEvent)
+    if (pstrAdmUseInstance && pstrEvent)
     {
-        switch(pstrEvent->header.evt_id)
+        switch (pstrEvent->header.evt_id)
         {
         case BLE_GAP_EVT_CONNECTED:
         {
@@ -171,7 +171,7 @@ Mid_tenuStatus enuBleAdmUseTransferData(ble_adm_use_t *pstrAdmUseInstance, uint8
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
     /* Make sure valid arguments are passed */
-    if(BLE_ADM_USE_VALID_TRANSFER(pstrAdmUseInstance, pu8Data, pu16DataLength))
+    if (BLE_ADM_USE_VALID_TRANSFER(pstrAdmUseInstance, pu8Data, pu16DataLength))
     {
         ble_gatts_hvx_params_t strHvxParams;
 
@@ -195,7 +195,7 @@ Mid_tenuStatus enuBleAdmUseInit(ble_adm_use_t *pstrAdmUseInstance, BleAdm_tstrIn
     Mid_tenuStatus enuRetVal = Middleware_Failure;
 
     /* Make sure valid arguments are passed */
-    if(pstrAdmUseInstance && pstrAdmUseInit)
+    if (pstrAdmUseInstance && pstrAdmUseInit)
     {
         /* Initialize Admin User service's definition structure */
         pstrAdmUseInstance->u16ConnHandle = BLE_CONN_HANDLE_INVALID;
@@ -204,13 +204,13 @@ Mid_tenuStatus enuBleAdmUseInit(ble_adm_use_t *pstrAdmUseInstance, BleAdm_tstrIn
 
         /* Add Admin User service's custom base UUID to Softdevice's service database */
         ble_uuid128_t strBaseUuid = BLE_ADM_USE_BASE_UUID;
-        if(NRF_SUCCESS == sd_ble_uuid_vs_add(&strBaseUuid, &pstrAdmUseInstance->u8UuidType))
+        if (NRF_SUCCESS == sd_ble_uuid_vs_add(&strBaseUuid, &pstrAdmUseInstance->u8UuidType))
         {
             /* Add Admin User service to Softdevice's BLE service database */
             ble_uuid_t strUseRegUuid;
             strUseRegUuid.type = pstrAdmUseInstance->u8UuidType;
             strUseRegUuid.uuid = BLE_ADM_USE_UUID_SERVICE;
-            if(NRF_SUCCESS == sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
+            if (NRF_SUCCESS == sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
                                                         &strUseRegUuid,
                                                         &pstrAdmUseInstance->u16ServiceHandle))
             {
@@ -250,7 +250,7 @@ Mid_tenuStatus enuBleAdmUseInit(ble_adm_use_t *pstrAdmUseInstance, BleAdm_tstrIn
                 strAttCharValue.max_len = BLE_ADM_USE_MAX_DATA_LENGTH;
 
                 /* Add User Id/Password characteristic */
-                if(NRF_SUCCESS == sd_ble_gatts_characteristic_add(pstrAdmUseInstance->u16ServiceHandle,
+                if (NRF_SUCCESS == sd_ble_gatts_characteristic_add(pstrAdmUseInstance->u16ServiceHandle,
                                                                    &strCharMetaData,
                                                                    &strAttCharValue,
                                                                    &pstrAdmUseInstance->strIdPwdChar))
